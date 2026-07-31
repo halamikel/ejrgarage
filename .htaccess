@@ -1,0 +1,33 @@
+# EJR Garage - root .htaccess
+
+# ── Allow AJAX/fetch requests (fixes InfinityFree 403 on API calls) ──
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "https://ejrgarage.site.je"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type"
+</IfModule>
+
+# Handle OPTIONS preflight
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule .* - [R=200,L]
+
+# CRITICAL FIX: Pass Authorization header through to PHP
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Fallback for CGI/FastCGI setups
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+# Block direct access to sensitive config files
+<FilesMatch "^(db_config\.php|mail_config\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+Options -Indexes

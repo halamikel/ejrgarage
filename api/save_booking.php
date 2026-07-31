@@ -1,0 +1,197 @@
+<?php
+header("Content-Type: application/json");
+include 'db_config.php';
+require_once '../includes/php-jwt/JWT.php';
+require_once '../includes/php-jwt/Key.php';
+require '../includes/PHPMailer/Exception.php';
+require '../includes/PHPMailer/PHPMailer.php';
+require '../includes/PHPMailer/SMTP.php';
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as MailException;
+
+// ── JWT AUTH ─────────────────────────────────────────────────
+if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
+$secret_key = JWT_SECRET;
+$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
+$authHeader = $headers['authorization'] ?? '';
+
+if (!preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Token missing']);
+    exit;
+}
+
+try {
+    $decoded = JWT::decode($matches[1], new Key($secret_key, 'HS256'));
+    $userId  = $decoded->uid ?? $decoded->id;
+} catch (\Exception $e) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    exit;
+}
+
+// ── GET USER INFO ─────────────────────────────────────────────
+$userStmt = $conn->prepare("SELECT email, full_name, notif_email FROM users WHERE id = ? LIMIT 1");
+$userStmt->bind_param("i", $userId);
+$userStmt->execute();
+$user = $userStmt->get_result()->fetch_assoc();
+
+if (!$user) {
+    echo json_encode(['status' => 'error', 'message' => 'User not found.']);
+    exit;
+}
+
+// ── PARSE INPUT ───────────────────────────────────────────────
+$data = json_decode(file_get_contents("php://input"), true);
+if (!$data) {
+    echo json_encode(["status" => "error", "message" => "No data received"]);
+    exit;
+}
+
+try {
+    $conn->begin_transaction();
+
+    $v        = $data['vehicle'];
+    $services = is_array($data['services']) ? implode(", ", $data['services']) : $data['services'];
+
+    // ── CHECK / INSERT VEHICLE ────────────────────────────────
+    $checkStmt = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ? LIMIT 1");
+    $checkStmt->bind_param("s", $v['plate']);
+    $checkStmt->execute();
+    $result = $checkStmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $vehicleId = $row['id'];
+    } else {
+        $stmtVeh = $conn->prepare(
+            "INSERT INTO vehicles (user_id, brand, model, year_model, plate_number, transmission, fuel_type)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        $stmtVeh->bind_param("issssss",
+            $userId, $v['brand'], $v['model'], $v['year'], $v['plate'], $v['transmission'], $v['fuel']
+        );
+        if (!$stmtVeh->execute()) {
+            throw new Exception("Vehicle Save Failed: " . $stmtVeh->error);
+        }
+        $vehicleId = $conn->insert_id;
+    }
+
+    // ── SAVE APPOINTMENT ──────────────────────────────────────
+    $stmtApp = $conn->prepare(
+        "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, status)
+         VALUES (?, ?, ?, ?, 'Pending')"
+    );
+    $stmtApp->bind_param("iiss", $userId, $vehicleId, $services, $v['appointmentDate']);
+
+    if (!$stmtApp->execute()) {
+        throw new Exception("Appointment Save Failed: " . $stmtApp->error);
+    }
+
+    $conn->commit();
+
+    /**
+     * BUGFIX: Same pattern as register.php — the email send was happening
+     * BEFORE the JSON success response was echoed. On InfinityFree's free
+     * tier, set_time_limit() is disabled so PHP's execution limit kills
+     * the script mid-SMTP-wait, producing an empty response that the
+     * frontend's fetch().json() can't parse, triggering the catch block's
+     * "Connection Failed" toast — even though the booking was already saved.
+     * Fix: send the success response first, then attempt email.
+     */
+    $responseBody = json_encode(["status" => "success", "message" => "Booking Saved!"]);
+
+    if (function_exists('fastcgi_finish_request')) {
+        echo $responseBody;
+        fastcgi_finish_request();
+    } else {
+        ob_start();
+        echo $responseBody;
+        header('Content-Length: ' . ob_get_length());
+        header('Connection: close');
+        ob_end_flush();
+        @ob_flush();
+        flush();
+    }
+
+    // ── SEND EMAIL (after response is already sent) ───────────
+    if ($user['notif_email'] == 1) {
+        $formattedDate = date("F j, Y", strtotime($v['appointmentDate']));
+        $serviceList   = implode("</li><li style='margin-bottom:4px;'>", $data['services']);
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = SMTP_HOST;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = SMTP_USER;
+            $mail->Password   = SMTP_PASS;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port       = 465;
+            $mail->Timeout    = 15;
+            $mail->setFrom(SMTP_USER, 'EJR Garage');
+            $mail->addAddress($user['email'], $user['full_name']);
+            $mail->isHTML(true);
+            $mail->Subject = 'EJR Garage - Appointment Booked!';
+            $mail->Body    = '
+            <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
+                <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
+                    <div style="text-align:center;margin-bottom:24px;">
+                        <h2 style="color:#e62429;margin:0;">EJR Garage</h2>
+                        <p style="color:#5f6b7a;margin:4px 0 0;">Appointment Confirmation</p>
+                    </div>
+                    <p style="color:#1e2a36;">Hi <strong>' . htmlspecialchars($user['full_name']) . '</strong>,</p>
+                    <p style="color:#5f6b7a;">Your appointment has been successfully booked and is currently <strong>Pending</strong> approval. We will notify you once it is confirmed.</p>
+                    <div style="background:#f8f9fa;border-radius:8px;padding:20px;margin:20px 0;">
+                        <h4 style="color:#1e2a36;margin:0 0 12px;">Appointment Details</h4>
+                        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                            <tr>
+                                <td style="color:#5f6b7a;padding:6px 0;width:40%;">Date</td>
+                                <td style="color:#1e2a36;font-weight:bold;">' . $formattedDate . '</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#5f6b7a;padding:6px 0;">Vehicle</td>
+                                <td style="color:#1e2a36;font-weight:bold;">' . htmlspecialchars($v['brand'] . ' ' . $v['model'] . ' (' . $v['year'] . ')') . '</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#5f6b7a;padding:6px 0;">Plate No.</td>
+                                <td style="color:#1e2a36;font-weight:bold;">' . htmlspecialchars($v['plate']) . '</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#5f6b7a;padding:6px 0;vertical-align:top;">Services</td>
+                                <td style="color:#1e2a36;font-weight:bold;">
+                                    <ul style="margin:0;padding-left:16px;">
+                                        <li style="margin-bottom:4px;">' . $serviceList . '</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="color:#5f6b7a;padding:6px 0;">Status</td>
+                                <td><span style="background:#fff3cd;color:#856404;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:bold;">Pending</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="text-align:center;margin-top:24px;">
+                        <a href="https://ejrgarage.com/my_appointments.php"
+                           style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                            View My Appointments
+                        </a>
+                    </div>
+                    <p style="color:#a0aab5;font-size:11px;text-align:center;margin-top:24px;">
+                        EJR Garage &mdash; Santo Tomas, Batangas
+                    </p>
+                </div>
+            </div>';
+            $mail->send();
+        } catch (MailException $e) {
+            error_log("EJR Garage MAIL ERROR (booking confirmation to " . $user['email'] . "): " . $mail->ErrorInfo);
+        }
+    }
+
+} catch (Exception $e) {
+    $conn->rollback();
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+}
+?>

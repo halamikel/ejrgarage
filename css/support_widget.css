@@ -1,0 +1,227 @@
+/* ==========================================
+   EJR ASSISTANT - CHAT WIDGET STYLES
+   ========================================== */
+
+/* The floating container */
+.chat-widget-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    font-family: var(--font-body), sans-serif;
+}
+
+/* The Pulse Button */
+.chat-widget-toggle {
+    background: linear-gradient(135deg, #e62429 0%, #ff6b00 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    box-shadow: 0 10px 20px rgba(230, 36, 41, 0.3);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chat-widget-toggle:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(230, 36, 41, 0.4);
+}
+
+.chat-badge {
+    background: white;
+    color: #e62429;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 800;
+}
+
+/* The Chat Window */
+.chat-widget-window {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 350px;
+    height: 450px;
+    background: white;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+    transform: translateY(20px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.chat-widget-window.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Header */
+.chat-header {
+    background: #1e2a36; /* Dark steel like your UI */
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header span {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.chat-header button {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Chat History Area */
+.chat-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f4f6f8;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Message Bubbles */
+.chat-message {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    position: relative;
+    animation: scaleIn 0.2s ease;
+}
+
+.bot-message {
+    background: white;
+    color: #1e2a36;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #e3e8ef;
+}
+
+.user-message {
+    background: linear-gradient(135deg, #e62429 0%, #ff6b00 100%);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+
+/* Footer / Input Area */
+.chat-footer {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e3e8ef;
+    display: flex;
+    gap: 10px;
+}
+
+.chat-footer input {
+    flex: 1;
+    border: 1px solid #e3e8ef;
+    background: #f4f6f8;
+    padding: 10px 15px;
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.chat-footer input:focus {
+    border-color: #e62429;
+}
+
+.chat-footer button {
+    background: #1e2a36;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-footer button:hover {
+    background: #e62429;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 480px) {
+    .chat-widget-window {
+        width: calc(100vw - 40px);
+        height: 400px;
+    }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Fix for page click blocking */
+#ejrChatContainer {
+    pointer-events: none !important;
+}
+
+#ejrChatContainer #chatPill,
+#ejrChatContainer #chatBox,
+#ejrChatContainer #chatBox * {
+    pointer-events: all !important;
+}
+
+/* Container for the user list sidebar */
+#adminChatUserList {
+    height: calc(100vh - 250px); /* Adjust based on your header height */
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* Container for the actual message bubbles */
+#adminChatBody {
+    height: 500px; /* Fixed height or calc() */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    scrollbar-width: thin;
+}
+
+/* Smooth scrolling for the message container */
+#adminChatBody {
+    scroll-behavior: smooth;
+}
+
+/* Optional: Custom scrollbar styling for Chrome/Safari */
+#adminChatBody::-webkit-scrollbar, 
+#adminChatUserList::-webkit-scrollbar {
+    width: 6px;
+}
+#adminChatBody::-webkit-scrollbar-thumb, 
+#adminChatUserList::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+}

@@ -1,0 +1,1559 @@
+// =============================================================
+// admin_dashboard.js — EJR Garage Admin Dashboard
+// =============================================================
+
+let masterData = { users: [], appointments: [], vehicles: [] };
+let historyData = [];
+let currentChatUserId = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ── Initial Data Load ────────────────────────────────────
+    loadFullSiteData();
+    loadAdminChatUsers();
+    loadServiceHistory();
+    loadParts();
+    loadInquiries();
+    loadOrders();
+    loadBusyDates();
+
+    // ── Live Chat Badge ──────────────────────────────────────
+    updateLiveChatBadge();
+    setInterval(updateLiveChatBadge, 5000);
+
+    // ── Enter Key Chat Send ──────────────────────────────────
+    const adminReplyInput = document.getElementById("adminReplyInput");
+    if (adminReplyInput) {
+        adminReplyInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendAdminReply();
+            }
+        });
+    }
+
+    // ── Global Search Filter ─────────────────────────────────
+    const adminSearch = document.getElementById("adminSearch");
+    if (adminSearch) {
+        adminSearch.addEventListener("input", function (e) {
+            const term = e.target.value.toLowerCase();
+            renderAppointments(masterData.appointments.filter(a =>
+                (a.full_name && a.full_name.toLowerCase().includes(term)) ||
+                (a.service_type && a.service_type.toLowerCase().includes(term))
+            ));
+            renderUsers(masterData.users.filter(u =>
+                (u.full_name && u.full_name.toLowerCase().includes(term)) ||
+                (u.email && u.email.toLowerCase().includes(term))
+            ));
+            renderVehicles(masterData.vehicles.filter(v =>
+                (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
+                (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
+                (v.model && v.model.toLowerCase().includes(term))
+            ));
+        });
+    }
+
+    // ── Lazy Load History Tab ────────────────────────────────
+    const historyTab = document.querySelector('[data-bs-target="#tab-history"]');
+    if (historyTab) {
+        historyTab.addEventListener("shown.bs.tab", () => {
+            if (!historyData.length) loadServiceHistory();
+        });
+    }
+
+    // ── Chat Sync Loop ───────────────────────────────────────
+    setInterval(() => {
+        const chatTabActive = document.querySelector("#tab-live-chat")?.classList.contains("show");
+        if (chatTabActive) {
+            loadAdminChatUsers();
+            if (currentChatUserId) loadAdminMessages(currentChatUserId);
+        }
+    }, 3000);
+    
+    // ── Busy Dates Button ────────────────────────────────────────
+    const btnAddBusyDate = document.getElementById('btnAddBusyDate');
+    if (btnAddBusyDate) {
+        btnAddBusyDate.addEventListener('click', openBlockDate);
+    }
+
+    // ── Tab Click Listeners ──────────────────────────────────
+    document.querySelector('[data-bs-target="#tab-parts"]')
+        .addEventListener('shown.bs.tab', loadParts);
+    document.querySelector('[data-bs-target="#tab-inquiries"]')
+        .addEventListener('shown.bs.tab', loadInquiries);
+    document.querySelector('[data-bs-target="#tab-orders"]')
+        .addEventListener('shown.bs.tab', loadOrders);
+    document.querySelector('[data-bs-target="#tab-busy-dates"]')
+        .addEventListener('shown.bs.tab', loadBusyDates);
+
+    // ── Realtime Auto-Refresh ────────────────────────────────
+    startRealtime();
+});
+
+
+
+
+// =============================================================
+// CORE DATA LOADERS
+// =============================================================
+
+function loadFullSiteData() {
+    fetch('api/admin/get_full_site_data.php?t=' + Date.now(), { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                masterData = data;
+                renderAppointments(data.appointments);
+                renderUsers(data.users);
+                renderVehicles(data.vehicles);
+                updateStats(data);
+            }
+        })
+        .catch(err => console.error("Fetch failed:", err));
+}
+
+function loadServiceHistory() {
+    fetch('api/admin/get_service_history.php', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                historyData = data.history;
+                document.getElementById('badgeHistory').textContent = historyData.length;
+                renderHistory(historyData);
+            }
+        })
+        .catch(() => {
+            document.getElementById('historyTableBody').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load history.</td></tr>';
+        });
+}
+
+function loadParts() {
+    fetch('api/admin/manage_parts.php', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            document.getElementById('badgeParts').textContent = data.parts.length;
+            const tbody = document.getElementById('partsTableBody');
+            tbody.innerHTML = data.parts.map(p => `
+                <tr>
+                    <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
+                             onerror="this.style.display='none'"></td>
+                    <td class="fw-bold">${p.name}</td>
+                    <td><span class="badge bg-light text-dark border">${p.category}</span></td>
+                    <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                    <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-dark"
+                                    onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${p.description?.replace(/'/g,"\\'")||''}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+        });
+}
+
+function loadInquiries() {
+    fetch('api/admin/manage_parts.php?action=get_inquiries', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+
+            // Filter out responded inquiries for admin view
+            const pending = data.inquiries.filter(i => i.status !== 'responded');
+
+            document.getElementById('badgeInquiries').textContent = pending.length;
+            const tbody = document.getElementById('inquiriesTableBody');
+            tbody.innerHTML = pending.length ? pending.map(i => `
+                <tr>
+                    <td><span class="badge bg-light text-dark border">${i.part_name}</span></td>
+                    <td class="fw-bold">${i.customer_name}</td>
+                    <td>${i.contact}</td>
+                    <td class="text-muted small">${i.message || '—'}</td>
+                    <td>${new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td><span class="badge bg-warning text-dark">pending</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-success"
+                                    onclick="updateInquiry(${i.id})">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteInquiry(${i.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`).join('')
+            : '<tr><td colspan="7" class="text-center text-muted py-4">No pending inquiries.</td></tr>';
+        });
+}
+
+function loadOrders() {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+
+    fetch('api/admin/manage_orders.php', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') throw new Error(data.message);
+
+            const orders = data.orders ?? [];
+            document.getElementById('badgeOrders').textContent = orders.length;
+
+            if (!orders.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders placed yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(o => {
+                const year      = new Date(o.created_at).getFullYear();
+                const orderNo   = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
+                const itemsArr  = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                const itemsList = Array.isArray(itemsArr)
+                    ? itemsArr.map(i => `${i.name} ×${i.qty}`).join(', ')
+                    : o.items;
+                const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const safeName  = o.customer_name.replace(/'/g, "\\'");
+                const isPending = o.status.toLowerCase() === 'pending';
+
+                return `
+                <tr>
+                    <td><code style="color:#b30000;">${orderNo}</code></td>
+                    <td class="fw-bold">${o.customer_name}</td>
+                    <td>${o.contact}</td>
+                    <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                        title="${itemsList}">${itemsList}</td>
+                    <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                    <td>${date}</td>
+                    <td>${statusBadge(o.status)}</td>
+                    <td>
+                        <div class="btn-group">
+                            ${isPending ? `
+                                <button class="btn btn-sm btn-outline-success"
+                                        onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')"
+                                        title="Manage">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    onclick="deleteOrder(${o.id})"
+                                    title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        })
+        .catch(err => {
+            console.error('Orders error:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders. Check API.</td></tr>';
+        });
+}
+
+
+// =============================================================
+// RENDER FUNCTIONS
+// =============================================================
+
+function updateStats(data) {
+    document.getElementById("statTotal").textContent    = data.appointments.length;
+    document.getElementById("statPending").textContent  = data.appointments.filter(a => a.status === 'Pending').length;
+    document.getElementById("statUsers").textContent    = data.users.length;
+    document.getElementById("statVehicles").textContent = data.vehicles.length;
+    document.getElementById("badgeAppt").textContent    = data.appointments.length;
+    document.getElementById("badgeUsers").textContent   = data.users.length;
+    document.getElementById("badgeVehs").textContent    = data.vehicles.length;
+}
+
+function statusBadge(status) {
+    if (!status) return `<span class="badge bg-secondary">Unknown</span>`;
+    const s = status.toLowerCase().trim();
+    const map = {
+        'pending':   'bg-warning text-dark',
+        'approved':  'bg-success',
+        'confirmed': 'bg-success',
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
+    };
+    const displayStatus = s.charAt(0).toUpperCase() + s.slice(1);
+    return `<span class="badge ${map[s] || 'bg-secondary'}">${displayStatus}</span>`;
+}
+
+function renderAppointments(apps) {
+    document.getElementById("appointmentTableBody").innerHTML = apps.length
+        ? apps.map(a => `
+            <tr>
+                <td class="fw-bold">${a.full_name || 'Guest'}</td>
+                <td><span class="badge bg-light text-dark border">${a.service_type}</span></td>
+                <td>${a.vehicle_info || '—'}</td>
+                <td>${a.appointment_date
+                    ? new Date(a.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '—'}</td>
+                <td>${statusBadge(a.status)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-dark" onclick="manageApp(${a.id}, '${a.status}')">
+                        <i class="bi bi-pencil-square"></i> Manage
+                    </button>
+                </td>
+            </tr>`).join('')
+        : '<tr><td colspan="6" class="text-center text-muted py-4">No appointments found.</td></tr>';
+}
+
+function renderUsers(users) {
+    if (!users.length) {
+        document.getElementById("userTableBody").innerHTML =
+            '<tr><td colspan="7" class="text-center text-muted py-4">No users found.</td></tr>';
+        return;
+    }
+    document.getElementById("userTableBody").innerHTML = users.map(u => {
+        const name  = u.full_name.replace(/'/g, "\\'");
+        const email = u.email.replace(/'/g, "\\'");
+        return `
+        <tr>
+            <td>${u.id}</td>
+            <td class="fw-bold">${u.full_name}</td>
+            <td>${u.email}</td>
+            <td>${u.phone || '—'}</td>
+            <td><span class="badge ${u.role_id == 2 ? 'bg-danger' : 'bg-secondary'}">
+                ${u.role_id == 2 ? 'Admin' : 'Customer'}
+            </span></td>
+            <td>${u.created_at
+                ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-dark me-1"
+                        onclick="editUser(${u.id}, '${name}', '${email}', ${u.role_id})">
+                    <i class="bi bi-pencil-square"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="deleteUser(${u.id}, '${name}')">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderVehicles(vehs) {
+    document.getElementById("vehicleTableBody").innerHTML = vehs.length
+        ? vehs.map(v => `
+            <tr>
+                <td class="fw-bold">${v.owner_name || '—'}</td>
+                <td>${v.brand || '—'}</td>
+                <td>${v.model || '—'}</td>
+                <td>${v.year_model || '—'}</td>
+                <td><code class="text-uppercase" style="color:#b30000;">${v.plate_number}</code></td>
+                <td>${v.fuel_type || '—'}</td>
+                <td>${v.transmission || '—'}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="7" class="text-center text-muted py-4">No vehicles found.</td></tr>';
+}
+
+function renderHistory(data) {
+    const tbody = document.getElementById('historyTableBody');
+    document.getElementById('historyCount').textContent =
+        data.length ? `Showing ${data.length} record(s)` : '';
+
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No service history found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(h => {
+        const vehicle = h.brand && h.model
+            ? `${h.brand} ${h.model} (${h.year_model || '—'})`
+            : '—';
+        const date = h.appointment_date
+            ? new Date(h.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '—';
+        const rawDate = h.appointment_date ? h.appointment_date.substring(0, 10) : '';
+        const service = h.service_type.replace(/'/g, "\\'");
+
+        return `
+        <tr>
+            <td class="fw-bold">${h.full_name || '—'}</td>
+            <td><span class="badge bg-light text-dark border">${h.service_type}</span></td>
+            <td>${vehicle}</td>
+            <td><code class="text-uppercase" style="color:#b30000;">${h.plate_number || '—'}</code></td>
+            <td>${date}</td>
+            <td>
+                <div class="btn-group">
+                    <a href="api/admin/generate_receipt.php?id=${h.id}" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="View Receipt">
+                        <i class="bi bi-receipt"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-success"
+                            onclick="sendReceiptToUser(${h.id}, '${h.full_name.replace(/'/g, "\\'")}')" title="Send Receipt">
+                        <i class="bi bi-send"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="editHistory(${h.id}, '${service}', '${rawDate}')">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteHistory(${h.id}, '${h.full_name.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+
+// =============================================================
+// APPOINTMENTS
+// =============================================================
+
+function manageApp(id, currentStatus) {
+    Swal.fire({
+        title: 'Update Appointment Status',
+        input: 'select',
+        inputOptions: {
+            'Pending':   'Pending',
+            'Confirmed': 'Confirmed',
+            'Completed': 'Completed',
+            'Cancelled': 'Cancelled'
+        },
+        inputValue: currentStatus,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Update'
+    }).then(result => {
+        if (result.isConfirmed && result.value) {
+            postData('api/admin/update_appointment.php', {
+                appointment_id: id,
+                status: result.value
+            });
+        }
+    });
+}
+
+
+// =============================================================
+// USERS
+// =============================================================
+
+function editUser(id, name, email, roleId) {
+    Swal.fire({
+        title: 'Edit User',
+        html: `
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Full Name</label>
+                <input id="swal-name" class="form-control" value="${name}">
+            </div>
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Email</label>
+                <input id="swal-email" class="form-control" value="${email}">
+            </div>
+            <div class="text-start">
+                <label class="form-label fw-semibold small">Role</label>
+                <select id="swal-role" class="form-select">
+                    <option value="1" ${roleId == 1 ? 'selected' : ''}>Customer</option>
+                    <option value="2" ${roleId == 2 ? 'selected' : ''}>Admin</option>
+                </select>
+            </div>`,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => ({
+            action:    'update_info',
+            user_id:   id,
+            full_name: document.getElementById('swal-name').value.trim(),
+            email:     document.getElementById('swal-email').value.trim(),
+            role_id:   parseInt(document.getElementById('swal-role').value)
+        })
+    }).then(result => {
+        if (result.isConfirmed) postData('api/admin/manage_user.php', result.value);
+    });
+}
+
+function deleteUser(id, name) {
+    Swal.fire({
+        title: `Delete ${name}?`,
+        text: 'This will permanently delete the user, their vehicles, and cancel their pending appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (result.isConfirmed) postData('api/admin/manage_user.php', { action: 'delete', user_id: id });
+    });
+}
+
+
+// =============================================================
+// SERVICE HISTORY
+// =============================================================
+
+function applyHistoryFilter() {
+    const term  = document.getElementById('historySearch').value.toLowerCase();
+    const month = document.getElementById('historyMonth').value;
+    const filtered = historyData.filter(h => {
+        const matchTerm = !term ||
+            (h.full_name && h.full_name.toLowerCase().includes(term)) ||
+            (h.plate_number && h.plate_number.toLowerCase().includes(term)) ||
+            (h.model && h.model.toLowerCase().includes(term));
+        const matchMonth = !month || (h.appointment_date && h.appointment_date.startsWith(month));
+        return matchTerm && matchMonth;
+    });
+    renderHistory(filtered);
+}
+
+function clearHistoryFilter() {
+    document.getElementById('historySearch').value = '';
+    document.getElementById('historyMonth').value  = '';
+    renderHistory(historyData);
+}
+
+function sendReceiptToUser(id, name) {
+    Swal.fire({
+        title: 'Send Receipt?',
+        text: `Do you want to send the digital receipt to ${name}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Yes, Send Email',
+        showLoaderOnConfirm: true,
+        preConfirm: () => fetch('api/admin/send_receipt.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appointment_id: id })
+        })
+        .then(res => { if (!res.ok) throw new Error(res.statusText); return res.json(); })
+        .catch(err => Swal.showValidationMessage(`Request failed: ${err}`)),
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then(result => {
+        if (result.isConfirmed && result.value?.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'Sent!', text: `Receipt sent to ${name}.`, timer: 2000, showConfirmButton: false });
+        } else if (result.isConfirmed) {
+            Swal.fire('Error', result.value?.message || 'Failed to send receipt.', 'error');
+        }
+    });
+}
+
+function editHistory(id, service, date) {
+    Swal.fire({
+        title: 'Edit Service Record',
+        html: `
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Service Type</label>
+                <input id="swal-service" class="form-control" value="${service}">
+            </div>
+            <div class="text-start">
+                <label class="form-label fw-semibold small">Date</label>
+                <input id="swal-date" type="date" class="form-control" value="${date}">
+            </div>`,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => ({
+            action:           'update',
+            id,
+            service_type:     document.getElementById('swal-service').value.trim(),
+            appointment_date: document.getElementById('swal-date').value
+        })
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/get_service_history.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result.value)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Record updated', showConfirmButton: false, timer: 2000 });
+                historyData = [];
+                loadServiceHistory();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
+
+function deleteHistory(id, name) {
+    Swal.fire({
+        title: `Delete record for ${name}?`,
+        text: 'This will permanently remove this service history entry.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/get_service_history.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Record deleted', showConfirmButton: false, timer: 2000 });
+                historyData = [];
+                loadServiceHistory();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
+
+
+// =============================================================
+// PARTS
+// =============================================================
+
+function openAddPart() {
+    Swal.fire({
+        title: 'Add New Part',
+        html: partForm(),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Add Part',
+        preConfirm: () => getPartFormValues('add')
+    }).then(result => {
+        if (result.isConfirmed) postPartData(result.value);
+    });
+}
+
+function openEditPart(id, name, desc, price, category, image_url, stock) {
+    Swal.fire({
+        title: 'Edit Part',
+        html: partForm({ name, desc, price, category, image_url, stock }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getPartFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postPartData(result.value);
+    });
+}
+
+function partForm(v = {}) {
+    return `
+        <div class="text-start">
+            <div class="mb-2"><label class="form-label fw-semibold small">Name</label>
+            <input id="sp-name" class="form-control" value="${v.name || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Description</label>
+            <textarea id="sp-desc" class="form-control" rows="2">${v.desc || ''}</textarea></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
+            <input id="sp-price" type="number" class="form-control" value="${v.price || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Category</label>
+            <select id="sp-cat" class="form-select">
+                <option value="engine"     ${v.category === 'engine'     ? 'selected' : ''}>Engine</option>
+                <option value="brakes"     ${v.category === 'brakes'     ? 'selected' : ''}>Brakes</option>
+                <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
+                <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
+            </select></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Image URL</label>
+            <input id="sp-img" class="form-control" value="${v.image_url || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Stock</label>
+            <input id="sp-stock" type="number" class="form-control" value="${v.stock || 0}"></div>
+        </div>`;
+}
+
+function getPartFormValues(action, id = null) {
+    const val = {
+        action,
+        name:        document.getElementById('sp-name').value.trim(),
+        description: document.getElementById('sp-desc').value.trim(),
+        price:       parseFloat(document.getElementById('sp-price').value),
+        category:    document.getElementById('sp-cat').value,
+        image_url:   document.getElementById('sp-img').value.trim(),
+        stock:       parseInt(document.getElementById('sp-stock').value)
+    };
+    if (id) val.id = id;
+    if (!val.name || !val.price) {
+        Swal.showValidationMessage('Name and price are required.');
+        return false;
+    }
+    return val;
+}
+
+function postPartData(payload) {
+    fetch('api/admin/manage_parts.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 2000 });
+            loadParts();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+function deletePart(id, name) {
+    Swal.fire({
+        title: `Delete "${name}"?`,
+        text: 'This will also delete all inquiries for this part.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (result.isConfirmed) postPartData({ action: 'delete', id });
+    });
+}
+
+
+// =============================================================
+// INQUIRIES
+// =============================================================
+
+function updateInquiry(id) {
+    Swal.fire({
+        title: 'Reply to Inquiry',
+        input: 'textarea',
+        inputLabel: 'Your Message to Customer',
+        inputPlaceholder: 'e.g. This part is available, you can visit us tomorrow...',
+        showCancelButton: true,
+        confirmButtonText: 'Send Response',
+        confirmButtonColor: '#28a745',
+        preConfirm: (message) => {
+            if (!message) Swal.showValidationMessage('Please enter a reply message');
+            return message;
+        }
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_parts.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_inquiry', id, status: 'responded', reply_message: result.value })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Reply Sent', showConfirmButton: false, timer: 2000 });
+                loadInquiries();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
+
+function deleteInquiry(id) {
+    Swal.fire({
+        title: 'Delete this inquiry?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_parts.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_inquiry', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Deleted', showConfirmButton: false, timer: 2000 });
+                loadInquiries();
+            }
+        });
+    });
+}
+
+
+// =============================================================
+// ORDERS
+// =============================================================
+
+function updateOrder(id, status, name) {
+    const currentStatus = status.toLowerCase();
+
+    if (currentStatus === 'approved' || currentStatus === 'completed') {
+        Swal.fire({ title: 'Already Approved', html: `Order for <b>${name}</b> is already approved.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+
+    if (currentStatus === 'cancelled') {
+        Swal.fire({ title: 'Order Cancelled', html: `Order for <b>${name}</b> has already been cancelled.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Manage Order',
+        html: `How would you like to proceed with the order for <b>${name}</b>?`,
+        icon: 'question',
+        showConfirmButton: true,
+        confirmButtonText: '✓ Approve',
+        confirmButtonColor: '#198754',
+        showDenyButton: true,
+        denyButtonText: '✗ Decline',
+        denyButtonColor: '#dc3545',
+        showCancelButton: true,
+        cancelButtonText: 'Keep Pending'
+    }).then(result => {
+        if (result.isConfirmed) {
+            executeStatusUpdate(id, 'approved', name);  // lowercase 'approved'
+        } else if (result.isDenied) {
+            executeStatusUpdate(id, 'cancelled', name); // lowercase 'cancelled'
+        }
+    });
+}
+
+function executeStatusUpdate(id, newStatus, name) {
+    fetch('api/admin/manage_orders.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'Order Updated!', text: `Order for ${name} is now ${newStatus}.`, timer: 1500, showConfirmButton: false });
+            loadOrders();
+        } else {
+            Swal.fire('Error', data.message || 'Failed to update order', 'error');
+        }
+    })
+    .catch(err => {
+        console.error("Update error:", err);
+        Swal.fire('Error', 'Connection failed.', 'error');
+    });
+}
+
+function deleteOrder(id) {
+    Swal.fire({
+        title: 'Delete this order?',
+        text: 'This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_orders.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Order deleted', showConfirmButton: false, timer: 2000 });
+                loadOrders();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
+
+
+// =============================================================
+// LIVE CHAT
+// =============================================================
+
+function loadAdminChatUsers() {
+    fetch('api/admin/get_chat_users.php', { credentials: 'include' })
+        .then(res => {
+            if (!res.ok) throw new Error('Unauthorized');
+            return res.json();
+        })
+        .then(data => {
+            if (data.status !== 'success') throw new Error(data.message);
+
+            const list  = document.getElementById('adminChatUserList');
+            const users = data.users ?? [];
+
+            list.innerHTML = users.length
+                ? users.map(u => {
+                    const isWaiting = u.chat_session === 'waiting';
+                    const isLive    = u.chat_session === 'live';
+                    const isActive  = currentChatUserId == u.id;
+                    return `
+                    <div class="p-3 border-bottom chat-user-item ${isActive ? 'active-chat' : ''}"
+                         style="cursor:pointer;"
+                         data-id="${u.id}"
+                         data-name="${u.full_name.replace(/"/g, '&quot;')}"
+                         onclick="selectUserChat(this)">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-truncate" style="max-width:150px;">${u.full_name}</span>
+                            <div class="d-flex gap-1 align-items-center">
+                                ${u.unread_count > 0 ? `<span class="badge rounded-pill bg-danger">${u.unread_count}</span>` : ''}
+                                ${isWaiting ? `<span class="badge bg-warning text-dark">Waiting</span>` : ''}
+                                ${isLive    ? `<span class="badge bg-success">Live</span>` : ''}
+                            </div>
+                        </div>
+                        <small class="text-muted text-truncate d-block mb-2">${u.last_message || 'No messages yet'}</small>
+                        ${isWaiting ? `
+                        <div class="d-flex gap-2 mt-2" onclick="event.stopPropagation()">
+                            <button class="btn btn-sm btn-success flex-grow-1"
+                                    onclick="handleSession(${u.id}, 'accept', '${u.full_name.replace(/'/g, "\\'")}')">
+                                <i class="bi bi-check-lg me-1"></i>Accept
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger flex-grow-1"
+                                    onclick="handleSession(${u.id}, 'decline')">
+                                <i class="bi bi-x-lg me-1"></i>Decline
+                            </button>
+                        </div>` : ''}
+                    </div>`;
+                }).join('')
+                : '<div class="p-4 text-center text-muted">No active conversations.</div>';
+
+            const waitingCount = (data.users ?? []).filter(u => u.chat_session === 'waiting').length;
+            document.getElementById('badgeChat').textContent = (data.total_unread ?? 0) + waitingCount;
+        })
+        .catch(err => {
+            console.error('Chat users error:', err.message);
+            document.getElementById('adminChatUserList').innerHTML =
+                '<div class="p-4 text-center text-danger small">Could not load chats.</div>';
+        });
+}
+
+function handleSession(userId, action, userName = 'User') {
+    fetch('api/admin/accept_session.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, action })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (action === 'accept') {
+                currentChatUserId = userId;
+                document.getElementById('adminInputArea').classList.remove('d-none');
+                const titleEl = document.getElementById('chattingWithTitle');
+                if (titleEl) titleEl.innerText = 'Chatting with: ' + userName;
+                loadAdminMessages(userId);
+            }
+            loadAdminChatUsers();
+            Swal.fire({
+                toast: true, position: 'bottom-end',
+                icon: action === 'accept' ? 'success' : 'info',
+                title: action === 'accept' ? 'Session accepted!' : 'Session declined',
+                showConfirmButton: false, timer: 2000
+            });
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(err => console.error('Session error:', err));
+}
+
+function selectUserChat(el) {
+    const userId   = el.dataset.id;
+    const userName = el.dataset.name;
+    currentChatUserId = userId;
+    document.getElementById('adminInputArea').classList.remove('d-none');
+    document.getElementById('chattingWithTitle').innerText = 'Chatting with: ' + userName;
+    loadAdminMessages(userId);
+    loadAdminChatUsers();
+}
+
+function loadAdminMessages(userId) {
+    if (!userId) return;
+    currentChatUserId = userId;
+
+    fetch(`api/admin/get_messages.php?user_id=${userId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            const body = document.getElementById('adminChatBody');
+            if (!body) return;
+
+            // Hide input area if session is no longer live
+            if (data.chat_session !== 'live') {
+                document.getElementById('adminInputArea').classList.add('d-none');
+                currentChatUserId = null;
+            }
+
+            const msgs = data.messages ?? [];
+            body.innerHTML = msgs.length
+                ? msgs.map(m => `
+                    <div class="mb-3 d-flex ${m.sender === 'admin' ? 'justify-content-end' : 'justify-content-start'}">
+                        <div class="p-3 rounded-3 shadow-sm" style="max-width:75%;
+                            ${m.sender === 'admin'
+                                ? 'background:#b30000;color:white;'
+                                : 'background:#fff;border:1px solid #ddd;'}">
+                            <div>${m.message}</div>
+                            <small style="font-size:0.7rem;display:block;margin-top:5px;opacity:0.8;">${m.time}</small>
+                        </div>
+                    </div>`).join('')
+                : '<div class="text-center text-muted mt-5">No messages yet.</div>';
+
+            body.scrollTop = body.scrollHeight;
+        })
+        .catch(err => console.error('Messages error:', err));
+}
+
+function sendAdminReply() {
+    const input = document.getElementById('adminReplyInput');
+    const msg   = input.value.trim();
+    if (!msg || !currentChatUserId) return;
+
+    fetch('api/admin/send_message.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentChatUserId, message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            input.value = '';
+            loadAdminMessages(currentChatUserId);
+            loadAdminChatUsers();
+        } else {
+            console.error('Send failed:', data.message);
+        }
+    })
+    .catch(err => console.error('Send error:', err));
+}
+
+function endLiveSession() {
+    if (!currentChatUserId) return;
+    Swal.fire({
+        title: 'End Live Session?',
+        text: 'This will switch the user back to Bot Mode.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ffc107',
+        confirmButtonText: 'Yes, End Session'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/end_session.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentChatUserId })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('File not found (404) or Server Error');
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('adminInputArea').classList.add('d-none');
+                document.getElementById('adminChatBody').innerHTML = `
+                    <div class="text-center mt-5 text-muted">
+                        <i class="bi bi-chat-left-dots fs-1 d-block mb-2"></i>
+                        <p>Select a customer to start chatting</p>
+                    </div>`;
+                currentChatUserId = null;
+                Swal.fire('Ended', 'Session closed.', 'success');
+                loadAdminChatUsers();
+            } else {
+                Swal.fire('Error', data.message || 'Failed to end session', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire('System Error', 'Could not reach api/admin/end_session.php.', 'error');
+        });
+    });
+}
+
+
+// =============================================================
+// EXPORT CSV
+// =============================================================
+
+function exportCSV(type) {
+    let rows = [], headers = [], filename = '';
+
+    if (type === 'appointments') {
+        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Status'];
+        rows     = masterData.appointments.map(a => [a.full_name || 'Guest', a.service_type, a.vehicle_info || '—', a.appointment_date, a.status]);
+        filename = 'appointments.csv';
+    } else if (type === 'users') {
+        headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];
+        rows     = masterData.users.map(u => [u.id, u.full_name, u.email, u.phone || '—', u.role_id == 2 ? 'Admin' : 'Customer', u.created_at || '—']);
+        filename = 'users.csv';
+    } else if (type === 'history') {
+        headers  = ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date'];
+        rows     = historyData.map(h => [h.full_name || '—', h.service_type, h.brand && h.model ? `${h.brand} ${h.model} (${h.year_model || '—'})` : '—', h.plate_number || '—', h.appointment_date || '—']);
+        filename = 'service_history.csv';
+    }
+
+    const csv  = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+
+// =============================================================
+// GENERIC HELPER
+// =============================================================
+
+function postData(endpoint, payload) {
+    fetch(endpoint, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message || 'Updated successfully', showConfirmButton: false, timer: 2500 });
+            loadFullSiteData();
+            historyData = [];
+            loadServiceHistory();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+
+// =============================================================
+// REALTIME AUTO-REFRESH
+// =============================================================
+
+function autoRefreshData() {
+    loadFullSiteData();
+    loadAdminChatUsers();
+    loadParts();
+    loadInquiries();
+    loadOrders();
+    loadBusyDates();
+}
+
+function startRealtime() {
+    async function loop() {
+        try { autoRefreshData(); } catch (e) { console.error("Realtime error:", e); }
+        setTimeout(loop, 5000);
+    }
+    loop();
+}
+
+// =============================================================
+// LIVE CHAT BADGE
+// =============================================================
+
+function updateLiveChatBadge() {
+    fetch('api/admin/get_chat_users.php', { credentials: 'include' })
+        .then(res => {
+            if (!res.ok) throw new Error('Unauthorized');
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const users = data.users ?? [];
+                const waitingCount = users.filter(u => u.chat_session === 'waiting').length;
+                const totalUnread  = data.total_unread ?? 0;
+
+                // Badge shows whichever is higher — unread messages OR waiting users
+                const badgeCount = Math.max(totalUnread, waitingCount) || (waitingCount + totalUnread);
+                document.getElementById('badgeChat').textContent = waitingCount + totalUnread;
+            }
+        })
+        .catch(err => console.error('Badge update error:', err));
+}
+
+// =============================================================
+// BUSY DATES
+// =============================================================
+
+let busyDatesData = [];
+
+function loadBusyDates() {
+    fetch('api/admin/manage_busy_dates.php', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            busyDatesData = data.dates;
+            document.getElementById('badgeBusyDates').textContent = 
+                data.dates.filter(d => d.is_busy == 1).length;
+            renderBusyDates(data.dates);
+        });
+}
+
+function applyBusyFilter() {
+    const filter = document.getElementById('busyDateFilter').value;
+    const filtered = filter === ''
+        ? busyDatesData
+        : busyDatesData.filter(d => d.is_busy == filter);
+    renderBusyDates(filtered);
+}
+
+function renderBusyDates(dates) {
+    const tbody = document.getElementById('busyDatesTableBody');
+
+    if (!dates.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No dates found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = dates.map(d => {
+        const dateObj   = new Date(d.appointment_date + 'T00:00:00');
+        const formatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const dayName   = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const isBusy    = d.is_busy == 1;
+        const pct       = d.slot_limit > 0 ? Math.min(Math.round((d.current_bookings / d.slot_limit) * 100), 100) : 100;
+        const barColor  = pct >= 100 ? 'bg-danger' : pct >= 60 ? 'bg-warning' : 'bg-success';
+
+        return `
+        <tr>
+            <td class="fw-bold">${formatted}</td>
+            <td><span class="badge bg-light text-dark border">${dayName}</span></td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <span>${d.current_bookings} / ${d.slot_limit}</span>
+                    <div class="progress flex-grow-1" style="height:6px;min-width:80px;">
+                        <div class="progress-bar ${barColor}" style="width:${pct}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="badge ${isBusy ? 'bg-danger' : 'bg-success'}">
+                    ${isBusy ? 'Busy' : 'Available'}
+                </span>
+            </td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="editBusyDate(${d.id}, '${d.appointment_date}', ${d.slot_limit}, ${d.is_busy})"
+                            title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm ${isBusy ? 'btn-outline-success' : 'btn-outline-warning'}"
+                            onclick="toggleBusy(${d.id}, ${isBusy ? 0 : 1})"
+                            title="${isBusy ? 'Mark as Available' : 'Mark as Busy'}">
+                        <i class="bi bi-${isBusy ? 'unlock' : 'lock'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteBusyDate(${d.id}, '${formatted}')"
+                            title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function openBlockDate() {
+    Swal.fire({
+        title: '<i class="bi bi-calendar-plus me-2"></i>Block a Date',
+        html: busyDateForm(),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Block Date',
+        preConfirm: () => getBusyDateFormValues('block')
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function editBusyDate(id, date, limit, isBusy) {
+    Swal.fire({
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Busy Date',
+        html: busyDateForm({ date, limit, isBusy }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getBusyDateFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function busyDateForm(v = {}) {
+    const today = new Date().toISOString().split('T')[0];
+    return `
+        <div class="text-start">
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Date</label>
+                <input type="date" id="bd-date" class="form-control"
+                       value="${v.date || ''}" min="${today}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Slot Limit</label>
+                <input type="number" id="bd-limit" class="form-control"
+                       value="${v.limit ?? 5}" min="1">
+                <small class="text-muted">Max appointments allowed on this day</small>
+            </div>
+            <div class="mb-2">
+                <label class="form-label fw-semibold small">Status</label>
+                <select id="bd-busy" class="form-select">
+                    <option value="1" ${v.isBusy == 1 ? 'selected' : ''}>Busy</option>
+                    <option value="0" ${v.isBusy == 0 ? 'selected' : ''}>Available</option>
+                </select>
+            </div>
+        </div>`;
+}
+
+function getBusyDateFormValues(action, id = null) {
+    const date    = document.getElementById('bd-date').value;
+    const limit   = parseInt(document.getElementById('bd-limit').value);
+    const is_busy = parseInt(document.getElementById('bd-busy').value);
+
+    if (!date) {
+        Swal.showValidationMessage('Please select a date.');
+        return false;
+    }
+    if (!limit || limit < 1) {
+        Swal.showValidationMessage('Slot limit must be at least 1.');
+        return false;
+    }
+
+    const payload = { action, date, limit, is_busy };
+    if (id) payload.id = id;
+    return payload;
+}
+
+function openBlockDate() {
+    Swal.fire({
+        title: '<i class="bi bi-calendar-plus me-2"></i> Add Busy Date',
+        html: busyDateForm(),  // no args = fresh empty form
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: '<i class="bi bi-plus-lg me-1"></i> Add Date',
+        preConfirm: () => getBusyDateFormValues('block')
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function toggleBusy(id, isBusy) {
+    fetch('api/admin/manage_busy_dates.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_busy', id, is_busy: isBusy })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: isBusy ? 'Marked as Busy' : 'Marked as Available', showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        }
+    });
+}
+
+function deleteBusyDate(id, date) {
+    Swal.fire({
+        title: `Delete ${date}?`,
+        text: 'This removes the date record but not the actual appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_busy_dates.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Date deleted', showConfirmButton: false, timer: 2000 });
+                loadBusyDates();
+            }
+        });
+    });
+}
+
+function updateSlotLimit(id) {
+    const limit = parseInt(document.getElementById(`limit-${id}`).value);
+    if (!limit || limit < 1) return;
+
+    fetch('api/admin/manage_busy_dates.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_limit', id, limit })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Slot limit updated', showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        }
+    });
+}
+
+function toggleBusy(id, isBusy) {
+    fetch('api/admin/manage_busy_dates.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_busy', id, is_busy: isBusy ? 1 : 0 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: isBusy ? 'Marked as Busy' : 'Marked as Available', showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        }
+    });
+}
+
+function openBlockDate() {
+    Swal.fire({
+        title: '<i class="bi bi-calendar-plus me-2"></i>Block a Date',
+        html: busyDateForm(),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Block Date',
+        preConfirm: () => getBusyDateFormValues('block')
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function editBusyDate(id, date, limit, isBusy) {
+    Swal.fire({
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Busy Date',
+        html: busyDateForm({ date, limit, isBusy }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getBusyDateFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function busyDateForm(v = {}) {
+    const today = new Date().toISOString().split('T')[0];
+    return `
+        <div class="text-start">
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Date</label>
+                <input type="date" id="bd-date" class="form-control"
+                       value="${v.date || ''}" min="${today}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Slot Limit</label>
+                <input type="number" id="bd-limit" class="form-control"
+                       value="${v.limit ?? 5}" min="1">
+                <small class="text-muted">Max appointments allowed on this day before marked busy</small>
+            </div>
+            <div class="mb-2">
+                <label class="form-label fw-semibold small">Status</label>
+                <select id="bd-busy" class="form-select">
+                    <option value="1" ${v.isBusy == 1 || v.isBusy === undefined ? 'selected' : ''}>
+                        🔴 Busy (Blocked)
+                    </option>
+                    <option value="0" ${v.isBusy == 0 ? 'selected' : ''}>
+                        🟢 Available
+                    </option>
+                </select>
+            </div>
+        </div>`;
+}
+
+function getBusyDateFormValues(action, id = null) {
+    const date    = document.getElementById('bd-date').value;
+    const limit   = parseInt(document.getElementById('bd-limit').value);
+    const is_busy = parseInt(document.getElementById('bd-busy').value);
+
+    if (!date) {
+        Swal.showValidationMessage('Please select a date.');
+        return false;
+    }
+    if (!limit || limit < 1) {
+        Swal.showValidationMessage('Slot limit must be at least 1.');
+        return false;
+    }
+
+    const payload = { action, date, limit, is_busy };
+    if (id) payload.id = id;
+    return payload;
+}
+
+function postBusyDate(payload) {
+    fetch('api/admin/manage_busy_dates.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+function toggleBusy(id, isBusy) {
+    fetch('api/admin/manage_busy_dates.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_busy', id, is_busy: isBusy })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: isBusy ? 'Marked as Busy' : 'Marked as Available', showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        }
+    });
+}
+
+function deleteBusyDate(id, date) {
+    Swal.fire({
+        title: `Delete ${date}?`,
+        text: 'This removes the date record but not the actual appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_busy_dates.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Date deleted', showConfirmButton: false, timer: 2000 });
+                loadBusyDates();
+            }
+        });
+    });
+}
+
+function deleteBusyDate(id, date) {
+    Swal.fire({
+        title: `Remove ${date}?`,
+        text: 'This will remove the date record but not the actual appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, remove'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_busy_dates.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Date removed', showConfirmButton: false, timer: 2000 });
+                loadBusyDates();
+            }
+        });
+    });
+}

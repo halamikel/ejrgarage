@@ -1,0 +1,99 @@
+/* BOOKING STEPS */
+.step-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e3e8ef;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.step.active {
+    background: var(--primary-red);
+    color: #fff;
+}
+
+.line {
+    width: 60px;
+    height: 2px;
+    background: #e3e8ef;
+}
+
+.service-item {
+    background: #f4f6f8;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 2px solid var(--border-light);
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.service-item:hover {
+    background: #fff;
+    border-color: var(--primary-red);
+}
+
+.service-item.selected {
+    border-color: var(--primary-red);
+    background: rgba(230, 36, 41, 0.05);
+    color: var(--primary-red);
+    font-weight: 700;
+}
+
+.confirmation-box {
+    margin-top: 24px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.confirmation-box h5 {
+    margin: 0;
+    padding: 14px 18px;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.detail-group {
+    padding: 18px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.detail-group:last-child {
+    border-bottom: none;
+}
+
+.detail-title {
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* AUTHENTICATION STRIPES (Login/Register) */
+.landing-stripe {
+    background: linear-gradient(135deg, rgba(230, 36, 41, 0.05) 25%, rgba(255, 107, 0, 0.05) 100%);
+}
+
+@media (max-width: 991.98px) {
+    .landing-stripe {
+        width: 55%;
+    }
+}

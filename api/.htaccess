@@ -1,0 +1,15 @@
+# Block direct HTTP access to sensitive PHP files.
+# These files should only be reached via require_once from other PHP scripts,
+# never directly by a browser.
+<FilesMatch "^(env|db_config|mailer_helper|paymongo_helper|rate_limit|security)\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block direct HTTP access to the secrets file. This is critical: unlike the
+# .php files above, a raw .env file served without this rule would leak every
+# secret in it as plaintext to anyone who requests it.
+<FilesMatch "^\.env$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

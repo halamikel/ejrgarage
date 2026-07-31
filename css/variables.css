@@ -1,0 +1,12 @@
+:root {
+  --primary-red: #e62429;
+  --accent-orange: #ff6b00;
+  --bg-main: #ffffff;
+  --bg-alt: #f8f9fa;
+  --panel-bg: #ffffff;
+  --border-light: #e3e8ef;
+  --text-dark: #1e2a36;
+  --text-muted: #5f6b7a;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}

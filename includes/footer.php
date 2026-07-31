@@ -1,0 +1,455 @@
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/js/auth.js"></script>
+
+<script>
+if (localStorage.getItem('jwt_token')) {
+    if (typeof startSessionWatch === 'function') {
+        startSessionWatch();
+    }
+}
+</script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<footer class="bg-black text-white pt-5 pb-3" style="border-top: 4px solid #b30000; position: relative; z-index: 10;">
+    <div class="container">
+        <div class="row g-4 justify-content-between">
+            <div class="col-md-4 text-start">
+                <h6 class="fw-bold mb-4 text-uppercase" style="letter-spacing: 1px;">Contact Us</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-geo-alt-fill text-danger me-3 fs-5"></i><span>Mabalacat City, Pampanga</span></li>
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-telephone-fill text-danger me-3 fs-5"></i><span>0912-345-6789</span></li>
+                    <li class="mb-3 d-flex align-items-center"><i class="bi bi-envelope-fill text-danger me-3 fs-5"></i><span>info@ejrgarage.com</span></li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-center d-flex flex-column align-items-center">
+                <div class="footer-brand mb-3"><img src="/assets/images/Inverted_EJRLogo.png" alt="EJR Garage" style="height: 55px; width: auto;"></div>
+                <p class="text-secondary small px-lg-5">Reliable repairs. Honest pricing. Quality service.</p>
+                <div class="d-flex gap-3 mt-2">
+                    <a href="#" class="text-white opacity-75"><i class="bi bi-facebook fs-5"></i></a>
+                    <a href="#" class="text-white opacity-75"><i class="bi bi-instagram fs-5"></i></a>
+                    <a href="#" class="text-white opacity-75"><i class="bi bi-twitter-x fs-5"></i></a>
+                </div>
+            </div>
+            <div class="col-md-4 text-start text-md-end">
+                <div class="d-inline-block text-start">
+                    <h6 class="fw-bold mb-4 text-uppercase" style="letter-spacing: 1px;">Office Hours</h6>
+                    <ul class="list-unstyled m-0">
+                        <li class="mb-2">Monday – Friday: <span class="text-secondary ps-2">8:00 AM – 6:00 PM</span></li>
+                        <li class="mb-2">Saturday: <span class="text-secondary ps-2">8:00 AM – 5:00 PM</span></li>
+                        <li class="mb-0">Sunday: <span class="text-danger fw-bold ps-2">Closed</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <hr class="border-secondary opacity-25 mb-4">
+                <p class="small text-secondary m-0">© 2026 EJR Garage. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- ── CHAT WIDGET ─────────────────────────────────────────── -->
+<div id="ejrChatContainer" style="position:fixed;bottom:25px;right:25px;z-index:9999999;pointer-events:none;">
+
+    <!-- Toggle Pill -->
+<div id="chatPill" onclick="toggleChat()" style="background:linear-gradient(45deg,#e62429,#ff6b00);color:white;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:700;box-shadow:0 4px 15px rgba(0,0,0,0.4);display:flex;align-items:center;user-select:none;pointer-events:all;">
+        <i class="bi bi-chat-dots-fill me-2 fs-5"></i> LIVE CHAT
+        <span id="chatNotification" style="display:none;margin-left:8px;background:#fff;color:#e62429;border-radius:50%;width:22px;height:22px;align-items:center;justify-content:center;font-size:11px;font-weight:800;">0</span>
+    </div>
+
+    <!-- Chat Box -->
+<div id="chatBox" style="display:none;position:absolute;bottom:75px;right:0;width:360px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.25);flex-direction:column;overflow:hidden;border:1px solid #e3e8ef;pointer-events:all;">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#1e2a36,#2d3f50);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #e62429;">
+            <div class="d-flex align-items-center gap-2">
+                <div style="width:38px;height:38px;background:#e62429;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                    <i class="bi bi-robot fs-5"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:15px;">EJR Assistant</div>
+                    <div id="chatStatusLabel" style="font-size:11px;opacity:0.75;">Bot Mode • Always here to help</div>
+                </div>
+            </div>
+            <button onclick="toggleChat()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:22px;opacity:0.8;">&times;</button>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="waitingIndicator" style="display:none;padding:8px 16px;background:#fff3cd;color:#856404;font-size:12px;text-align:center;border-bottom:1px solid #ffeeba;">
+            <span class="spinner-border spinner-border-sm me-1" style="width:11px;height:11px;"></span>
+            Waiting for an admin to accept your request...
+        </div>
+        <div id="liveIndicator" style="display:none;padding:8px 16px;background:#d1fae5;color:#065f46;font-size:12px;text-align:center;border-bottom:1px solid #6ee7b7;">
+            <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>
+            You are now connected to a live admin
+        </div>
+
+        <!-- Messages -->
+        <div id="chatBody" style="height:300px;padding:16px;overflow-y:auto;background:#f0f2f5;display:flex;flex-direction:column;gap:8px;">
+            <div class="ejr-bot-msg">
+                Hi! 👋 Welcome to <strong>EJR Garage</strong>. How can I help you today?
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typingIndicator" style="display:none;padding:6px 16px;background:#f0f2f5;border-top:1px solid #e9ecef;">
+            <div style="background:#e9ecef;padding:8px 12px;border-radius:12px 12px 12px 0;display:inline-flex;gap:4px;align-items:center;">
+                <span class="ejr-dot"></span><span class="ejr-dot"></span><span class="ejr-dot"></span>
+            </div>
+        </div>
+
+        <div id="chatOptions" style="padding:10px 14px;background:#fff;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #eee;">
+            <button onclick="askQuickQuestion('Services Offered')" class="opt-btn"><i class="bi bi-tools me-1"></i>Services</button>
+            <button onclick="askQuickQuestion('Booking Help')" class="opt-btn"><i class="bi bi-calendar me-1"></i>Booking</button>
+            <button onclick="askQuickQuestion('Operating Hours')" class="opt-btn"><i class="bi bi-clock me-1"></i>Hours</button>
+            <button onclick="askQuickQuestion('Location')" class="opt-btn"><i class="bi bi-geo-alt me-1"></i>Location</button>
+            <button onclick="askQuickQuestion('Contact')" class="opt-btn"><i class="bi bi-telephone me-1"></i>Contact</button>
+            
+            <div id="dynamicButtonContainer" style="width:100%; margin-top:4px;">
+                <button id="btnRequestLive" onclick="requestLiveChat()" class="opt-btn" style="border-color:#1e2a36;color:#1e2a36;width:100%;justify-content:center;">
+                    <i class="bi bi-headset me-1"></i> Talk to a Live Agent
+                </button>
+            </div>
+        </div>
+
+        <!-- End Session Button (Live Mode only) -->
+        <div id="userEndSessionBar" style="display:none;padding:8px 14px;background:#fff8f8;border-top:1px solid #ffdede;text-align:center;">
+            <button onclick="userEndSession()" style="background:none;border:1px solid #e62429;color:#e62429;border-radius:20px;padding:4px 16px;font-size:12px;font-weight:600;cursor:pointer;">
+                <i class="bi bi-x-circle me-1"></i> End Live Session
+            </button>
+        </div>
+
+        <!-- Input -->
+        <div style="padding:12px 14px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;align-items:center;">
+            <input type="text" id="chatInput" placeholder="Type a message..." 
+                   style="flex:1;border:1px solid #ddd;padding:9px 14px;border-radius:24px;outline:none;font-size:14px;background:#f8f9fa;"
+                   onkeydown="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" style="background:#e62429;color:white;border:none;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-send-fill" style="font-size:14px;"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.opt-btn {
+    background:#fff; border:1px solid #e62429; color:#e62429;
+    border-radius:20px; padding:5px 12px; font-size:11px;
+    cursor:pointer; font-weight:600; transition:0.2s; display:flex; align-items:center;
+}
+.opt-btn:hover { background:#e62429; color:#fff; }
+
+.ejr-bot-msg {
+    background:#fff; color:#333; padding:10px 14px;
+    border-radius:16px 16px 16px 4px; font-size:13px;
+    align-self:flex-start; max-width:85%; box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    line-height:1.5;
+}
+.ejr-user-msg {
+    background:linear-gradient(135deg,#e62429,#ff4444); color:white;
+    padding:10px 14px; border-radius:16px 16px 4px 16px; font-size:13px;
+    align-self:flex-end; max-width:85%; box-shadow:0 1px 3px rgba(0,0,0,0.15);
+    line-height:1.5;
+}
+.ejr-time {
+    font-size:10px; opacity:0.65; margin-top:3px; text-align:right;
+}
+
+/* Typing dots */
+.ejr-dot {
+    width:7px; height:7px; background:#999; border-radius:50%;
+    animation:ejrBounce 1.2s infinite ease-in-out;
+}
+.ejr-dot:nth-child(2) { animation-delay:0.2s; }
+.ejr-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes ejrBounce {
+    0%,60%,100% { transform:translateY(0); }
+    30%          { transform:translateY(-6px); }
+}
+
+#chatBody::-webkit-scrollbar { width:5px; }
+#chatBody::-webkit-scrollbar-thumb { background:#ccc; border-radius:10px; }
+</style>
+
+
+<script>
+let lastChatSession = 'bot';
+let suppressNextPoll = false;
+
+// ── Toggle chat open/close ───────────────────────────────────
+function toggleChat() {
+    const box = document.getElementById('chatBox');
+    const open = box.style.display === 'none';
+    box.style.display = open ? 'flex' : 'none';
+    if (open) {
+        loadMessages();
+        document.getElementById('chatNotification').style.display = 'none';
+    }
+}
+
+// ── Update UI based on session state ────────────────────────
+function applySessionUI(session) {
+    currentChatMode = session; // track for polling
+    const waiting     = document.getElementById('waitingIndicator');
+    const live        = document.getElementById('liveIndicator');
+    const statusLabel = document.getElementById('chatStatusLabel');
+    const btnContainer = document.getElementById('dynamicButtonContainer');
+
+    if (lastChatSession === 'live' && session === 'bot') {
+        resetChatUI();
+    }
+    lastChatSession = session;
+
+    if (session === 'waiting') {
+        btnContainer.innerHTML = `
+            <button onclick="cancelLiveRequest()" class="opt-btn" 
+                    style="border-color:#6c757d;color:#6c757d;width:100%;justify-content:center;">
+                <i class="bi bi-x-circle me-1"></i> Cancel Request
+            </button>`;
+        waiting.style.display   = 'block';
+        live.style.display      = 'none';
+        statusLabel.textContent = 'Waiting for admin...';
+    } 
+    else if (session === 'live') {
+        // REPLACE with End Session Button
+        btnContainer.innerHTML = `
+            <button onclick="userEndSession()" class="opt-btn" style="border-color:#e62429;color:#e62429;width:100%;justify-content:center;">
+                <i class="bi bi-x-circle me-1"></i> End Live Session
+            </button>`;
+        
+        waiting.style.display    = 'none';
+        live.style.display       = 'block';
+        statusLabel.textContent  = '🟢 Live with Admin';
+    } 
+    else {
+        // Bot mode: RESTORE Talk to Agent Button
+        btnContainer.innerHTML = `
+            <button id="btnRequestLive" onclick="requestLiveChat()" class="opt-btn" style="border-color:#1e2a36;color:#1e2a36;width:100%;justify-content:center;">
+                <i class="bi bi-headset me-1"></i> Talk to a Live Agent
+            </button>`;
+        
+        waiting.style.display    = 'none';
+        live.style.display       = 'none';
+        statusLabel.textContent  = 'Bot Mode • Always here to help';
+    }
+}
+
+// ── Reset chat to fresh bot state ────────────────────────────
+function resetChatUI() {
+    const body = document.getElementById('chatBody');
+    
+    // 1. Completely clear the old admin conversation from the screen
+    body.innerHTML = ''; 
+    
+    // 2. Add the fresh bot greeting
+    body.innerHTML = `
+        <div class="ejr-bot-msg">
+            Your session with the admin has ended. Bot mode is now re-enabled. How else can I help you? 😊
+        </div>`;
+        
+    // 3. Scroll to the top so the message is visible
+    body.scrollTop = 0;
+}
+
+// ── Load messages from server ────────────────────────────────
+function loadMessages() {
+    const _pollToken = localStorage.getItem('jwt_token') || '';
+    fetch('/api/check_session.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _pollToken },
+        body: JSON.stringify({ type: 'get_messages' })
+    })
+        .then(res => res.json())
+        .then(data => {
+            applySessionUI(data.chat_session ?? 'bot');
+
+            if (data.messages && data.messages.length) {
+                const body = document.getElementById('chatBody');
+                body.innerHTML = data.messages.map(m => `
+                    <div class="${m.sender === 'user' ? 'ejr-user-msg' : 'ejr-bot-msg'}">
+                        <div>${m.message}</div>
+                        <div class="ejr-time">${m.time}</div>
+                    </div>`).join('');
+                body.scrollTop = body.scrollHeight;
+            }
+        })
+        .catch(err => console.error('Load messages error:', err));
+}
+
+// ── Append a single message bubble ──────────────────────────
+function appendMessage(text, sender) {
+    const body = document.getElementById('chatBody');
+    const div  = document.createElement('div');
+    div.className = sender === 'user' ? 'ejr-user-msg' : 'ejr-bot-msg';
+    div.innerHTML = `<div>${text}</div>`;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+}
+
+// ── Show/hide typing indicator ───────────────────────────────
+function showTyping(show) {
+    document.getElementById('typingIndicator').style.display = show ? 'block' : 'none';
+}
+
+// ── Send a message ───────────────────────────────────────────
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const msg   = input.value.trim();
+    if (!msg) return;
+
+    appendMessage(msg, 'user');
+    input.value = '';
+    showTyping(true);
+
+    const _chatToken = localStorage.getItem('jwt_token') || '';
+    fetch('/api/check_session.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _chatToken },
+        body: JSON.stringify({ type: 'chat', action: 'chat', message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showTyping(false);
+        if (data.reply) appendMessage(data.reply, 'admin');
+        applySessionUI(data.mode ?? 'bot');
+    })
+    .catch(err => {
+        showTyping(false);
+        console.error('Send error:', err);
+    });
+}
+
+// ── Quick question buttons ───────────────────────────────────
+function askQuickQuestion(question) {
+    document.getElementById('chatInput').value = question;
+    sendChatMessage();
+}
+
+// ── Request live admin ───────────────────────────────────────
+function requestLiveChat() {
+    const _liveToken = localStorage.getItem('jwt_token') || '';
+    fetch('/api/check_session.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _liveToken },
+        body: JSON.stringify({ type: 'chat', action: 'request_live' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('chatBody').innerHTML = `
+                <div class="ejr-bot-msg">
+                    <i class="bi bi-headset me-1"></i>
+                    Request sent! Please wait while an admin connects...
+                </div>`;
+            applySessionUI('waiting');
+        }
+    })
+    .catch(err => console.error('Live request error:', err));
+}
+
+function cancelLiveRequest() {
+    const _cancelToken = localStorage.getItem('jwt_token') || '';
+    fetch('/api/check_session.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _cancelToken },
+        body: JSON.stringify({ type: 'chat', action: 'cancel_live_request' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            suppressNextPoll = true;
+            applySessionUI('bot');
+            // ✅ Bot replies are never stored in DB, so just restore the greeting
+            document.getElementById('chatBody').innerHTML = `
+                <div class="ejr-bot-msg">
+                    Hi! 👋 Welcome to <strong>EJR Garage</strong>. How can I help you today?
+                </div>`;
+        }
+    })
+    .catch(err => console.error('Cancel request error:', err));
+}
+
+function userEndSession() {
+    Swal.fire({
+        title: 'End Live Session?',
+        text: 'You will be returned to the bot. Your chat history will be cleared.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e62429',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, End Session',
+        cancelButtonText: 'Stay in Session'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+
+        const _endToken = localStorage.getItem('jwt_token') || '';
+        fetch('/api/check_session.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _endToken },
+            body: JSON.stringify({ type: 'end_session' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                resetChatUI();
+                applySessionUI('bot');
+            } else {
+                console.error('Server error:', data.message);
+            }
+        })
+        .catch(err => console.error('End session error:', err));
+    });
+}
+// ── Auto-refresh: only poll when in live/waiting session ─────
+let currentChatMode = 'bot';
+setInterval(() => {
+    if (document.getElementById('chatBox').style.display !== 'flex') return;
+    if (currentChatMode !== 'live' && currentChatMode !== 'waiting') return;
+    if (suppressNextPoll) { suppressNextPoll = false; return; }
+    loadMessages();
+}, 4000);
+</script>
+
+<style>
+    .swal2-container {
+    z-index: 99999999 !important;
+}
+</style>
+
+<script>
+fetch('api/get_busy_dates.php')
+    .then(res => res.json())
+    .then(data => {
+        const busyDates = data.busy_dates ?? [];
+
+        flatpickr("#appointmentDate", {
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+
+            // Disable Sundays (0) — adjust to your garage's closed days
+            disable: [
+                function(date) {
+                    return date.getDay() === 0;
+                }
+            ],
+
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+                if (busyDates.includes(dateStr)) {
+                    dayElem.style.background = '#e62429';
+                    dayElem.style.color      = '#fff';
+                    dayElem.style.borderRadius = '50%';
+                    dayElem.title = 'Fully booked';
+                }
+            }
+        });
+    });
+</script>

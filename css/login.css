@@ -1,0 +1,101 @@
+.stripe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 46%;
+  background: linear-gradient(135deg, rgba(230, 36, 41, 0.05) 0%, rgba(255, 107, 0, 0.05) 100%);
+  clip-path: polygon(0 0, 82% 0, 100% 100%, 0% 100%);
+  z-index: 0;
+  border-right: 1px solid rgba(230, 36, 41, 0.1);
+}
+
+.row-util {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 26px;
+}
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--steel);
+  cursor: pointer;
+}
+.remember input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent2);
+}
+.forgot {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--accent2);
+  text-decoration: none;
+  letter-spacing: .5px;
+  font-family: var(--font-body);
+  transition: color .2s;
+}
+.forgot:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .stripe { display: none; }
+}
+
+.feat-icon i, .logo-icon i {
+  font-size: 15px;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+.field-error {
+  color: var(--accent2); 
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 6px;       
+  text-align: left;      
+  display: none;         
+  width: 100%;
+}
+
+input.error {
+  border: 1.5px solid var(--accent2);
+  background: #fff5f5;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap input {
+  width: 100%;
+  padding-right: 40px;
+  box-sizing: border-box;
+}
+
+.input-wrap .eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--steel);
+  font-size: 1rem;
+}
