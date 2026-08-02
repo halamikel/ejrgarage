@@ -6,28 +6,46 @@ header('Content-Type: application/json');
 
 // ── CORS: reflect exact origin (required when credentials:'include' is used) ──
 $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = ['https://ejrgarage.onrender.com', 'http://localhost'];
+$allowed = ['https://ejrgarage.onrender.com', 'https://ejrgarage.site.je', 'http://localhost'];
 if (in_array($origin, $allowed)) {
     header("Access-Control-Allow-Origin: $origin");
 } else {
-    header('Access-Control-Allow-Origin: https://ejrgarage.onrender.com');
+    header('Access-Control-Allow-Origin: https://ejrgarage.site.je');
 }
 header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
 // ── Use __DIR__ for reliable paths on shared/InfinityFree hosting ──
 $root = dirname(__DIR__); // api/ -> root
 require_once $root . '/api/db_config.php';
+require_once $root . '/includes/php-jwt/JWT.php';
+require_once $root . '/includes/php-jwt/Key.php';
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 date_default_timezone_set('Asia/Manila');
 
 $data     = json_decode(file_get_contents('php://input'), true);
 $user_msg = trim($data['message'] ?? '');
 $action   = $data['action']  ?? 'chat';
 
-// ── AUTH: Session only (no Authorization header — avoids InfinityFree WAF) ──
-$userId = (int)($_SESSION['user_id'] ?? 0);
+// ── AUTH: JWT bearer (mobile app) first, PHP session (web) as fallback ──
+$userId = 0;
+$headers = array_change_key_case(getallheaders(), CASE_LOWER);
+$authHeader = $headers['authorization'] ?? '';
+if (preg_match('/bearer\s(\S+)/i', $authHeader, $m)) {
+    try {
+        if (!defined('JWT_SECRET')) require_once __DIR__ . '/env.php';
+        $decoded = JWT::decode($m[1], new Key(JWT_SECRET, 'HS256'));
+        $userId  = (int)($decoded->uid ?? 0);
+    } catch (Exception $e) {
+        // Invalid/expired token — fall through to session check below.
+    }
+}
+if ($userId === 0) {
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+}
 
 if ($userId === 0) {
     echo json_encode([
