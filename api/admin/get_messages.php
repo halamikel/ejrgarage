@@ -5,6 +5,10 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../db_config.php';
 
+require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
+require_once __DIR__ . '/../../includes/php-jwt/Key.php';
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 // -- JWT Auth --
 $headers    = array_change_key_case(getallheaders(), CASE_LOWER);
