@@ -84,6 +84,7 @@ $status        = $data['status'];
 $firstName     = explode(' ', trim($user['full_name'] ?? 'Customer'))[0];
 
 // ── SEND EMAIL ────────────────────────────────────────────────
+error_log("EJR APPT MAIL: appt_id={$data['appointment_id']} user_id=" . ($appt['user_id'] ?? 'NULL') . " user_found=" . ($user ? 'yes' : 'no') . " notif_email=" . ($user['notif_email'] ?? 'n/a'));
 if ($user && $user['notif_email'] == 1) {
     $badgeColors = [
         'Confirmed'   => 'background:#d1e7dd;color:#0a3622;',
@@ -124,7 +125,8 @@ if ($user && $user['notif_email'] == 1) {
         </div>
     </div>';
 
-    sendEmailViaBrevo($user['email'], $user['full_name'], "EJR Garage - Appointment {$status}", $html);
+    $emailSent = sendEmailViaBrevo($user['email'], $user['full_name'], "EJR Garage - Appointment {$status}", $html);
+    error_log("EJR APPT MAIL: send to {$user['email']} result=" . ($emailSent ? 'success' : 'FAILED'));
 }
 
 // ── SEND SMS via CommPeak Streams API ─────────────────────────

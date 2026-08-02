@@ -244,7 +244,7 @@ function sendOrderReceipt($order) {
         </div>';
 
     $payload = [
-        'sender'      => ['name' => 'EJR Garage', 'email' => 'ejrgaragetest@gmail.com'],
+        'sender'      => ['name' => BREVO_SENDER_NAME, 'email' => BREVO_SENDER_EMAIL],
         'to'          => [['email' => $order['email'], 'name' => $order['user_full_name']]],
         'subject'     => "Order Approved: {$orderNo}",
         'htmlContent' => $htmlBody,
