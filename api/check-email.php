@@ -32,7 +32,7 @@ $user = $stmt->get_result()->fetch_assoc();
 if ($user) {
     $fullName  = $user['full_name'];
     $token     = bin2hex(random_bytes(32));
-    $resetLink = "https://ejrgarage.site.je/reset-password.php?token=" . $token;
+    $resetLink = "https://ejrgarage.onrender.com/reset-password.php?token=" . $token;
 
     $del = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
     $del->bind_param("s", $email);

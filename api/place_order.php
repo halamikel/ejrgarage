@@ -91,8 +91,8 @@ try {
             $order_id,
             "EJR Garage Parts Order #{$order_id}",
             $total_price,
-            "https://ejrgarage.site.je/payment_success.php?order_id={$order_id}",
-            "https://ejrgarage.site.je/payment_cancelled.php?order_id={$order_id}"
+            "https://ejrgarage.onrender.com/payment_success.php?order_id={$order_id}",
+            "https://ejrgarage.onrender.com/payment_cancelled.php?order_id={$order_id}"
         );
 
         if ($checkout['ok']) {

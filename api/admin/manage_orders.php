@@ -171,7 +171,7 @@ function sendOrderReceipt($order) {
     $total       = '₱' . number_format($order['total_price'], 2);
     
     $receiptToken = hash('sha256', 'parts-receipt-' . $order['id'] . '-EJR2026');
-    $receiptLink = "https://ejrgarage.site.je/api/admin/generate_parts_receipt.php?id=" . $order['id'] . "&token=" . $receiptToken;
+    $receiptLink = "https://ejrgarage.onrender.com/api/admin/generate_parts_receipt.php?id=" . $order['id'] . "&token=" . $receiptToken;
 
     $itemsHtml = '';
     if (is_array($items)) {
