@@ -6,7 +6,9 @@
  *  - Local .env file (InfinityFree/local development)
  */
 
-// ---------- Try Render Environment Variables first ----------
+// ------------------------------------------------------------
+// Detect Render
+// ------------------------------------------------------------
 $renderVars = [
     'DB_HOST',
     'DB_PORT',
@@ -26,16 +28,31 @@ foreach ($renderVars as $var) {
 
 if ($usingRender) {
 
+    // Database
     define('DB_HOST', getenv('DB_HOST'));
     define('DB_PORT', getenv('DB_PORT'));
     define('DB_DATABASE', getenv('DB_NAME'));
     define('DB_USERNAME', getenv('DB_USER'));
     define('DB_PASSWORD', getenv('DB_PASS'));
 
+    // JWT
+    define('JWT_SECRET', getenv('JWT_SECRET'));
+
+    // Brevo
+    define('BREVO_API_KEY', getenv('BREVO_API_KEY'));
+    define('BREVO_SENDER_EMAIL', getenv('BREVO_SENDER_EMAIL'));
+    define('BREVO_SENDER_NAME', getenv('BREVO_SENDER_NAME'));
+
+    // PayMongo
+    define('PAYMONGO_SECRET_KEY', getenv('PAYMONGO_SECRET_KEY'));
+
     return;
 }
 
-// ---------- Fallback to local .env ----------
+// ------------------------------------------------------------
+// Local .env (InfinityFree / Localhost)
+// ------------------------------------------------------------
+
 $envPath = __DIR__ . '/.env';
 
 if (!file_exists($envPath)) {
@@ -60,6 +77,7 @@ foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line)
     $key = trim($key);
     $value = trim($value);
 
+    // Remove surrounding quotes
     if (
         strlen($value) >= 2 &&
         (

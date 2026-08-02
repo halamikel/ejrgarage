@@ -4,6 +4,8 @@
  * Render + TiDB Cloud Starter (SSL)
  */
 
+require_once __DIR__ . '/env.php';
+
 // ----------------------------------------------------------------
 // getallheaders() polyfill
 // ----------------------------------------------------------------
@@ -30,47 +32,46 @@ if (!function_exists('getallheaders')) {
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // ----------------------------------------------------------------
-// Load Render Environment Variables
+// Validate Required Constants
 // ----------------------------------------------------------------
-$host = getenv('DB_HOST');
-$port = (int)getenv('DB_PORT');
-$db   = getenv('DB_DATABASE');
-$user = getenv('DB_USERNAME');
-$pass = getenv('DB_PASSWORD');
+$required = [
+    'DB_HOST'     => DB_HOST,
+    'DB_PORT'     => DB_PORT,
+    'DB_DATABASE' => DB_DATABASE,
+    'DB_USERNAME' => DB_USERNAME,
+    'DB_PASSWORD' => DB_PASSWORD,
+];
 
-// ----------------------------------------------------------------
-// Validate Environment Variables
-// ----------------------------------------------------------------
-if (
-    empty($host) ||
-    empty($port) ||
-    empty($db) ||
-    empty($user) ||
-    empty($pass)
-) {
-    http_response_code(500);
-    header('Content-Type: application/json');
+foreach ($required as $key => $value) {
+    if ($value === null || $value === '') {
+        http_response_code(500);
+        header('Content-Type: application/json');
 
-    echo json_encode([
-        "status" => "error",
-        "message" => "Database environment variables are missing."
-    ]);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Missing environment variable: {$key}"
+        ]);
 
-    exit;
+        exit;
+    }
 }
 
 // ----------------------------------------------------------------
-// Connect to TiDB Cloud
+// Connect to TiDB Cloud using SSL
 // ----------------------------------------------------------------
 try {
 
     $cert = __DIR__ . '/../certificates/isrgrootx1.pem';
 
     if (!file_exists($cert)) {
-        throw new Exception("Certificate not found: " . $cert);
+        throw new Exception("CA certificate not found: {$cert}");
     }
 
     $conn = mysqli_init();
+
+    if (!$conn) {
+        throw new Exception("Unable to initialize MySQLi.");
+    }
 
     mysqli_ssl_set(
         $conn,
@@ -83,11 +84,11 @@ try {
 
     if (!mysqli_real_connect(
         $conn,
-        $host,
-        $user,
-        $pass,
-        $db,
-        $port,
+        DB_HOST,
+        DB_USERNAME,
+        DB_PASSWORD,
+        DB_DATABASE,
+        (int) DB_PORT,
         null,
         MYSQLI_CLIENT_SSL
     )) {
@@ -98,6 +99,8 @@ try {
     $conn->query("SET time_zone = '+08:00'");
 
 } catch (Throwable $e) {
+
+    error_log("Database Error: " . $e->getMessage());
 
     header('Content-Type: application/json');
     http_response_code(500);
