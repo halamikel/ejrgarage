@@ -74,15 +74,12 @@ try {
     $conn->query("SET time_zone = '+08:00'");
 
 } catch (mysqli_sql_exception $e) {
-
-    error_log("Database Connection Error: " . $e->getMessage());
-
-    http_response_code(500);
     header('Content-Type: application/json');
+    http_response_code(500);
 
     echo json_encode([
         "status" => "error",
-        "message" => "Database connection failed."
+        "message" => $e->getMessage()
     ]);
 
     exit;
