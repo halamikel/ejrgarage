@@ -28,7 +28,7 @@ if (!function_exists('getallheaders')) {
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
-    $conn = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $conn = @new mysqli(DB_CONNECTION, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
     $conn->query("SET time_zone = '+08:00'");
     $conn->set_charset("utf8mb4");
 } catch (mysqli_sql_exception $e) {
