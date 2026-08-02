@@ -1,6 +1,6 @@
 # ignore a specific file
 includes/mail_config.php
-api/env.php
+
 
 # ignore all .env files
 .env
