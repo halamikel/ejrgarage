@@ -1,40 +1,89 @@
 <?php
 /**
  * EJR Garage — Database Configuration
- *
- * Credentials are loaded from env.php (not hardcoded here).
- * See env.php for rotation instructions and .htaccess for access blocking.
+ * Uses Render Environment Variables
  */
-require_once __DIR__ . '/env.php';
 
-// ── getallheaders() polyfill ──────────────────────────────────
-// InfinityFree runs PHP-FPM/CGI where getallheaders() doesn't exist.
-// This polyfill reads from $_SERVER, which is always available.
+// ──────────────────────────────────────────────────────────────
+// getallheaders() polyfill
+// ──────────────────────────────────────────────────────────────
 if (!function_exists('getallheaders')) {
-    function getallheaders(): array {
+    function getallheaders(): array
+    {
         $headers = [];
+
         foreach ($_SERVER as $key => $value) {
-            if (str_starts_with($key, 'HTTP_')) {
-                $headers[str_replace('_', '-', substr($key, 5))] = $value;
+            if (strpos($key, 'HTTP_') === 0) {
+                $name = str_replace('_', '-', substr($key, 5));
+                $headers[$name] = $value;
             } elseif (in_array($key, ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5'])) {
                 $headers[str_replace('_', '-', $key)] = $value;
             }
         }
+
         return $headers;
     }
 }
 
-// ── MySQLi strict error reporting (PHP 8.1+) ─────────────────
+// ──────────────────────────────────────────────────────────────
+// MySQLi Error Reporting
+// ──────────────────────────────────────────────────────────────
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-try {
-    $conn = @new mysqli(DB_CONNECTION, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    $conn->query("SET time_zone = '+08:00'");
-    $conn->set_charset("utf8mb4");
-} catch (mysqli_sql_exception $e) {
-    error_log("EJR Garage DB Error: " . $e->getMessage());
-    header('Content-Type: application/json');
+// ──────────────────────────────────────────────────────────────
+// Load Environment Variables
+// ──────────────────────────────────────────────────────────────
+$host = getenv('DB_HOST');
+$port = (int) getenv('DB_PORT');
+$db   = getenv('DB_NAME');
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASS');
+
+// Check for missing environment variables
+if (
+    empty($host) ||
+    empty($port) ||
+    empty($db) ||
+    empty($user)
+) {
     http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Database connection failed. Please try again later."]);
+    header('Content-Type: application/json');
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database environment variables are missing."
+    ]);
+
+    exit;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Connect to Database
+// ──────────────────────────────────────────────────────────────
+try {
+
+    $conn = new mysqli(
+        $host,
+        $user,
+        $pass,
+        $db,
+        $port
+    );
+
+    $conn->set_charset("utf8mb4");
+    $conn->query("SET time_zone = '+08:00'");
+
+} catch (mysqli_sql_exception $e) {
+
+    error_log("Database Connection Error: " . $e->getMessage());
+
+    http_response_code(500);
+    header('Content-Type: application/json');
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database connection failed."
+    ]);
+
     exit;
 }
