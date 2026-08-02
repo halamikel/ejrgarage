@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 session_start();
+date_default_timezone_set('Asia/Manila');
 require_once 'db_config.php';
 require_once 'rate_limit.php';
 require_once '../includes/php-jwt/JWT.php';
@@ -114,7 +115,7 @@ if ($emailChanged) {
     }
 
     // Build verification link
-    $verifyLink = "https://ejrgarage.infinityfreeapp.com/api/confirm_email_change.php?token=" . urlencode($token);
+    $verifyLink = "https://ejrgarage.site.je/api/confirm_email_change.php?token=" . urlencode($token);
 
     $html = "
     <div style='background:#f4f6f8;padding:40px;font-family:Arial,sans-serif;'>

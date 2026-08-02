@@ -1506,29 +1506,26 @@ function loadServices() {
             const tbody = document.getElementById('servicesTableBody');
             if (!tbody) return;
             if (!data.services || !data.services.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No services found. Add your first service.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No services found. Add your first service.</td></tr>';
                 return;
             }
             tbody.innerHTML = data.services.map(s => `
                 <tr>
-                    <td><strong>${s.name}</strong>${s.description ? `<br><small class="text-muted">${s.description}</small>` : ''}</td>
+                    <td><strong>${s.name}</strong></td>
                     <td><span class="badge bg-secondary">${s.category}</span></td>
-                    <td>${s.price_from > 0 ? '₱' + parseFloat(s.price_from).toLocaleString('en-PH', {minimumFractionDigits:2}) : '—'}</td>
                     <td>
-                        <span class="badge ${s.is_active == 1 ? 'bg-success' : 'bg-danger'}">${s.is_active == 1 ? 'Active' : 'Inactive'}</span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editService(${s.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-warning me-1" onclick="toggleService(${s.id}, ${s.is_active == 1 ? 0 : 1})" title="${s.is_active == 1 ? 'Deactivate' : 'Activate'}">
-                            <i class="bi bi-${s.is_active == 1 ? 'eye-slash' : 'eye'}"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteService(${s.id}, '${s.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   style="cursor:pointer; width:2.5em; height:1.3em;"
+                                   ${s.is_active == 1 ? 'checked' : ''}
+                                   onchange="toggleService(${s.id}, this.checked ? 1 : 0)">
+                        </div>
                     </td>
                 </tr>`).join('');
         })
         .catch(() => {
             const tbody = document.getElementById('servicesTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Failed to load services.</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Failed to load services.</td></tr>';
         });
 }
 
@@ -1540,11 +1537,7 @@ function openAddService() {
                 <label class="form-label fw-semibold">Service Name *</label>
                 <input id="svcName" class="form-control mb-3" placeholder="e.g. Engine Overhaul">
                 <label class="form-label fw-semibold">Category</label>
-                <input id="svcCategory" class="form-control mb-3" placeholder="e.g. Popular Services" value="Popular Services">
-                <label class="form-label fw-semibold">Description</label>
-                <input id="svcDesc" class="form-control mb-3" placeholder="Short description (optional)">
-                <label class="form-label fw-semibold">Starting Price (₱)</label>
-                <input id="svcPrice" type="number" class="form-control" placeholder="0.00" value="0">
+                <input id="svcCategory" class="form-control" placeholder="e.g. Popular Services" value="Popular Services">
             </div>`,
         confirmButtonText: 'Add Service',
         confirmButtonColor: '#e62429',
@@ -1555,86 +1548,23 @@ function openAddService() {
             return {
                 action: 'add',
                 name,
-                category: document.getElementById('svcCategory').value.trim() || 'General',
-                description: document.getElementById('svcDesc').value.trim(),
-                price_from: parseFloat(document.getElementById('svcPrice').value) || 0
+                category: document.getElementById('svcCategory').value.trim() || 'General'
             };
         }
     }).then(result => {
         if (result.isConfirmed) {
             fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
                 .then(r=>r.json()).then(d=>{
-                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Done',showConfirmButton:false,timer:2000}); loadServices(); }
+                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Service added',showConfirmButton:false,timer:2000}); loadServices(); }
                     else Swal.fire('Error', d.message, 'error');
                 });
         }
     });
-}
-
-function editService(id) {
-    fetch('api/admin/manage_services.php', { headers: getAuthHeaders() })
-        .then(r => r.json())
-        .then(data => {
-            const s = data.services.find(x => x.id == id);
-            if (!s) return;
-            Swal.fire({
-                title: 'Edit Service',
-                html: `
-                    <div class="text-start">
-                        <label class="form-label fw-semibold">Service Name *</label>
-                        <input id="svcName" class="form-control mb-3" value="${s.name}">
-                        <label class="form-label fw-semibold">Category</label>
-                        <input id="svcCategory" class="form-control mb-3" value="${s.category}">
-                        <label class="form-label fw-semibold">Description</label>
-                        <input id="svcDesc" class="form-control mb-3" value="${s.description || ''}">
-                        <label class="form-label fw-semibold">Starting Price (₱)</label>
-                        <input id="svcPrice" type="number" class="form-control mb-3" value="${s.price_from}">
-                        <label class="form-label fw-semibold">Status</label>
-                        <select id="svcActive" class="form-select">
-                            <option value="1" ${s.is_active == 1 ? 'selected' : ''}>Active</option>
-                            <option value="0" ${s.is_active == 0 ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    </div>`,
-                confirmButtonText: 'Save Changes',
-                confirmButtonColor: '#e62429',
-                showCancelButton: true,
-                preConfirm: () => ({
-                    action: 'update', id,
-                    name: document.getElementById('svcName').value.trim(),
-                    category: document.getElementById('svcCategory').value.trim(),
-                    description: document.getElementById('svcDesc').value.trim(),
-                    price_from: parseFloat(document.getElementById('svcPrice').value) || 0,
-                    is_active: parseInt(document.getElementById('svcActive').value)
-                })
-            }).then(result => {
-                if (result.isConfirmed) fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
-                .then(r=>r.json()).then(d=>{
-                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Done',showConfirmButton:false,timer:2000}); loadServices(); }
-                    else Swal.fire('Error', d.message, 'error');
-                });
-            });
-        });
 }
 
 function toggleService(id, newStatus) {
     fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'toggle', id, is_active:newStatus }) })
-        .then(r=>r.json()).then(d=>{ if(d.status==='success') loadServices(); else Swal.fire('Error', d.message, 'error'); });
-}
-
-function deleteService(id, name) {
-    Swal.fire({
-        title: 'Delete Service?',
-        html: `Delete <strong>${name}</strong>?<br><small class="text-muted">If it has active appointments, deactivate it instead.</small>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#e62429',
-        confirmButtonText: 'Delete'
-    }).then(result => {
-        if (result.isConfirmed) {
-            fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'delete', id }) })
-                .then(r=>r.json()).then(d=>{ if(d.status==='success') loadServices(); else Swal.fire('Error', d.message, 'error'); });
-        }
-    });
+        .then(r=>r.json()).then(d=>{ if(d.status!=='success'){ Swal.fire('Error', d.message, 'error'); loadServices(); } });
 }
 
 // =============================================================

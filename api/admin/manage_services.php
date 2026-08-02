@@ -21,6 +21,9 @@ if (preg_match('/bearer\s(\S+)/i', $auth, $m)) {
 if (!$isAdmin) { http_response_code(403); echo json_encode(['status'=>'error','message'=>'Forbidden']); exit; }
 
 // ── Auto-create services table ─────────────────────────────────
+$tableExistsCheck = $conn->query("SHOW TABLES LIKE 'ejr_services'");
+$tableIsNew = ($tableExistsCheck && $tableExistsCheck->num_rows === 0);
+
 $conn->query("CREATE TABLE IF NOT EXISTS ejr_services (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(150) NOT NULL,
@@ -30,6 +33,32 @@ $conn->query("CREATE TABLE IF NOT EXISTS ejr_services (
     is_active   TINYINT(1) DEFAULT 1,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// Seed with the exact services already listed on the public booking page,
+// so the admin's list starts in sync with what customers currently see.
+if ($tableIsNew) {
+    $seedServices = [
+        // [name, category]
+        ['PMS', 'Popular Services'],
+        ['Change Oil', 'Popular Services'],
+        ['Engine Tune Up', 'Popular Services'],
+        ['Auto Electrical Transmission', 'Popular Services'],
+        ['EFI', 'Popular Services'],
+        ['Carburator Services', 'Popular Services'],
+        ['Decarbonizer', 'Popular Services'],
+        ['Scanning Fault Codes', 'Popular Services'],
+        ['Paint Services', 'Popular Services'],
+        ['Back to Zero (Anti-bacterial fogging)', 'Popular Services'],
+        ['Car Checkup', 'Other Services'],
+        ['Scheduled Maintenance', 'Other Services'],
+        ['Tow/Roadside Assistance', 'Other Services'],
+    ];
+    $seedStmt = $conn->prepare("INSERT INTO ejr_services (name, category) VALUES (?, ?)");
+    foreach ($seedServices as [$name, $category]) {
+        $seedStmt->bind_param("ss", $name, $category);
+        $seedStmt->execute();
+    }
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];

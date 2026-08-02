@@ -178,7 +178,6 @@
                 willClose: () => {
                     localStorage.removeItem("selectedServices");
                     localStorage.removeItem("vehicleDetails");
-                    localStorage.removeItem("ejr_booking_timer_start");
                     window.location.href = "my_appointments.php"; 
                 }
             });
@@ -215,90 +214,5 @@
   });
 </script>
 
-
-<!-- ── 15-minute booking timer (persists across booking steps) ── -->
-<script>
-(function () {
-    if (!localStorage.getItem('jwt_token')) return;
-
-    const DURATION  = 15 * 60 * 1000; // 15 min in ms
-    const WARN_AT   = 2  * 60 * 1000; // warn at 2 min
-    const KEY_START = 'ejr_booking_timer_start';
-    const PAGES     = ['booking.php', 'booking-details.php', 'booking-confirmation.php'];
-
-    const currentPage = window.location.pathname.split('/').pop();
-    const isFirstPage = currentPage === 'booking.php';
-
-    // Start or resume timer
-    let startTime = parseInt(localStorage.getItem(KEY_START) || '0');
-    if (!startTime || isFirstPage) {
-        startTime = Date.now();
-        localStorage.setItem(KEY_START, startTime);
-    }
-
-    // Build timer pill
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `
-        <div id="ejrTimerInner" style="
-            position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
-            background:#1e2a36; color:#fff; border-radius:50px;
-            padding:10px 22px; font-size:13px; font-weight:500;
-            display:flex; align-items:center; gap:10px;
-            box-shadow:0 4px 20px rgba(0,0,0,.25); z-index:9998;
-            white-space:nowrap; transition:background .4s;">
-            <i class="bi bi-clock" style="font-size:15px;"></i>
-            <span id="ejrTimerLabel">Booking session: <strong id="ejrTimerCount">15:00</strong></span>
-        </div>`;
-    document.body.appendChild(wrap);
-
-    const inner   = document.getElementById('ejrTimerInner');
-    const label   = document.getElementById('ejrTimerLabel');
-    const countEl = document.getElementById('ejrTimerCount');
-
-    function fmt(ms) {
-        const s = Math.ceil(ms / 1000);
-        return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
-    }
-
-    const iv = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const rem     = DURATION - elapsed;
-
-        if (rem <= 0) {
-            clearInterval(iv);
-            wrap.remove();
-            localStorage.removeItem(KEY_START);
-            localStorage.removeItem('selectedServices');
-            localStorage.removeItem('vehicleDetails');
-            localStorage.removeItem('ejr_booking_timer_start');
-            Swal.fire({
-                icon: 'info',
-                title: 'Booking Session Expired',
-                text: 'Your 15-minute booking session has expired. Please start over.',
-                confirmButtonColor: '#e62429',
-                allowOutsideClick: false
-            }).then(() => { window.location.href = 'booking.php'; });
-            return;
-        }
-
-        countEl.textContent = fmt(rem);
-
-        if (rem <= WARN_AT) {
-            inner.style.background = '#e62429';
-            label.innerHTML = '&#9888; Only <strong>' + fmt(rem) + '</strong> left to complete!';
-        }
-    }, 1000);
-
-    // Clear timer on successful booking completion
-    window.addEventListener('bookingComplete', () => {
-        clearInterval(iv);
-        localStorage.removeItem(KEY_START);
-    });
-
-    window.addEventListener('beforeunload', () => {
-        // Don't clear — we want it to persist across booking pages
-    });
-})();
-</script>
 
 <?php include 'includes/footer.php'; ?>

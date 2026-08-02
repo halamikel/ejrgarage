@@ -7,37 +7,49 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // STEP 1: SERVICE SELECTION (booking.php)
   // ==========================================
-  const services = document.querySelectorAll(".service-item");
   const nextBtn = document.querySelector(".btn-next");
   const serviceError = document.getElementById("serviceError");
   const serviceLimitError = document.getElementById("serviceLimitError");
-  
+
   let selectedServices = [];
+  let authModal = null;
+  let step1Initialized = false;
 
-  if (services.length > 0 && nextBtn && !document.getElementById("vehicleForm")) {
-    
-    let authModal = document.createElement("div");
-    authModal.id = "authModal";
-    authModal.style.cssText = "display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center;";
-    
-    authModal.innerHTML = `
-      <div style="background: #ffffff; border-radius: 16px; width: 90%; max-width: 420px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); overflow: hidden; position: relative; border: 1px solid #e3e8ef; text-align: center; padding: 40px 30px;">
-        <button onclick="document.getElementById('authModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 28px; cursor: pointer; color: #a0aab5;">&times;</button>
-        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(230, 36, 41, 0.1); color: #e62429; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 32px;">
-          <i class="bi bi-shield-lock-fill"></i>
-        </div>
-        <h3 style="font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #1e2a36; margin-bottom: 10px; font-size: 1.8rem; text-transform: uppercase;">Login Required</h3>
-        <p style="color: #5f6b7a; margin-bottom: 30px; font-size: 0.95rem; line-height: 1.6;">You must be logged in to book an appointment with EJR Garage.</p>
-        <div style="display: flex; gap: 12px; flex-direction: column;">
-          <a href="login.php" style="width: 100%; background: linear-gradient(45deg, #e62429, #ff6b00); color: #fff; padding: 12px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; text-decoration: none; text-transform: uppercase;">Log In Here</a>
-          <a href="registration.php" style="width: 100%; padding: 12px; border: 1px solid #e3e8ef; border-radius: 8px; color: #1e2a36; font-family: 'Rajdhani', sans-serif; font-weight: 700; text-decoration: none; text-transform: uppercase;">Register Now</a>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(authModal);
+  function initServiceSelection() {
+    // booking.php loads .service-item elements via an async fetch to
+    // api/get_services.php, which resolves AFTER DOMContentLoaded has
+    // already fired. So this re-queries the DOM each time it's called
+    // (on load, and again on the 'ejrServicesLoaded' event) instead of
+    // relying on a stale NodeList captured before the elements existed.
+    const services = document.querySelectorAll(".service-item");
 
-    window.addEventListener('click', (e) => { if (e.target == authModal) authModal.style.display = "none"; });
+    if (services.length === 0 || !nextBtn || document.getElementById("vehicleForm")) {
+      return;
+    }
+
+    if (!authModal) {
+      authModal = document.createElement("div");
+      authModal.id = "authModal";
+      authModal.style.cssText = "display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center;";
+
+      authModal.innerHTML = `
+        <div style="background: #ffffff; border-radius: 16px; width: 90%; max-width: 420px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); overflow: hidden; position: relative; border: 1px solid #e3e8ef; text-align: center; padding: 40px 30px;">
+          <button onclick="document.getElementById('authModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 28px; cursor: pointer; color: #a0aab5;">&times;</button>
+          <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(230, 36, 41, 0.1); color: #e62429; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 32px;">
+            <i class="bi bi-shield-lock-fill"></i>
+          </div>
+          <h3 style="font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #1e2a36; margin-bottom: 10px; font-size: 1.8rem; text-transform: uppercase;">Login Required</h3>
+          <p style="color: #5f6b7a; margin-bottom: 30px; font-size: 0.95rem; line-height: 1.6;">You must be logged in to book an appointment with EJR Garage.</p>
+          <div style="display: flex; gap: 12px; flex-direction: column;">
+            <a href="login.php" style="width: 100%; background: linear-gradient(45deg, #e62429, #ff6b00); color: #fff; padding: 12px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; text-decoration: none; text-transform: uppercase;">Log In Here</a>
+            <a href="registration.php" style="width: 100%; padding: 12px; border: 1px solid #e3e8ef; border-radius: 8px; color: #1e2a36; font-family: 'Rajdhani', sans-serif; font-weight: 700; text-decoration: none; text-transform: uppercase;">Register Now</a>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(authModal);
+      window.addEventListener('click', (e) => { if (e.target == authModal) authModal.style.display = "none"; });
+    }
 
     services.forEach(service => {
       service.addEventListener("click", function () {
@@ -59,20 +71,28 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-    nextBtn.addEventListener("click", function (e) {
-      e.preventDefault(); 
-      if (selectedServices.length === 0) {
-        if (serviceError) serviceError.style.display = "block";
-        return;
-      }
-      if (!isLoggedIn()) {
-         document.getElementById('authModal').style.display = "flex";
-         return; 
-      }
-      localStorage.setItem("selectedServices", JSON.stringify(selectedServices));
-      window.location.href = "booking-details.php";
-    });
+    if (!step1Initialized) {
+      nextBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (selectedServices.length === 0) {
+          if (serviceError) serviceError.style.display = "block";
+          return;
+        }
+        if (!isLoggedIn()) {
+          document.getElementById('authModal').style.display = "flex";
+          return;
+        }
+        localStorage.setItem("selectedServices", JSON.stringify(selectedServices));
+        window.location.href = "booking-details.php";
+      });
+      step1Initialized = true;
+    }
   }
+
+  // Try immediately (covers any server-rendered .service-item markup),
+  // and again once booking.php's async fetch injects the real ones.
+  initServiceSelection();
+  document.addEventListener('ejrServicesLoaded', initServiceSelection);
 
   // ==========================================
   // STEP 2: VEHICLE DETAILS (booking-details.php)
