@@ -5,11 +5,11 @@ header('Content-Type: application/json');
 
 // ── CORS: reflect exact origin ──
 $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = ['https://ejrgarage.site.je', 'http://ejrgarage.site.je'];
+$allowed = ['https://ejrgarage.onrender.com', 'http://localhost'];
 if (in_array($origin, $allowed)) {
     header("Access-Control-Allow-Origin: $origin");
 } else {
-    header('Access-Control-Allow-Origin: https://ejrgarage.site.je');
+    header('Access-Control-Allow-Origin: https://ejrgarage.onrender.com');
 }
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Headers: Content-Type');
