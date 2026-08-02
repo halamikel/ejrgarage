@@ -33,7 +33,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS ejr_services (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(150) NOT NULL,
     category    VARCHAR(100) DEFAULT 'General',
-    description TEXT DEFAULT '',
+    description TEXT NULL,
     price_from  DECIMAL(10,2) DEFAULT 0.00,
     is_active   TINYINT(1) DEFAULT 1,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
