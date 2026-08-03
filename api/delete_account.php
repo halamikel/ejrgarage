@@ -113,7 +113,7 @@ try {
                 <p style="color:#5f6b7a;">Your account has been permanently deleted. All your data including vehicles and appointments have been removed from our system.</p>
                 <p style="color:#5f6b7a;">We are sorry to see you go. If this was a mistake or you change your mind, you are always welcome to create a new account.</p>
                 <div style="text-align:center;margin-top:24px;">
-                    <a href="https://ejrgarage.com/register.php"
+                    <a href="https://ejrgarage.onrender.com/register.php"
                        style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                         Create New Account
                     </a>

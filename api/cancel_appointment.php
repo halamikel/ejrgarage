@@ -131,7 +131,7 @@ if ($appt['notif_email'] == 1) {
                 </div>
                 <p style="color:#5f6b7a;">If you would like to rebook, you can do so anytime from your account.</p>
                 <div style="text-align:center;margin-top:24px;">
-                    <a href="https://ejrgarage.com/booking.php"
+                    <a href="https://ejrgarage.onrender.com/booking.php"
                        style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                         Book Again
                     </a>

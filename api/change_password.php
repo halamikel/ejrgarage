@@ -96,7 +96,7 @@ if ($update->affected_rows > 0) {
                 <p style="color:#5f6b7a;">Your account password was just changed successfully.</p>
                 <p style="color:#5f6b7a;">If you did not make this change, please contact us immediately or reset your password.</p>
                 <div style="margin-top:20px;">
-                    <a href="https://ejrgarage.com/login.php"
+                    <a href="https://ejrgarage.onrender.com/login.php"
                        style="background:#e62429;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
                         Reset Password
                     </a>

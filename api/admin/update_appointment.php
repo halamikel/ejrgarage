@@ -117,7 +117,7 @@ if ($user && $user['notif_email'] == 1) {
                 </table>
             </div>
             <div style="text-align:center;margin-top:24px;">
-                <a href="https://ejrgarage.com/my_appointments.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                <a href="https://ejrgarage.onrender.com/my_appointments.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                     View My Appointments
                 </a>
             </div>

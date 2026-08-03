@@ -96,7 +96,7 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
 
                             <p style="color:#5f6b7a;">If this was a mistake, you can add your vehicle back anytime from your dashboard.</p>
                             <div style="text-align:center;margin-top:24px;">
-                                <a href="https://ejrgarage.com/my_vehicles.php"
+                                <a href="https://ejrgarage.onrender.com/my_vehicles.php"
                                    style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                                     Go to Garage
                                 </a>

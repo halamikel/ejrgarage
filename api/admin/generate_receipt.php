@@ -138,7 +138,7 @@ header('Content-Type: text/html; charset=UTF-8');
             <h1>EJR Garage</h1>
             <p>Mabalacat City, Pampanga</p>
             <p>support@ejrgarage.com</p>
-            <p>ejrgarage.com</p>
+            <p>ejrgarage.onrender.com</p>
         </div>
         <div class="invoice-meta">
             <div class="inv-label">Invoice</div>
