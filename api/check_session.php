@@ -182,6 +182,12 @@ if (in_array($type, ['chat', 'get_messages', 'end_session'])) {
     $user_msg = trim($input['message'] ?? '');
 
     if ($action === 'request_live') {
+        // Clear leftover messages from a previous ended live session so
+        // they don't reappear (both for the user and in the admin's
+        // chat view) when a new live request starts.
+        $clear = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
+        $clear->bind_param("i", $userId); $clear->execute();
+
         $stmt = $conn->prepare("UPDATE users SET chat_session = 'waiting' WHERE id = ?");
         $stmt->bind_param("i", $userId); $stmt->execute();
         $sysMsg = "A user has requested live assistance.";

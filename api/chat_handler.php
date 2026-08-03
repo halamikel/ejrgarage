@@ -6,11 +6,11 @@ header('Content-Type: application/json');
 
 // ── CORS: reflect exact origin (required when credentials:'include' is used) ──
 $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = ['https://ejrgarage.onrender.com', 'https://ejrgarage.site.je', 'http://localhost'];
+$allowed = ['https://ejrgarage.onrender.com', 'http://localhost'];
 if (in_array($origin, $allowed)) {
     header("Access-Control-Allow-Origin: $origin");
 } else {
-    header('Access-Control-Allow-Origin: https://ejrgarage.site.je');
+    header('Access-Control-Allow-Origin: https://ejrgarage.onrender.com');
 }
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
@@ -30,21 +30,23 @@ $data     = json_decode(file_get_contents('php://input'), true);
 $user_msg = trim($data['message'] ?? '');
 $action   = $data['action']  ?? 'chat';
 
-// ── AUTH: JWT bearer (mobile app) first, PHP session (web) as fallback ──
-$userId = 0;
-$headers = array_change_key_case(getallheaders(), CASE_LOWER);
-$authHeader = $headers['authorization'] ?? '';
-if (preg_match('/bearer\s(\S+)/i', $authHeader, $m)) {
-    try {
-        if (!defined('JWT_SECRET')) require_once __DIR__ . '/env.php';
-        $decoded = JWT::decode($m[1], new Key(JWT_SECRET, 'HS256'));
-        $userId  = (int)($decoded->uid ?? 0);
-    } catch (Exception $e) {
-        // Invalid/expired token — fall through to session check below.
-    }
-}
+// ── AUTH: session (web) OR JWT Bearer (mobile app) ────────────
+// The web frontend relies on PHP sessions since it never sends an
+// Authorization header (to route around InfinityFree's WAF). The
+// Flutter app has no cookie jar and always sends a JWT, so it's
+// checked here as a fallback when no session is present.
+$userId = (int)($_SESSION['user_id'] ?? 0);
+
 if ($userId === 0) {
-    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $headers    = array_change_key_case(getallheaders(), CASE_LOWER);
+    $authHeader = $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (preg_match('/bearer\s(\S+)/i', $authHeader, $m)) {
+        try {
+            if (!defined('JWT_SECRET')) require_once $root . '/api/env.php';
+            $decoded = JWT::decode($m[1], new Key(JWT_SECRET, 'HS256'));
+            $userId  = (int)($decoded->uid ?? 0);
+        } catch (Exception $e) {}
+    }
 }
 
 if ($userId === 0) {
@@ -58,6 +60,13 @@ if ($userId === 0) {
 
 // ── 1. LIVE CHAT REQUEST ──────────────────────────────────────
 if ($action === 'request_live') {
+    // Clear any leftover messages from a previous, already-ended live
+    // session first — otherwise the old back-and-forth (and the admin's
+    // view of it) reappears every time the user starts a new one.
+    $clear = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
+    $clear->bind_param("i", $userId);
+    $clear->execute();
+
     $stmt = $conn->prepare("UPDATE users SET chat_session = 'waiting' WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
