@@ -61,6 +61,7 @@ if ($type === 'admin_get_chat_users') {
             FROM users u
             INNER JOIN ejr_chat c ON u.id = c.user_id
             WHERE c.id IN (SELECT MAX(id) FROM ejr_chat GROUP BY user_id)
+            AND u.chat_session IN ('waiting', 'live')
             AND u.id != ?
             ORDER BY c.created_at DESC";
     $stmt = $conn->prepare($sql);
