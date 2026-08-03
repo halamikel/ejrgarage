@@ -247,7 +247,7 @@ header('Content-Type: text/html; charset=UTF-8');
     </button>
     <div class="footer">
         <p>Thank you for trusting EJR Garage with your vehicle!</p>
-        <p style="margin-top:6px;">ejrgarage.site.je &mdash; This is a system-generated receipt. <?= $receiptNo ?></p>
+        <p style="margin-top:6px;">ejrgarage.onrender.com &mdash; This is a system-generated receipt. <?= $receiptNo ?></p>
     </div>
 </div>
 </body>

@@ -14,7 +14,7 @@
 
 # ── Allow AJAX/fetch requests (fixes InfinityFree 403 on API calls) ──
 <IfModule mod_headers.c>
-    Header always set Access-Control-Allow-Origin "https://ejrgarage.site.je"
+    Header always set Access-Control-Allow-Origin "https://ejrgarage.onrender"
     Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
     Header always set Access-Control-Allow-Headers "Content-Type"
 </IfModule>

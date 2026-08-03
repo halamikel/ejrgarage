@@ -41,7 +41,7 @@ function sendEmailViaBrevo(string $toEmail, string $toName, string $subject, str
 }
 
 function sendVerificationEmail(string $userEmail, string $token): bool {
-    $link = "https://ejrgarage.site.je/api/verify.php?token=" . urlencode($token);
+    $link = "https://ejrgarage.onrender.com/api/verify.php?token=" . urlencode($token);
     $html = "
     <div style='background:#f4f6f8;padding:40px;font-family:Arial,sans-serif;'>
       <div style='background:#fff;border-radius:12px;max-width:480px;margin:auto;padding:36px;border:1px solid #e3e8ef;text-align:center;'>
