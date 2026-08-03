@@ -4,13 +4,9 @@ require_once 'db_config.php';
 require_once 'rate_limit.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
-require '../includes/PHPMailer/Exception.php';
-require '../includes/PHPMailer/PHPMailer.php';
-require '../includes/PHPMailer/SMTP.php';
+require_once 'mailer_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
 
 if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
 $secret_key = JWT_SECRET;
@@ -74,42 +70,24 @@ $update->execute();
 
 if ($update->affected_rows > 0) {
     // Send email notification
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = 465;
-            $mail->Timeout    = 15;
-        $mail->setFrom(SMTP_USER, 'EJR Garage');
-        $mail->addAddress($user['email'], $user['full_name']);
-        $mail->isHTML(true);
-        $mail->Subject = 'EJR Garage - Password Changed';
-        $mail->Body = '
-        <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
-            <div style="background:#ffffff;border-radius:12px;max-width:480px;margin:auto;padding:30px;text-align:center;border:1px solid #e3e8ef;">
-                <h2 style="color:#1e2a36;margin-bottom:10px;">Password Changed</h2>
-                <p style="color:#5f6b7a;">Hi ' . htmlspecialchars($user['full_name']) . ',</p>
-                <p style="color:#5f6b7a;">Your account password was just changed successfully.</p>
-                <p style="color:#5f6b7a;">If you did not make this change, please contact us immediately or reset your password.</p>
-                <div style="margin-top:20px;">
-                    <a href="https://ejrgarage.onrender.com/login.php"
-                       style="background:#e62429;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
-                        Reset Password
-                    </a>
-                </div>
-                <p style="color:#a0aab5;font-size:12px;margin-top:20px;">
-                    If this was you, no further action is needed.
-                </p>
-            </div>
-        </div>';
-        $mail->send();
-    } catch (MailException $e) {
-        // Don't fail the request if email fails, password is already changed
-    }
+    $body = '
+        <p style="color:#5f6b7a;">Hi ' . htmlspecialchars($user['full_name']) . ',</p>
+        <p style="color:#5f6b7a;">Your account password was just changed successfully.</p>
+        <p style="color:#5f6b7a;">If you did not make this change, please contact us immediately or reset your password.</p>
+        <p style="color:#a0aab5;font-size:12px;margin-top:20px;">
+            If this was you, no further action is needed.
+        </p>';
+
+    sendNotificationEmail(
+        $user['email'],
+        $user['full_name'],
+        'EJR Garage - Password Changed',
+        'Password Changed',
+        $body,
+        'Reset Password',
+        'https://ejrgarage.onrender.com/login.php'
+    );
+    // Errors are logged inside sendEmailViaBrevo(); password is already changed either way.
 
 
     // BUGFIX: Respond to browser BEFORE sending email so PHP execution
