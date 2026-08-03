@@ -189,7 +189,7 @@ if ($user && $user['notif_sms'] == 1 && !empty($user['phone'])) {
         CURLOPT_POSTFIELDS     => $smsPayload,
         CURLOPT_HTTPHEADER     => [
             'Content-Type: application/json; charset=UTF-8',
-            'Authorization: b6e00371c83f933b6a89b0fbc2cd3f74dc26e633dd7f6ea1e215d357b7ba68f7cdc388cc8d41eb1c0cb15aafcbcbfce6c33376bc73',
+            'Authorization: ',
         ],
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_SSL_VERIFYPEER => false,
