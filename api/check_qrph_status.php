@@ -35,6 +35,12 @@ if (!$token) {
 
 try {
     $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
+} catch (Exception $e) {
+    echo json_encode(['status' => 'error', 'message' => 'Session expired or invalid. Please log in again.']);
+    exit;
+}
+
+try {
     $user_id = $decoded->uid ?? 0;
     ejr_rate_limit($conn, "check_qrph_status", ejr_get_ip() . "|" . $user_id, 60, 300);
 
@@ -89,5 +95,6 @@ try {
     }
 
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Session expired or invalid: ' . $e->getMessage()]);
+    error_log('EJR check_qrph_status error: ' . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Something went wrong while checking your payment status. Please try again.']);
 }

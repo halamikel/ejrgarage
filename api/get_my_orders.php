@@ -25,6 +25,12 @@ if (!$token) {
 
 try {
     $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
+} catch (Exception $e) {
+    echo json_encode(['status' => 'error', 'message' => 'Session expired or invalid. Please log in again.']);
+    exit;
+}
+
+try {
     $user_id = $decoded->uid ?? 0;
 
     if (!$user_id) {
@@ -52,5 +58,6 @@ try {
     echo json_encode(['status' => 'success', 'orders' => $orders]);
 
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Session expired or invalid: ' . $e->getMessage()]);
+    error_log('EJR get_my_orders error: ' . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
 }
