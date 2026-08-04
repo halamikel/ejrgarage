@@ -52,3 +52,86 @@ function paymongo_get_checkout(string $checkoutId): ?array {
     $result = paymongo_request('GET', '/checkout_sessions/' . $checkoutId);
     return $result['ok'] ? $result['data'] : null;
 }
+
+/**
+ * QR Ph (in-app) — Payment Intent workflow.
+ * Docs: https://docs.paymongo.com/docs/payment-acceptance-qr-ph-api
+ *
+ * All three calls below are made server-side with the Secret Key, which
+ * PayMongo's docs explicitly say is fine ("If calling the Attach API will
+ * be on the server side, you may use your Secret API Keys and the
+ * client_key will not be required") — so the app never sees any PayMongo
+ * key, only our own JWT-authenticated endpoints.
+ */
+function paymongo_create_payment_intent(int $orderId, string $description, float $amount): array {
+    $result = paymongo_request('POST', '/payment_intents', ['data' => ['attributes' => [
+        'amount'                 => (int) round($amount * 100), // centavos
+        'currency'                => 'PHP',
+        'payment_method_allowed'  => ['qrph'],
+        'description'             => $description,
+        'metadata'                => ['order_id' => (string) $orderId],
+    ]]]);
+    if (!$result['ok']) return ['ok' => false, 'error' => $result['error']];
+    return [
+        'ok'         => true,
+        'id'         => $result['data']['id'] ?? null,
+        'client_key' => $result['data']['attributes']['client_key'] ?? null,
+    ];
+}
+
+function paymongo_create_qrph_method(): array {
+    $result = paymongo_request('POST', '/payment_methods', ['data' => ['attributes' => [
+        'type' => 'qrph',
+    ]]]);
+    if (!$result['ok']) return ['ok' => false, 'error' => $result['error']];
+    return ['ok' => true, 'id' => $result['data']['id'] ?? null];
+}
+
+function paymongo_attach_payment_method(string $intentId, string $paymentMethodId): array {
+    $result = paymongo_request('POST', "/payment_intents/{$intentId}/attach", ['data' => ['attributes' => [
+        'payment_method' => $paymentMethodId,
+    ]]]);
+    if (!$result['ok']) return ['ok' => false, 'error' => $result['error']];
+    $attrs = $result['data']['attributes'] ?? [];
+    return [
+        'ok'       => true,
+        'status'   => $attrs['status'] ?? null,
+        'qr_image' => $attrs['next_action']['code']['image_url'] ?? null,
+    ];
+}
+
+// Runs the full 3-step QR Ph generation (intent -> method -> attach) for
+// an order that already exists in part_orders. Returns the QR image plus
+// the payment_intent id so it can be stored for later status polling.
+function paymongo_generate_qrph(int $orderId, string $description, float $amount): array {
+    $intent = paymongo_create_payment_intent($orderId, $description, $amount);
+    if (!$intent['ok'] || !$intent['id']) {
+        return ['ok' => false, 'error' => $intent['error'] ?? 'Could not create payment intent.'];
+    }
+
+    $method = paymongo_create_qrph_method();
+    if (!$method['ok'] || !$method['id']) {
+        return ['ok' => false, 'error' => $method['error'] ?? 'Could not create QR Ph payment method.'];
+    }
+
+    $attach = paymongo_attach_payment_method($intent['id'], $method['id']);
+    if (!$attach['ok'] || !$attach['qr_image']) {
+        return ['ok' => false, 'error' => $attach['error'] ?? 'Could not generate QR code.'];
+    }
+
+    return [
+        'ok'                => true,
+        'payment_intent_id' => $intent['id'],
+        'qr_image'          => $attach['qr_image'],
+        'status'            => $attach['status'],
+    ];
+}
+
+// Poll a Payment Intent's current status. Returns the raw 'status' string
+// PayMongo reports: awaiting_payment_method | awaiting_next_action |
+// processing | succeeded.
+function paymongo_get_payment_intent_status(string $intentId): ?string {
+    $result = paymongo_request('GET', "/payment_intents/{$intentId}");
+    if (!$result['ok']) return null;
+    return $result['data']['attributes']['status'] ?? null;
+}

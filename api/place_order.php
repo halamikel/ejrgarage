@@ -40,7 +40,7 @@ try {
     $contact         = trim($data['contact'] ?? '');
     $items           = $data['items'] ?? [];
     $total_price     = floatval($data['total_price'] ?? 0);
-    $payment_method  = ($data['payment_method'] ?? 'online') === 'cod' ? 'cod' : 'online';
+    $payment_method  = ($data['payment_method'] ?? 'card') === 'cod' ? 'cod' : 'card';
 
     if (!$customer_name || !$contact || empty($items) || $total_price <= 0) {
         echo json_encode(['status' => 'error', 'message' => 'Missing required fields.']);
