@@ -152,6 +152,13 @@ function updateUI(user) {
     const cardAvatarIcon = document.getElementById("profileCardAvatarIcon");
     if (cardAvatar && cardAvatarImg && cardAvatarIcon) {
         if (user.profile_picture) {
+            cardAvatarImg.onerror = () => {
+                // The image failed to load (e.g. file missing on the server).
+                // Fall back to the icon instead of letting the browser render
+                // broken alt text inside the circular frame.
+                cardAvatarImg.style.display = "none";
+                cardAvatarIcon.style.display = "";
+            };
             cardAvatarImg.src = `/${user.profile_picture}?v=${Date.now()}`;
             cardAvatarImg.style.display = "block";
             cardAvatarIcon.style.display = "none";
