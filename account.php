@@ -159,7 +159,10 @@ function updateUI(user) {
                 cardAvatarImg.style.display = "none";
                 cardAvatarIcon.style.display = "";
             };
-            cardAvatarImg.src = `/${user.profile_picture}?v=${Date.now()}`;
+            const picSrc = user.profile_picture.startsWith('http')
+                ? user.profile_picture
+                : `/${user.profile_picture}`;
+            cardAvatarImg.src = `${picSrc}?v=${Date.now()}`;
             cardAvatarImg.style.display = "block";
             cardAvatarIcon.style.display = "none";
         } else {

@@ -10,6 +10,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
+require_once 'cloudinary_helper.php';
 $secret_key = JWT_SECRET;
 
 $headers    = array_change_key_case(getallheaders(), CASE_LOWER);
@@ -55,53 +56,46 @@ try {
         exit;
     }
 
-    // Map MIME type to a safe, fixed extension — never trust the uploaded filename's extension.
-    // OWASP: An attacker can upload a valid JPEG named shell.php; using pathinfo() on the
-    // original name would save it with a .php extension, enabling remote code execution.
-    $mimeToExt = [
-        'image/jpeg' => 'jpg',
-        'image/png'  => 'png',
-        'image/webp' => 'webp',
-        'image/gif'  => 'gif',
-    ];
-    $ext      = $mimeToExt[$mimeType]; // Always derived from finfo, never from $_FILES['name']
-    $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
-    $uploadDir = '../uploads/avatars/';
-    $uploadPath = $uploadDir . $filename;
+    // ── UPLOAD TO CLOUDINARY (survives restarts — Render's local disk
+    // does not, see cloudinary_helper.php) ──────────────────────────
+    $publicId = 'ejr-avatars/avatar_' . $userId . '_' . time();
 
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-
-    // Delete old avatar if exists
+    // Fetch old picture first so we can clean it up on Cloudinary after
+    // a successful new upload (only if it's actually a Cloudinary URL —
+    // legacy local-disk paths have nothing to delete there).
     $stmt = $conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $current = $stmt->get_result()->fetch_assoc();
+    $oldPublicId = $current && !empty($current['profile_picture'])
+        ? cloudinary_public_id_from_url($current['profile_picture'])
+        : null;
 
-    if ($current && !empty($current['profile_picture'])) {
-        $oldPath = $uploadDir . basename($current['profile_picture']);
-        if (file_exists($oldPath)) {
-            @unlink($oldPath);
-        }
-    }
+    $upload = cloudinary_upload($file['tmp_name'], $publicId);
 
-    if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to save uploaded image. Check folder permissions.']);
+    if (!$upload['ok']) {
+        error_log("Cloudinary avatar upload failed for user {$userId}: " . $upload['error']);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to upload photo: ' . $upload['error']]);
         exit;
     }
 
-    $publicPath = 'uploads/avatars/' . $filename;
+    $imageUrl = $upload['url'];
 
     // Save to DB
     $upStmt = $conn->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
-    $upStmt->bind_param("si", $publicPath, $userId);
+    $upStmt->bind_param("si", $imageUrl, $userId);
 
     if ($upStmt->execute()) {
+        // Best-effort cleanup of the previous image — do this after the
+        // DB write succeeds so a delete failure never leaves a user with
+        // no photo referenced at all.
+        if ($oldPublicId) {
+            cloudinary_delete($oldPublicId);
+        }
         echo json_encode([
             'status'          => 'success',
             'message'         => 'Profile picture updated successfully.',
-            'profile_picture' => $publicPath
+            'profile_picture' => $imageUrl
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Database update failed.']);
@@ -114,4 +108,3 @@ try {
         'message' => 'Server error while saving photo: ' . $e->getMessage()
     ]);
 }
-?>

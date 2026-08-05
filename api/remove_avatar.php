@@ -8,6 +8,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
+require_once 'cloudinary_helper.php';
 $secret_key = JWT_SECRET;
 $headers    = array_change_key_case(getallheaders(), CASE_LOWER);
 $authHeader = $headers['authorization'] ?? '';
@@ -27,16 +28,24 @@ try {
     exit;
 }
 
-// Get current profile picture path to delete the file
+// Get current profile picture to clean it up
 $stmt = $conn->prepare("SELECT profile_picture FROM users WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
 if ($user && !empty($user['profile_picture'])) {
-    $filePath = $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($user['profile_picture'], '/');
-    if (file_exists($filePath)) {
-        unlink($filePath);
+    $publicId = cloudinary_public_id_from_url($user['profile_picture']);
+    if ($publicId) {
+        // Cloudinary-hosted image — delete it there.
+        cloudinary_delete($publicId);
+    } else {
+        // Legacy local-disk path (pre-Cloudinary) — clean up if it
+        // happens to still exist on this container's disk.
+        $filePath = $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($user['profile_picture'], '/');
+        if (file_exists($filePath)) {
+            @unlink($filePath);
+        }
     }
 }
 
@@ -49,4 +58,3 @@ if ($upd->execute()) {
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Could not remove photo.']);
 }
-?>

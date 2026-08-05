@@ -216,7 +216,10 @@ function populateUserSettings() {
     const avatarDisplay = document.getElementById("avatarDisplay");
     if (avatarDisplay) {
         if (user.profile_picture) {
-            avatarDisplay.style.backgroundImage = `url(/${user.profile_picture}?v=${Date.now()})`;avatarDisplay.dataset.hasPic = "1";
+            const picSrc = user.profile_picture.startsWith('http')
+                ? user.profile_picture
+                : `/${user.profile_picture}`;
+            avatarDisplay.style.backgroundImage = `url(${picSrc}?v=${Date.now()})`;avatarDisplay.dataset.hasPic = "1";
             document.getElementById("removePhotoBtn") && (document.getElementById("removePhotoBtn").style.display = "");
         } else {
             avatarDisplay.style.backgroundImage = "";avatarDisplay.dataset.hasPic = "0";

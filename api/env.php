@@ -46,6 +46,12 @@ if ($usingRender) {
     // PayMongo
     define('PAYMONGO_SECRET_KEY', getenv('PAYMONGO_SECRET_KEY'));
 
+    // Cloudinary (avatar storage — Render's local disk is ephemeral and
+    // wipes runtime uploads on every restart, see upload_avatar.php)
+    define('CLOUDINARY_CLOUD_NAME', getenv('CLOUDINARY_CLOUD_NAME'));
+    define('CLOUDINARY_API_KEY', getenv('CLOUDINARY_API_KEY'));
+    define('CLOUDINARY_API_SECRET', getenv('CLOUDINARY_API_SECRET'));
+
     return;
 }
 
