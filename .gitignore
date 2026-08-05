@@ -8,3 +8,4 @@ includes/mail_config.php
 # ignore a whole folder
 node_modules/
 vendor/
+uploads/
