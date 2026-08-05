@@ -19,19 +19,20 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         // Fixed: Using 'uid' to match your login.php payload
         $userId = $decoded->uid; 
 
-        // Join vehicles (for the car name) and technicians (for the
-        // assigned mechanic's name), same JOIN pattern as
-        // api/admin/get_full_site_data.php uses for consistency.
+        // Join vehicles (for the car name) and mechanics (for the
+        // assigned mechanic's name) — matches the real schema already
+        // used in api/admin/get_full_site_data.php: table "mechanics",
+        // FK "appointments.mechanic_id", name column "name".
         $query = "SELECT a.*,
                          v.brand, v.model, v.plate_number,
                          CONCAT_WS(' ', v.brand, v.model,
                              CASE WHEN v.plate_number IS NOT NULL THEN CONCAT('(', v.plate_number, ')') ELSE NULL END
                          ) AS vehicle_info,
-                         t.full_name AS technician_name,
-                         t.is_available AS technician_available
+                         m.name AS mechanic_name,
+                         m.status AS mechanic_status
                   FROM appointments a
                   LEFT JOIN vehicles v ON a.vehicle_id = v.id
-                  LEFT JOIN technicians t ON a.technician_id = t.id
+                  LEFT JOIN mechanics m ON a.mechanic_id = m.id
                   WHERE a.user_id = ?
                   ORDER BY a.appointment_date DESC";
                   
