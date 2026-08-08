@@ -340,8 +340,40 @@ body {
     border-spacing: 0;
     font-size: 13.5px;
 }
+
+/* Scrollable data area — keeps every admin table/list capped at a
+   fixed height instead of growing the whole page as more rows are
+   added (appointments, users, vehicles, history, parts, inquiries,
+   orders, busy dates, services, mechanics all share .table-responsive). */
+.table-responsive {
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ejr-border) transparent;
+}
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: transparent;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--ejr-border);
+    border-radius: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #c7cbd4;
+}
+
+/* Sticky header so column labels stay visible while scrolling a
+   long list, instead of scrolling out of view immediately. */
 .ejr-table thead tr {
     background: #f8f9fb;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 .ejr-table thead th {
     padding: 11px 16px;
