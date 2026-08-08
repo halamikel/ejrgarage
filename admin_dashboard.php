@@ -199,6 +199,15 @@ include 'includes/header.php';
                             <i class="bi bi-download me-1"></i> Export CSV
                         </button>
                     </div>
+                    <div class="ejr-filter-bar mb-3">
+                        <select id="appointmentsStatusFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
                     <div class="table-responsive">
                         <table class="ejr-table">
                             <thead><tr><th>Customer</th><th>Service</th><th>Vehicle</th><th>Date</th><th>Mechanic</th><th>Status</th><th>Action</th></tr></thead>
@@ -221,6 +230,13 @@ include 'includes/header.php';
                         <button class="ejr-btn ejr-btn--outline" onclick="exportCSV('users')">
                             <i class="bi bi-download me-1"></i> Export CSV
                         </button>
+                    </div>
+                    <div class="ejr-filter-bar mb-3">
+                        <select id="usersRoleFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="">All Roles</option>
+                            <option value="1">Customer</option>
+                            <option value="2">Admin</option>
+                        </select>
                     </div>
                     <div class="table-responsive">
                         <table class="ejr-table">
@@ -341,6 +357,16 @@ include 'includes/header.php';
                             <i class="bi bi-plus-lg me-1"></i> Add Part
                         </button>
                     </div>
+                    <div class="ejr-filter-bar mb-3">
+                        <select id="partsCategoryFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="">All Categories</option>
+                        </select>
+                        <select id="partsStockFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="">All Stock</option>
+                            <option value="in">In Stock</option>
+                            <option value="out">Out of Stock</option>
+                        </select>
+                    </div>
                     <div class="table-responsive">
                         <table class="ejr-table">
                             <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
@@ -361,6 +387,13 @@ include 'includes/header.php';
                             Part Inquiries
                         </div>
                     </div>
+                    <div class="ejr-filter-bar mb-3">
+                        <select id="inquiriesStatusFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="pending" selected>Pending Only</option>
+                            <option value="responded">Responded Only</option>
+                            <option value="all">All Inquiries</option>
+                        </select>
+                    </div>
                     <div class="table-responsive">
                         <table class="ejr-table">
                             <thead><tr><th>Part</th><th>Customer</th><th>Contact</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
@@ -380,6 +413,15 @@ include 'includes/header.php';
                             </span>
                             Parts Orders
                         </div>
+                    </div>
+                    <div class="ejr-filter-bar mb-3">
+                        <select id="ordersStatusFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
                     </div>
                     <div class="table-responsive">
                         <table class="ejr-table">
@@ -438,6 +480,16 @@ include 'includes/header.php';
                         <i class="bi bi-plus-lg me-1"></i> Add Service
                     </button>
                 </div>
+                <div class="ejr-filter-bar mb-3">
+                    <select id="servicesCategoryFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select id="servicesActiveFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                        <option value="">All</option>
+                        <option value="1">Available Only</option>
+                        <option value="0">Unavailable Only</option>
+                    </select>
+                </div>
                 <div class="table-responsive">
                     <table class="ejr-table">
                         <thead><tr><th>Service Name</th><th>Category</th><th>Available</th></tr></thead>
@@ -460,6 +512,13 @@ include 'includes/header.php';
                     <button class="ejr-btn ejr-btn--red" onclick="openAddMechanic()">
                         <i class="bi bi-plus-lg me-1"></i> Add Mechanic
                     </button>
+                </div>
+                <div class="ejr-filter-bar mb-3">
+                    <select id="mechanicsStatusFilter" class="ejr-filter-select" onchange="applyAllFilters()">
+                        <option value="">All</option>
+                        <option value="available">Available Only</option>
+                        <option value="unavailable">Unavailable Only</option>
+                    </select>
                 </div>
                 <div class="table-responsive">
                     <table class="ejr-table">

@@ -14,6 +14,15 @@ let masterData = { users: [], appointments: [], vehicles: [] };
 let historyData = [];
 let currentChatUserId = null;
 
+// Raw datasets kept in memory so search + filter dropdowns can be
+// combined and re-applied without re-fetching from the server.
+let partsData = [];
+let inquiriesData = [];
+let ordersData = [];
+let servicesData = [];
+let mechanicsData = [];
+let globalSearchTerm = '';
+
 document.addEventListener("DOMContentLoaded", () => {
 
     loadFullSiteData();
@@ -34,20 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminSearch = document.getElementById("adminSearch");
     if (adminSearch) {
         adminSearch.addEventListener("input", function (e) {
-            const term = e.target.value.toLowerCase();
-            renderAppointments(masterData.appointments.filter(a =>
-                (a.full_name && a.full_name.toLowerCase().includes(term)) ||
-                (a.service_type && a.service_type.toLowerCase().includes(term))
-            ));
-            renderUsers(masterData.users.filter(u =>
-                (u.full_name && u.full_name.toLowerCase().includes(term)) ||
-                (u.email && u.email.toLowerCase().includes(term))
-            ));
-            renderVehicles(masterData.vehicles.filter(v =>
-                (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
-                (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
-                (v.model && v.model.toLowerCase().includes(term))
-            ));
+            globalSearchTerm = e.target.value.toLowerCase().trim();
+            applyAllFilters();
         });
     }
 
@@ -77,9 +74,9 @@ function loadFullSiteData() {
         .then(data => {
             if (data.status === 'success') {
                 masterData = data;
-                renderAppointments(data.appointments);
-                renderUsers(data.users);
-                renderVehicles(data.vehicles);
+                filterAndRenderAppointments();
+                filterAndRenderUsers();
+                filterAndRenderVehicles();
                 updateStats(data);
             }
         })
@@ -93,7 +90,7 @@ function loadServiceHistory() {
             if (data.status === 'success') {
                 historyData = data.history;
                 document.getElementById('badgeHistory').textContent = historyData.length;
-                renderHistory(historyData);
+                filterAndRenderHistory();
             }
         })
         .catch(() => {
@@ -107,30 +104,69 @@ function loadParts() {
         .then(res => res.json())
         .then(data => {
             if (data.status !== 'success') return;
-            document.getElementById('badgeParts').textContent = data.parts.length;
-            const tbody = document.getElementById('partsTableBody');
-            tbody.innerHTML = data.parts.map(p => `
-                <tr>
-                    <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
-                             onerror="this.style.display='none'"></td>
-                    <td class="fw-bold">${p.name}</td>
-                    <td><span class="badge bg-light text-dark border">${p.category}</span></td>
-                    <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                    <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-dark"
-                                    onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
-                                <i class="bi bi-pencil-square"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger"
-                                    onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`).join('');
+            partsData = data.parts;
+            document.getElementById('badgeParts').textContent = partsData.length;
+            populatePartsCategoryFilter();
+            filterAndRenderParts();
         });
+}
+
+function populatePartsCategoryFilter() {
+    const sel = document.getElementById('partsCategoryFilter');
+    if (!sel) return;
+    const current = sel.value;
+    const categories = [...new Set(partsData.map(p => p.category).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Categories</option>' +
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (categories.includes(current)) sel.value = current;
+}
+
+function filterAndRenderParts() {
+    const term = globalSearchTerm;
+    const category = document.getElementById('partsCategoryFilter')?.value || '';
+    const stock = document.getElementById('partsStockFilter')?.value || '';
+
+    const filtered = partsData.filter(p => {
+        const matchesTerm = !term ||
+            (p.name && p.name.toLowerCase().includes(term)) ||
+            (p.category && p.category.toLowerCase().includes(term));
+        const matchesCategory = !category || p.category === category;
+        const matchesStock = !stock ||
+            (stock === 'in' && p.stock > 0) ||
+            (stock === 'out' && p.stock <= 0);
+        return matchesTerm && matchesCategory && matchesStock;
+    });
+    renderParts(filtered);
+}
+
+function renderParts(parts) {
+    const tbody = document.getElementById('partsTableBody');
+    if (!tbody) return;
+    if (!parts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = parts.map(p => `
+        <tr>
+            <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
+                     onerror="this.style.display='none'"></td>
+            <td class="fw-bold">${p.name}</td>
+            <td><span class="badge bg-light text-dark border">${p.category}</span></td>
+            <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('');
 }
 
 function loadInquiries() {
@@ -138,30 +174,53 @@ function loadInquiries() {
         .then(res => res.json())
         .then(data => {
             if (data.status !== 'success') return;
-            const pending = data.inquiries.filter(i => i.status !== 'responded');
-            document.getElementById('badgeInquiries').textContent = pending.length;
-            const tbody = document.getElementById('inquiriesTableBody');
-            tbody.innerHTML = pending.length ? pending.map(i => `
-                <tr>
-                    <td><span class="badge bg-light text-dark border">${i.part_name}</span></td>
-                    <td class="fw-bold">${i.customer_name}</td>
-                    <td>${i.contact}</td>
-                    <td class="text-muted small">${i.message || '—'}</td>
-                    <td>${new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                    <td><span class="badge bg-warning text-dark">pending</span></td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})">
-                                <i class="bi bi-check-lg"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`).join('')
-            : '<tr><td colspan="7" class="text-center text-muted py-4">No pending inquiries.</td></tr>';
+            inquiriesData = data.inquiries;
+            const pendingCount = inquiriesData.filter(i => i.status !== 'responded').length;
+            document.getElementById('badgeInquiries').textContent = pendingCount;
+            filterAndRenderInquiries();
         });
+}
+
+function filterAndRenderInquiries() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
+
+    const filtered = inquiriesData.filter(i => {
+        const matchesTerm = !term ||
+            (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
+            (i.part_name && i.part_name.toLowerCase().includes(term)) ||
+            (i.contact && i.contact.toLowerCase().includes(term));
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'pending' && i.status !== 'responded') ||
+            (statusFilter === 'responded' && i.status === 'responded');
+        return matchesTerm && matchesStatus;
+    });
+    renderInquiries(filtered);
+}
+
+function renderInquiries(inquiries) {
+    const tbody = document.getElementById('inquiriesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = inquiries.length ? inquiries.map(i => `
+        <tr>
+            <td><span class="badge bg-light text-dark border">${i.part_name}</span></td>
+            <td class="fw-bold">${i.customer_name}</td>
+            <td>${i.contact}</td>
+            <td class="text-muted small">${i.message || '—'}</td>
+            <td>${new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+            <td><span class="badge ${i.status === 'responded' ? 'bg-success' : 'bg-warning text-dark'}">${i.status === 'responded' ? 'responded' : 'pending'}</span></td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('')
+    : '<tr><td colspan="7" class="text-center text-muted py-4">No inquiries match your search.</td></tr>';
 }
 
 function loadOrders() {
@@ -172,59 +231,82 @@ function loadOrders() {
         .then(res => res.json())
         .then(data => {
             if (data.status !== 'success') throw new Error(data.message);
-            const orders = data.orders ?? [];
-            document.getElementById('badgeOrders').textContent = orders.length;
-
-            if (!orders.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders placed yet.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = orders.map(o => {
-                const year      = new Date(o.created_at).getFullYear();
-                const orderNo   = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
-                const itemsArr  = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-                const itemsList = Array.isArray(itemsArr)
-                    ? itemsArr.map(i => `${i.name} ×${i.qty}`).join(', ')
-                    : o.items;
-                const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                const safeName  = o.customer_name.replace(/'/g, "\\'");
-                const isPending = o.status.toLowerCase() === 'pending';
-
-                return `
-                <tr>
-                    <td><code style="color:#b30000;">${orderNo}</code></td>
-                    <td class="fw-bold">${o.customer_name}</td>
-                    <td>${o.contact}</td>
-                    <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                        title="${itemsList}">${itemsList}</td>
-                    <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                    <td>${date}</td>
-                    <td>${statusBadge(o.status)}</td>
-                    <td>
-                        <div class="btn-group">
-                            ${isPending ? `
-                                <button class="btn btn-sm btn-outline-success"
-                                        onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Manage">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>` : ''}
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    onclick="deleteOrder(${o.id})" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
-                               class="btn btn-sm btn-outline-primary" title="View Invoice">
-                                <i class="bi bi-receipt"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
+            ordersData = data.orders ?? [];
+            document.getElementById('badgeOrders').textContent = ordersData.length;
+            filterAndRenderOrders();
         })
         .catch(err => {
             console.error('Orders error:', err);
             tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
         });
+}
+
+function filterAndRenderOrders() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
+
+    const filtered = ordersData.filter(o => {
+        const year = new Date(o.created_at).getFullYear();
+        const orderNo = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`.toLowerCase();
+        const matchesTerm = !term ||
+            (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+            (o.contact && o.contact.toLowerCase().includes(term)) ||
+            orderNo.includes(term);
+        const matchesStatus = !statusFilter || o.status.toLowerCase() === statusFilter.toLowerCase();
+        return matchesTerm && matchesStatus;
+    });
+    renderOrders(filtered);
+}
+
+function renderOrders(orders) {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+
+    if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders match your search.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = orders.map(o => {
+        const year      = new Date(o.created_at).getFullYear();
+        const orderNo   = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
+        const itemsArr  = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+        const itemsList = Array.isArray(itemsArr)
+            ? itemsArr.map(i => `${i.name} ×${i.qty}`).join(', ')
+            : o.items;
+        const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const safeName  = o.customer_name.replace(/'/g, "\\'");
+        const isPending = o.status.toLowerCase() === 'pending';
+
+        return `
+        <tr>
+            <td><code style="color:#b30000;">${orderNo}</code></td>
+            <td class="fw-bold">${o.customer_name}</td>
+            <td>${o.contact}</td>
+            <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                title="${itemsList}">${itemsList}</td>
+            <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            <td>${date}</td>
+            <td>${statusBadge(o.status)}</td>
+            <td>
+                <div class="btn-group">
+                    ${isPending ? `
+                        <button class="btn btn-sm btn-outline-success"
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Manage">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>` : ''}
+                    <button class="btn btn-sm btn-outline-secondary"
+                            onclick="deleteOrder(${o.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="View Invoice">
+                        <i class="bi bi-receipt"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
 }
 
 
@@ -255,6 +337,79 @@ function statusBadge(status) {
     };
     const displayStatus = s.charAt(0).toUpperCase() + s.slice(1);
     return `<span class="badge ${map[s] || 'bg-secondary'}">${displayStatus}</span>`;
+}
+
+function filterAndRenderAppointments() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
+
+    const filtered = masterData.appointments.filter(a => {
+        const matchesTerm = !term ||
+            (a.full_name && a.full_name.toLowerCase().includes(term)) ||
+            (a.service_type && a.service_type.toLowerCase().includes(term)) ||
+            (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
+            (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
+        const matchesStatus = !statusFilter || a.status === statusFilter;
+        return matchesTerm && matchesStatus;
+    });
+    renderAppointments(filtered);
+}
+
+function filterAndRenderUsers() {
+    const term = globalSearchTerm;
+    const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
+
+    const filtered = masterData.users.filter(u => {
+        const matchesTerm = !term ||
+            (u.full_name && u.full_name.toLowerCase().includes(term)) ||
+            (u.email && u.email.toLowerCase().includes(term)) ||
+            (u.phone && u.phone.toLowerCase().includes(term));
+        const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
+        return matchesTerm && matchesRole;
+    });
+    renderUsers(filtered);
+}
+
+function filterAndRenderVehicles() {
+    const term = globalSearchTerm;
+    const filtered = masterData.vehicles.filter(v =>
+        !term ||
+        (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
+        (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
+        (v.model && v.model.toLowerCase().includes(term)) ||
+        (v.brand && v.brand.toLowerCase().includes(term))
+    );
+    renderVehicles(filtered);
+}
+
+function filterAndRenderHistory() {
+    const term = globalSearchTerm;
+    const filtered = historyData.filter(h =>
+        !term ||
+        (h.full_name && h.full_name.toLowerCase().includes(term)) ||
+        (h.service_type && h.service_type.toLowerCase().includes(term)) ||
+        (h.plate_number && h.plate_number.toLowerCase().includes(term)) ||
+        (h.brand && h.brand.toLowerCase().includes(term)) ||
+        (h.model && h.model.toLowerCase().includes(term))
+    );
+    renderHistory(filtered);
+}
+
+// Re-applies globalSearchTerm + every tab's own dropdown filter across
+// all ten data tabs at once. Called both by the global search box and
+// by every individual filter dropdown's onchange, so search text and
+// dropdown filters always combine correctly no matter which changed.
+function applyAllFilters() {
+    filterAndRenderAppointments();
+    filterAndRenderUsers();
+    filterAndRenderVehicles();
+    filterAndRenderHistory();
+    filterAndRenderParts();
+    filterAndRenderInquiries();
+    filterAndRenderOrders();
+    filterAndRenderServices();
+    filterAndRenderMechanics();
+    if (typeof applyBusyFilter === 'function') applyBusyFilter();
 }
 
 function renderAppointments(apps) {
@@ -1305,8 +1460,14 @@ function loadBusyDates() {
 }
 
 function applyBusyFilter() {
-    const filter   = document.getElementById('busyDateFilter').value;
-    const filtered = filter === '' ? busyDatesData : busyDatesData.filter(d => d.is_busy == filter);
+    const filter = document.getElementById('busyDateFilter')?.value || '';
+    const term = globalSearchTerm;
+    const filtered = busyDatesData.filter(d => {
+        const matchesFilter = filter === '' || d.is_busy == filter;
+        const matchesTerm = !term ||
+            (d.appointment_date && d.appointment_date.toLowerCase().includes(term));
+        return matchesFilter && matchesTerm;
+    });
     renderBusyDates(filtered);
 }
 
@@ -1503,30 +1664,62 @@ function loadServices() {
     fetch('api/admin/manage_services.php', { headers: getAuthHeaders() })
         .then(r => r.json())
         .then(data => {
-            const tbody = document.getElementById('servicesTableBody');
-            if (!tbody) return;
-            if (!data.services || !data.services.length) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No services found. Add your first service.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.services.map(s => `
-                <tr>
-                    <td><strong>${s.name}</strong></td>
-                    <td><span class="badge bg-secondary">${s.category}</span></td>
-                    <td>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" role="switch"
-                                   style="cursor:pointer; width:2.5em; height:1.3em;"
-                                   ${s.is_active == 1 ? 'checked' : ''}
-                                   onchange="toggleService(${s.id}, this.checked ? 1 : 0)">
-                        </div>
-                    </td>
-                </tr>`).join('');
+            servicesData = data.services || [];
+            populateServicesCategoryFilter();
+            filterAndRenderServices();
         })
         .catch(() => {
             const tbody = document.getElementById('servicesTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Failed to load services.</td></tr>';
         });
+}
+
+function populateServicesCategoryFilter() {
+    const sel = document.getElementById('servicesCategoryFilter');
+    if (!sel) return;
+    const current = sel.value;
+    const categories = [...new Set(servicesData.map(s => s.category).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Categories</option>' +
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (categories.includes(current)) sel.value = current;
+}
+
+function filterAndRenderServices() {
+    const term = globalSearchTerm;
+    const category = document.getElementById('servicesCategoryFilter')?.value || '';
+    const activeFilter = document.getElementById('servicesActiveFilter')?.value || '';
+
+    const filtered = servicesData.filter(s => {
+        const matchesTerm = !term ||
+            (s.name && s.name.toLowerCase().includes(term)) ||
+            (s.category && s.category.toLowerCase().includes(term));
+        const matchesCategory = !category || s.category === category;
+        const matchesActive = activeFilter === '' || String(s.is_active) === activeFilter;
+        return matchesTerm && matchesCategory && matchesActive;
+    });
+    renderServices(filtered);
+}
+
+function renderServices(services) {
+    const tbody = document.getElementById('servicesTableBody');
+    if (!tbody) return;
+    if (!services.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No services match your search.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = services.map(s => `
+        <tr>
+            <td><strong>${s.name}</strong></td>
+            <td><span class="badge bg-secondary">${s.category}</span></td>
+            <td>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           style="cursor:pointer; width:2.5em; height:1.3em;"
+                           ${s.is_active == 1 ? 'checked' : ''}
+                           onchange="toggleService(${s.id}, this.checked ? 1 : 0)">
+                </div>
+            </td>
+        </tr>`).join('');
 }
 
 function openAddService() {
@@ -1575,27 +1768,46 @@ function loadMechanics() {
     fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
         .then(r => r.json())
         .then(data => {
-            const tbody = document.getElementById('mechanicsTableBody');
-            if (!tbody) return;
-            if (!data.mechanics || !data.mechanics.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No mechanics added yet.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.mechanics.map(m => `
-                <tr>
-                    <td><strong>${m.name}</strong></td>
-                    <td>${m.specialty || '—'}</td>
-                    <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
-                    </td>
-                </tr>`).join('');
+            mechanicsData = data.mechanics || [];
+            filterAndRenderMechanics();
         })
         .catch(() => {
             const tbody = document.getElementById('mechanicsTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Failed to load mechanics.</td></tr>';
         });
+}
+
+function filterAndRenderMechanics() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('mechanicsStatusFilter')?.value || '';
+
+    const filtered = mechanicsData.filter(m => {
+        const matchesTerm = !term ||
+            (m.name && m.name.toLowerCase().includes(term)) ||
+            (m.specialty && m.specialty.toLowerCase().includes(term));
+        const matchesStatus = !statusFilter || m.status === statusFilter;
+        return matchesTerm && matchesStatus;
+    });
+    renderMechanics(filtered);
+}
+
+function renderMechanics(mechanics) {
+    const tbody = document.getElementById('mechanicsTableBody');
+    if (!tbody) return;
+    if (!mechanics.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No mechanics match your search.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = mechanics.map(m => `
+        <tr>
+            <td><strong>${m.name}</strong></td>
+            <td>${m.specialty || '—'}</td>
+            <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
 }
 
 function openAddMechanic() {
