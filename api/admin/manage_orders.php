@@ -42,12 +42,14 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
-    // Added WHERE o.status = 'pending' to filter out approved/cancelled orders
+    // Return every order regardless of status — approved/completed/cancelled
+    // orders stay visible in the admin dashboard instead of disappearing
+    // once acted on. The Orders tab's status filter dropdown lets admins
+    // narrow the view back down to just Pending, etc. when they want to.
     $result = $conn->query("
         SELECT o.*, u.email, u.full_name as user_full_name, u.notif_email
         FROM part_orders o
         JOIN users u ON u.id = o.user_id
-        WHERE o.status = 'pending' 
         ORDER BY o.created_at DESC
     ");
     $orders = [];
