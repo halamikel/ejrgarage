@@ -492,8 +492,8 @@ include 'includes/header.php';
                 </div>
                 <div class="table-responsive">
                     <table class="ejr-table">
-                        <thead><tr><th>Service Name</th><th>Category</th><th>Available</th></tr></thead>
-                        <tbody id="servicesTableBody"><tr><td colspan="3" class="ejr-loading"><div class="spinner-border spinner-border-sm text-danger"></div> Loading...</td></tr></tbody>
+                        <thead><tr><th>Service Name</th><th>Category</th><th>Available</th><th>Actions</th></tr></thead>
+                        <tbody id="servicesTableBody"><tr><td colspan="4" class="ejr-loading"><div class="spinner-border spinner-border-sm text-danger"></div> Loading...</td></tr></tbody>
                     </table>
                 </div>
             </div>

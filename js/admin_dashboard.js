@@ -1704,7 +1704,7 @@ function renderServices(services) {
     const tbody = document.getElementById('servicesTableBody');
     if (!tbody) return;
     if (!services.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No services match your search.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No services match your search.</td></tr>';
         return;
     }
     tbody.innerHTML = services.map(s => `
@@ -1719,7 +1719,42 @@ function renderServices(services) {
                            onchange="toggleService(${s.id}, this.checked ? 1 : 0)">
                 </div>
             </td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="deleteService(${s.id}, '${s.name.replace(/'/g,"\\'")}')" title="Remove Service">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
         </tr>`).join('');
+}
+
+function deleteService(id, name) {
+    Swal.fire({
+        title: 'Remove Service?',
+        html: `Remove <strong>${name}</strong> from the services list?<br>
+               <small class="text-muted">This can't be undone. Services with active appointments can't be removed — deactivate them instead.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Remove'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_services.php', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Service removed', showConfirmButton: false, timer: 2000 });
+                loadServices();
+            } else {
+                Swal.fire('Cannot Remove', d.message || 'This service could not be removed.', 'error');
+            }
+        })
+        .catch(() => Swal.fire('Error', 'Something went wrong. Please try again.', 'error'));
+    });
 }
 
 function openAddService() {
