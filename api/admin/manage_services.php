@@ -103,8 +103,12 @@ if ($method === 'POST') {
 
         case 'delete':
             $id = (int)($input['id'] ?? 0);
-            // Check if service is in use in any pending/confirmed appointment
-            $check = $conn->prepare("SELECT COUNT(*) FROM appointments WHERE service_type = (SELECT name FROM ejr_services WHERE id=?) AND status IN ('Pending','Confirmed')");
+            // Check if service is in use in any pending/confirmed appointment.
+            // COLLATE forced explicitly on both sides — appointments.service_type
+            // and ejr_services.name were created with different default
+            // collations, which makes a bare comparison throw
+            // "Illegal mix of collations" instead of returning a count.
+            $check = $conn->prepare("SELECT COUNT(*) FROM appointments WHERE service_type COLLATE utf8mb4_general_ci = (SELECT name COLLATE utf8mb4_general_ci FROM ejr_services WHERE id=?) AND status IN ('Pending','Confirmed')");
             $check->bind_param("i", $id);
             $check->execute();
             $check->bind_result($count);
