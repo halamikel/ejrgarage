@@ -78,7 +78,9 @@ if ($method === 'POST') {
             if ($count > 0) {
                 echo json_encode(['status'=>'error','message'=>'Cannot delete: mechanic has active appointments.']); exit;
             }
-            $conn->prepare("DELETE FROM mechanics WHERE id=?")->execute([$id]);
+            $del = $conn->prepare("DELETE FROM mechanics WHERE id=?");
+            $del->bind_param("i", $id);
+            $del->execute();
             echo json_encode(['status'=>'success']);
             break;
 
@@ -92,7 +94,9 @@ if ($method === 'POST') {
 
             if ($mechanicId === 0) {
                 // Unassign
-                $conn->prepare("UPDATE appointments SET mechanic_id = NULL WHERE id = ?")->execute([$apptId]);
+                $unassign = $conn->prepare("UPDATE appointments SET mechanic_id = NULL WHERE id = ?");
+                $unassign->bind_param("i", $apptId);
+                $unassign->execute();
                 echo json_encode(['status'=>'success','message'=>'Mechanic unassigned.']);
                 exit;
             }

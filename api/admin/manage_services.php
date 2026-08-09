@@ -113,14 +113,18 @@ if ($method === 'POST') {
             if ($count > 0) {
                 echo json_encode(['status'=>'error','message'=>'Cannot delete: this service has active appointments. Deactivate it instead.']); exit;
             }
-            $conn->prepare("DELETE FROM ejr_services WHERE id=?")->execute([$id]);
+            $del = $conn->prepare("DELETE FROM ejr_services WHERE id=?");
+            $del->bind_param("i", $id);
+            $del->execute();
             echo json_encode(['status'=>'success']);
             break;
 
         case 'toggle':
             $id        = (int)($input['id'] ?? 0);
             $is_active = (int)($input['is_active'] ?? 1);
-            $conn->prepare("UPDATE ejr_services SET is_active=? WHERE id=?")->execute([$is_active, $id]);
+            $upd = $conn->prepare("UPDATE ejr_services SET is_active=? WHERE id=?");
+            $upd->bind_param("ii", $is_active, $id);
+            $upd->execute();
             echo json_encode(['status'=>'success']);
             break;
     }
