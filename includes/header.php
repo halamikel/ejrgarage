@@ -64,6 +64,7 @@ if (session_status() === PHP_SESSION_NONE) {
          <li class="nav-item"><a class="nav-link" href="/available_parts.php">Available Parts</a></li>
         <li class="nav-item"><a class="nav-link" href="/about-us.php">About Us</a></li>
         <li class="nav-item"><a class="nav-link" href="/contact.php">Contact</a></li>
+        <li class="nav-item"><a class="nav-link" href="/download-app.php"><i class="bi bi-android2 me-1"></i>Get the App</a></li>
       </ul>
       
       <?php if(isset($_SESSION['user_id'])): ?>

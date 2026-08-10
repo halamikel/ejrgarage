@@ -34,6 +34,9 @@ if (localStorage.getItem('jwt_token')) {
                     <a href="#" class="text-white opacity-75"><i class="bi bi-instagram fs-5"></i></a>
                     <a href="#" class="text-white opacity-75"><i class="bi bi-twitter-x fs-5"></i></a>
                 </div>
+                <a href="/download-app.php" class="d-inline-flex align-items-center gap-2 mt-3 px-3 py-2 text-white text-decoration-none" style="background:rgba(255,255,255,0.08); border-radius:10px; font-size:0.85rem;">
+                    <i class="bi bi-android2 text-danger fs-5"></i> Get the App
+                </a>
             </div>
             <div class="col-md-4 text-start text-md-end">
                 <div class="d-inline-block text-start">
