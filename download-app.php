@@ -58,7 +58,7 @@ include 'includes/header.php';
         </div>
 
         <!-- Download button -->
-        <a href="/assets/downloads/EJRGarage.apk"
+        <a href="/assets/downloads/EJR Garage.apk"
            id="downloadApkBtn"
            class="btn d-inline-flex align-items-center gap-3"
            style="background: linear-gradient(45deg, #e62429, #ff6b00); color:#fff; padding: 16px 32px; border-radius: 14px; text-decoration:none; box-shadow: 0 10px 30px rgba(230,36,41,0.3);">
