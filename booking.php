@@ -17,11 +17,11 @@
 <section class="steps py-4">
   <div class="container">
     <div class="step-wrapper">
-      <div class="step active">1</div>
-      <span class="step-label">Select Service</span>
-      <div class="line"></div>
-      <div class="step">2</div>
+      <div class="step">1</div>
       <span class="step-label">Your Details</span>
+      <div class="line"></div>
+      <div class="step active">2</div>
+      <span class="step-label">Select Service</span>
       <div class="line"></div>
       <div class="step">3</div>
       <span class="step-label">Confirm</span>

@@ -13,7 +13,7 @@
         <h1 style="color: #ffffff;">Your Trusted Auto Repair Shop</h1>
         <p style="color: #e3e8ef;">Quality automotive maintenance, diagnostics, emergency rescue, and home service solutions for every vehicle owner.</p>
         <div class="d-flex flex-wrap gap-3">
-          <a href="booking.php" class="btn btn-yellow" style="display:inline-flex; justify-content:center; align-items:center; text-align:center;">Book Now</a>
+          <a href="booking-details.php" class="btn btn-yellow" style="display:inline-flex; justify-content:center; align-items:center; text-align:center;">Book Now</a>
           <a href="about-us.php" class="btn btn-outline-light-custom">Explore More</a>
         </div>
       </div>
