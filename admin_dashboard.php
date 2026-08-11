@@ -236,6 +236,7 @@ include 'includes/header.php';
                             <option value="">All Roles</option>
                             <option value="1">Customer</option>
                             <option value="2">Admin</option>
+                            <option value="3">Mechanic</option>
                         </select>
                     </div>
                     <div class="table-responsive">

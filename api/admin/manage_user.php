@@ -83,6 +83,20 @@ if ($action === 'update_info') {
     $stmt->bind_param("ssiiii", $full_name, $email, $role_id, $is_verified, $is_phone_verified, $user_id);
 
     if ($stmt->execute()) {
+        // If the user is promoted to mechanic, keep the mechanics roster in sync.
+        if ((int)$role_id === 3) {
+            $mechanicName = trim($full_name);
+            $check = $conn->prepare("SELECT id FROM mechanics WHERE name = ? LIMIT 1");
+            $check->bind_param("s", $mechanicName);
+            $check->execute();
+            $check->store_result();
+            if ($check->num_rows === 0) {
+                $insert = $conn->prepare("INSERT INTO mechanics (name, specialty, status) VALUES (?, '', 'available')");
+                $insert->bind_param("s", $mechanicName);
+                $insert->execute();
+            }
+            $check->close();
+        }
         echo json_encode(['status' => 'success', 'message' => 'User updated successfully.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to update user.']);

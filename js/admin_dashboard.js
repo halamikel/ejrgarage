@@ -458,8 +458,8 @@ function renderUsers(users) {
             <td class="fw-bold">${u.full_name}</td>
             <td>${u.email}</td>
             <td>${u.phone || '—'}</td>
-            <td><span class="badge ${u.role_id == 2 ? 'bg-danger' : 'bg-secondary'}">
-                ${u.role_id == 2 ? 'Admin' : 'Customer'}
+            <td><span class="badge ${u.role_id == 2 ? 'bg-danger' : u.role_id == 3 ? 'bg-info text-dark' : 'bg-secondary'}">
+                ${u.role_id == 2 ? 'Admin' : u.role_id == 3 ? 'Mechanic' : 'Customer'}
             </span></td>
             <td>${u.created_at
                 ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -627,6 +627,7 @@ function editUser(id) {
                         <select id="swal-role" class="form-select">
                             <option value="1" ${user.role_id == 1 ? 'selected' : ''}>Customer</option>
                             <option value="2" ${user.role_id == 2 ? 'selected' : ''}>Admin</option>
+                            <option value="3" ${user.role_id == 3 ? 'selected' : ''}>Mechanic</option>
                         </select>
                     </div>
                     <div class="d-flex gap-3 mt-2">
