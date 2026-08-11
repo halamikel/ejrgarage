@@ -144,7 +144,7 @@
           </div>
         </div>
 
-        <div class="d-flex justify-content-between mt-5">
+        <div class="d-flex justify-content-end mt-5">
           <button type="button" class="btn btn-next px-5 fw-bold text-white"
                   style="background: linear-gradient(45deg, #e62429, #ff6b00); border: none;"
                   onclick="window.location.href='booking.php'">
