@@ -3,18 +3,15 @@ FROM php:8.3-apache
 # Install MySQL extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# dompdf (used to generate real PDF receipts) requires these PHP
-# extensions. mbstring/dom/xml are usually present but not guaranteed
-# on the base php:apache image; gd is needed if any receipt ever
-# embeds images. Without these, `composer install` fails its platform
-# requirements check before installing anything (exit code 1).
-RUN apt-get update && apt-get install -y \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libpng-dev \
-        libxml2-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd mbstring dom xml \
+# dompdf (used to generate real PDF receipts) requires mbstring, dom,
+# and xml. These are compiled into most official php images already,
+# but docker-php-ext-install is safe to re-run either way. libxml2-dev
+# provides the headers needed to build dom/xml if they aren't already
+# present. (GD/freetype/libjpeg were dropped — this receipt is text
+# only, no embedded images, so they're not needed and were the most
+# likely cause of the previous apt-get build failure.)
+RUN apt-get update && apt-get install -y libxml2-dev \
+    && docker-php-ext-install mbstring dom xml \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache rewrite module
