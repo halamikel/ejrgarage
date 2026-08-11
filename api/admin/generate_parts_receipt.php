@@ -2,10 +2,6 @@
 session_start();
 session_write_close();
 require_once '../db_config.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 $order_id = isset($_GET['id'])    ? (int)$_GET['id']    : 0;
 $token    = isset($_GET['token']) ? trim($_GET['token']) : '';
@@ -23,10 +19,11 @@ if (!$isAdmin) {
     }
 }
 
+
 $stmt = $conn->prepare("
-    SELECT o.*, u.full_name AS user_full_name, u.email
-    FROM part_orders o
-    JOIN users u ON u.id = o.user_id
+    SELECT o.*, u.full_name AS user_full_name, u.email 
+    FROM part_orders o 
+    JOIN users u ON u.id = o.user_id 
     WHERE o.id = ?
 ");
 $stmt->bind_param("i", $order_id);
@@ -60,157 +57,160 @@ foreach ($items as $i => $item) {
     </tr>";
 }
 
-// ── Build the invoice HTML (dompdf renders standard CSS2.1-ish HTML —
-// no flexbox/grid, so layout here uses tables instead of the flex/grid
-// rules the old browser-facing version used) ─────────────────────────
-$html = '
+header('Content-Type: text/html; charset=UTF-8');
+?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
+<title>Invoice <?= $invoiceNo ?></title>
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: DejaVu Sans, Arial, sans-serif; color:#1e2a36; }
-    .topbar { background:#e62429; height:6px; width:100%; }
-    .wrap { padding: 24px 40px; }
+    body { font-family:Arial,sans-serif; background:#f4f6f8; padding:30px; }
+    .invoice { background:#fff; border-radius:12px; max-width:720px; margin:auto; padding:0; border:1px solid #e3e8ef; box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
 
-    table.header-tbl { width:100%; border-bottom:1px solid #e3e8ef; padding-bottom:20px; margin-bottom: 4px; }
-    table.header-tbl td { vertical-align: top; }
-    .brand h1 { color:#e62429; font-size:22px; margin-bottom:2px; }
-    .brand p { color:#5f6b7a; font-size:11px; margin:2px 0; }
-    .meta { text-align:right; }
-    .meta .inv-label { font-size:10px; color:#a0aab5; text-transform:uppercase; letter-spacing:0.5px; }
-    .meta .inv-number { font-size:18px; font-weight:bold; color:#1e2a36; margin:4px 0; }
-    .meta .inv-badge { display:inline-block; background:#cfe2ff; color:#084298; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold; }
+    .invoice-topbar { background:#e62429; height:6px; }
 
-    table.date-tbl { width:100%; border-bottom:1px solid #e3e8ef; margin-top:16px; }
-    table.date-tbl td { padding:12px 0; font-size:11px; border-right:1px solid #e3e8ef; }
-    table.date-tbl td:last-child { border-right:none; }
-    .lbl { font-size:9px; color:#a0aab5; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:3px; }
-    .val { font-size:13px; font-weight:bold; color:#1e2a36; display:block; }
-    .sub { font-size:10px; color:#5f6b7a; display:block; margin-top:2px; }
+    .invoice-header { display:flex; justify-content:space-between; align-items:flex-start; padding:32px 40px 24px; border-bottom:1px solid #e3e8ef; }
+    .invoice-brand h1 { color:#e62429; font-size:26px; margin-bottom:2px; }
+    .invoice-brand p { color:#5f6b7a; font-size:12px; margin:2px 0; }
+    .invoice-meta { text-align:right; }
+    .invoice-meta .inv-label { font-size:11px; color:#a0aab5; text-transform:uppercase; letter-spacing:0.5px; }
+    .invoice-meta .inv-number { font-size:22px; font-weight:bold; color:#1e2a36; margin:4px 0; }
+    .invoice-meta .inv-badge { display:inline-block; background:#cfe2ff; color:#084298; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:bold; }
 
-    table.info-tbl { width:100%; border-bottom:1px solid #e3e8ef; margin-top:16px; }
-    table.info-tbl td { padding:10px 14px 16px 0; vertical-align: top; width:50%; }
-    .section-label { font-size:10px; color:#e62429; text-transform:uppercase; letter-spacing:0.8px; font-weight:bold; margin-bottom:8px; display:block; }
-    .info-tbl p { font-size:12px; margin-bottom:5px; }
-    .info-tbl p span.k { color:#5f6b7a; display:inline-block; min-width:55px; }
+    .date-row { display:flex; gap:0; border-bottom:1px solid #e3e8ef; }
+    .date-cell { flex:1; padding:16px 40px; }
+    .date-cell:not(:last-child) { border-right:1px solid #e3e8ef; }
+    .date-cell .lbl { font-size:11px; color:#a0aab5; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+    .date-cell .val { font-size:14px; font-weight:bold; color:#1e2a36; }
+    .date-cell .sub { font-size:11px; color:#5f6b7a; margin-top:2px; }
 
-    .items-wrap { margin-top:18px; }
-    table.items { width:100%; border-collapse:collapse; border:1px solid #e3e8ef; }
-    .items thead tr { background:#1e2a36; }
-    .items thead th { padding:10px 14px; color:#fff; font-size:11px; text-align:left; text-transform:uppercase; }
-    .items thead th.center { text-align:center; }
-    .items thead th.right { text-align:right; }
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #e3e8ef; }
+    .info-box { padding:20px 40px; }
+    .info-box:first-child { border-right:1px solid #e3e8ef; }
+    .info-box .section-label { font-size:11px; color:#e62429; text-transform:uppercase; letter-spacing:0.8px; font-weight:bold; margin-bottom:10px; }
+    .info-box p { font-size:13px; color:#1e2a36; margin-bottom:5px; }
+    .info-box p span { color:#5f6b7a; display:inline-block; min-width:60px; }
 
-    table.total-tbl { width:100%; margin-top:6px; }
-    table.total-tbl td { padding:6px 14px; font-size:12px; color:#5f6b7a; }
-    table.total-tbl td.val { text-align:right; color:#1e2a36; font-weight:600; }
-    table.total-tbl tr.grand td { font-size:15px; font-weight:bold; color:#e62429; border-top:2px solid #e62429; padding-top:10px; }
-    table.total-tbl tr.grand td.val { color:#e62429; }
+    .services-wrap { padding:24px 40px 0; }
+    .services-wrap .section-label { font-size:11px; color:#e62429; text-transform:uppercase; letter-spacing:0.8px; font-weight:bold; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; border:1px solid #e3e8ef; overflow:hidden; }
+    thead tr { background:#1e2a36; }
+    thead th { padding:11px 14px; color:#fff; font-size:12px; text-align:left; text-transform:uppercase; letter-spacing:0.5px; }
+    thead th:first-child { text-align:center; width:44px; }
+    thead th.right { text-align:right; }
 
-    .stamp { margin-top:20px; background:#084298; color:#fff; text-align:center; padding:12px; font-size:13px; font-weight:bold; letter-spacing:1px; }
-    .footer-note { margin-top:14px; font-size:10px; color:#a0aab5; text-align:center; }
+    .total-wrap { padding:0 40px; }
+    .total-table { border:none; margin-top:0; }
+    .total-table td { border:none; padding:6px 14px; font-size:13px; color:#5f6b7a; }
+    .total-table td.val { text-align:right; color:#1e2a36; font-weight:600; }
+    .total-table tr.grand td { font-size:16px; font-weight:bold; color:#e62429; border-top:2px solid #e62429; padding-top:10px; }
+    .total-table tr.grand td.val { color:#e62429; }
+
+    .stamp-row { margin:24px 40px; background:#084298; color:#fff; text-align:center; padding:14px; border-radius:8px; font-size:14px; font-weight:bold; letter-spacing:1px; }
+
+    .invoice-footer { padding:16px 40px 28px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e3e8ef; }
+    .invoice-footer .note { font-size:11px; color:#a0aab5; }
+    .print-btn { padding:10px 28px; background:#e62429; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:bold; cursor:pointer; }
+
+    @media print {
+        body { background:#fff; padding:0; }
+        .print-btn { display:none; }
+        .invoice { box-shadow:none; border:none; }
+    }
 </style>
 </head>
 <body>
-<div class="topbar"></div>
-<div class="wrap">
+<div class="invoice">
+    <div class="invoice-topbar"></div>
 
-    <table class="header-tbl">
-        <tr>
-            <td class="brand">
-                <h1>EJR Garage</h1>
-                <p>Mabalacat City, Pampanga</p>
-                <p>support@ejrgarage.com</p>
-                <p>ejrgarage.onrender.com</p>
-            </td>
-            <td class="meta">
-                <span class="inv-label">Parts Order Invoice</span>
-                <div class="inv-number">' . $invoiceNo . '</div>
-                <span class="inv-badge">Parts Order</span>
-            </td>
-        </tr>
-    </table>
+    <!-- Header -->
+    <div class="invoice-header">
+        <div class="invoice-brand">
+            <h1>EJR Garage</h1>
+            <p>Mabalacat City, Pampanga</p>
+            <p>support@ejrgarage.com</p>
+            <p>ejrgarage.onrender.com</p>
+        </div>
+        <div class="invoice-meta">
+            <div class="inv-label">Parts Order Invoice</div>
+            <div class="inv-number"><?= $invoiceNo ?></div>
+            <div class="inv-badge">&#128230; Parts Order</div>
+        </div>
+    </div>
 
-    <table class="date-tbl">
-        <tr>
-            <td>
-                <span class="lbl">Invoice Issued</span>
-                <span class="val">' . $issuedDate . '</span>
-                <span class="sub">' . $issuedTime . ' (PHT)</span>
-            </td>
-            <td>
-                <span class="lbl">Order Date</span>
-                <span class="val">' . $orderDate . '</span>
-            </td>
-            <td>
-                <span class="lbl">Prepared By</span>
-                <span class="val">EJR Garage</span>
-                <span class="sub">Authorized Staff</span>
-            </td>
-        </tr>
-    </table>
+    <!-- Dates -->
+    <div class="date-row">
+        <div class="date-cell">
+            <div class="lbl">Invoice Issued</div>
+            <div class="val"><?= $issuedDate ?></div>
+            <div class="sub"><?= $issuedTime ?> (PHT)</div>
+        </div>
+        <div class="date-cell">
+            <div class="lbl">Order Date</div>
+            <div class="val"><?= $orderDate ?></div>
+        </div>
+        <div class="date-cell">
+            <div class="lbl">Prepared By</div>
+            <div class="val">EJR Garage</div>
+            <div class="sub">Authorized Staff</div>
+        </div>
+    </div>
 
-    <table class="info-tbl">
-        <tr>
-            <td>
-                <span class="section-label">Billed To</span>
-                <p><span class="k">Name:</span> ' . $customer . '</p>
-                <p><span class="k">Email:</span> ' . $email . '</p>
-                <p><span class="k">Contact:</span> ' . $contact . '</p>
-            </td>
-            <td>
-                <span class="section-label">Order Details</span>
-                <p><span class="k">Order No:</span> ' . $invoiceNo . '</p>
-                <p><span class="k">Items:</span> ' . count($items) . ' item(s)</p>
-                <p><span class="k">Total:</span> <strong style="color:#e62429;">₱' . number_format($order['total_price'], 2) . '</strong></p>
-            </td>
-        </tr>
-    </table>
+    <!-- Customer Info -->
+    <div class="info-grid">
+        <div class="info-box">
+            <div class="section-label">Billed To</div>
+            <p><span>Name:</span> <?= $customer ?></p>
+            <p><span>Email:</span> <?= $email ?></p>
+            <p><span>Contact:</span> <?= $contact ?></p>
+        </div>
+        <div class="info-box">
+            <div class="section-label">Order Details</div>
+            <p><span>Order No:</span> <?= $invoiceNo ?></p>
+            <p><span>Items:</span> <?= count($items) ?> item(s)</p>
+            <p><span>Total:</span> <strong style="color:#e62429;">₱<?= number_format($order['total_price'], 2) ?></strong></p>
+        </div>
+    </div>
 
-    <div class="items-wrap">
-        <span class="section-label">Items Ordered</span>
-        <table class="items">
+    <!-- Items Table -->
+    <div class="services-wrap">
+        <div class="section-label">Items Ordered</div>
+        <table>
             <thead>
                 <tr>
-                    <th class="center">#</th>
+                    <th>#</th>
                     <th>Part Name</th>
-                    <th class="center">Qty</th>
+                    <th>Qty</th>
                     <th class="right">Unit Price</th>
                     <th class="right">Subtotal</th>
                 </tr>
             </thead>
-            <tbody>' . $itemRows . '</tbody>
+            <tbody><?= $itemRows ?></tbody>
         </table>
     </div>
 
-    <table class="total-tbl">
-        <tr class="grand">
-            <td>Total Amount</td>
-            <td class="val">₱' . number_format($order['total_price'], 2) . '</td>
-        </tr>
-    </table>
+    <!-- Total -->
+    <div class="total-wrap">
+        <table class="total-table">
+            <tr class="grand">
+                <td>Total Amount</td>
+                <td class="val">₱<?= number_format($order['total_price'], 2) ?></td>
+            </tr>
+        </table>
+    </div>
 
-    <div class="stamp">PARTS ORDER — THANK YOU FOR YOUR PURCHASE</div>
+    <!-- Stamp -->
+    <div class="stamp-row">&#128230;&nbsp; PARTS ORDER — THANK YOU FOR YOUR PURCHASE</div>
 
-    <div class="footer-note">' . $invoiceNo . ' &mdash; System-generated invoice. &copy; ' . date('Y') . ' EJR Garage.</div>
-
+    <!-- Footer -->
+    <div class="invoice-footer">
+        <div class="note">
+            <?= $invoiceNo ?> &mdash; System-generated invoice. &copy; <?= date('Y') ?> EJR Garage.
+        </div>
+        <button class="print-btn" onclick="window.print()">&#128438; Print / Download</button>
+    </div>
 </div>
 </body>
-</html>';
-
-// ── Render to PDF ─────────────────────────────────────────────
-$options = new Options();
-$options->set('isRemoteEnabled', false);
-$options->set('defaultFont', 'DejaVu Sans');
-
-$dompdf = new Dompdf($options);
-$dompdf->loadHtml($html);
-$dompdf->setPaper('A4', 'portrait');
-$dompdf->render();
-
-// "inline" opens it in the browser tab (viewable, and still
-// downloadable/printable from there); switch to "attachment" if you'd
-// rather it force-download immediately instead.
-$dompdf->stream($invoiceNo . '.pdf', ['Attachment' => false]);
+</html>
