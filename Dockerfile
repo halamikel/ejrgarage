@@ -6,8 +6,18 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
+# Install Composer (needed for dompdf, used to generate real PDF
+# receipts instead of relying on the browser's print-to-PDF dialog)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 # Copy project files
 COPY . /var/www/html/
+
+WORKDIR /var/www/html
+
+# Install PHP dependencies (dompdf). --no-dev keeps the image lean;
+# --no-interaction avoids the build hanging waiting for prompts.
+RUN composer install --no-dev --no-interaction --optimize-autoloader
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html
