@@ -60,7 +60,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <div class="collapse navbar-collapse" id="navContent">
       <ul class="navbar-nav ms-auto align-items-lg-center me-lg-3">
         <li class="nav-item"><a class="nav-link" href="/index.php">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="/booking.php">Book Appointment</a></li>
+        <li class="nav-item"><a class="nav-link" href="/booking-details.php">Book Appointment</a></li>
          <li class="nav-item"><a class="nav-link" href="/available_parts.php">Available Parts</a></li>
         <li class="nav-item"><a class="nav-link" href="/about-us.php">About Us</a></li>
         <li class="nav-item"><a class="nav-link" href="/contact.php">Contact</a></li>

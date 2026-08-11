@@ -44,7 +44,11 @@
         <i class="bi bi-info-circle me-1"></i> You may select up to <strong>5 services</strong> per booking.
       </div>
 
-      <div class="text-end mt-4">
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <button type="button" class="btn btn-outline-secondary px-4 fw-bold"
+                onclick="window.location.href='booking-details.php'">
+          <i class="bi bi-arrow-left me-1"></i> Back to Details
+        </button>
         <button class="btn btn-next px-5">Next <i class="bi bi-arrow-right ms-1"></i></button>
       </div>
 
