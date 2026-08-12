@@ -82,6 +82,20 @@ if ((int)($job['mechanic_user_id'] ?? 0) !== $userId) {
 }
 
 // ── Update status ──────────────────────────────────────────────
+// Self-healing schema: appointments.status was created too narrow
+// (VARCHAR(9)) to hold 'In Progress' (11 chars) or 'Cancelled'/
+// 'Completed'/'Confirmed' (9 chars exactly, right at the edge).
+// Widen it once so every real status in the app's canonical set fits.
+$colInfo = $conn->query("SHOW COLUMNS FROM appointments LIKE 'status'");
+if ($colInfo) {
+    $col = $colInfo->fetch_assoc();
+    $isWideEnough = $col && preg_match('/^(?:var)?char\((\d+)\)/i', $col['Type'], $m) && (int)$m[1] >= 20;
+    if ($col && !$isWideEnough) {
+        // Covers both a too-narrow VARCHAR and a too-restrictive ENUM.
+        $conn->query("ALTER TABLE appointments MODIFY status VARCHAR(20) NOT NULL DEFAULT 'Pending'");
+    }
+}
+
 $upd = $conn->prepare("UPDATE appointments SET status = ? WHERE id = ?");
 $upd->bind_param("si", $status, $jobId);
 if (!$upd->execute()) {
