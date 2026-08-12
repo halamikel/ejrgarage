@@ -13,7 +13,7 @@
  * api/admin/get_full_site_data.php and api/admin/manage_mechanics.php.
  *
  * Response: {status, jobs: [{id, service_type, vehicle_brand, vehicle_model,
- * plate_number, customer_name, appointment_date, status}]}
+ * plate_number, customer_name, customer_phone, appointment_date, status}]}
  */
 header('Content-Type: application/json');
 require_once 'db_config.php';
@@ -112,7 +112,7 @@ if ($mechId === null) {
 // ── Fetch assigned jobs ───────────────────────────────────────────
 $query = "SELECT a.id, a.service_type, a.appointment_date, a.status,
                  v.brand AS vehicle_brand, v.model AS vehicle_model, v.plate_number,
-                 u.full_name AS customer_name
+                 u.full_name AS customer_name, u.phone AS customer_phone
           FROM appointments a
           LEFT JOIN vehicles v ON a.vehicle_id = v.id
           LEFT JOIN users u ON a.user_id = u.id
