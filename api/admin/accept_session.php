@@ -1,176 +1,71 @@
 <?php
-
 session_start();
-
+include '../db_config.php';
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../db_config.php';
 
-require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
-require_once __DIR__ . '/../../includes/php-jwt/Key.php';
-
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-
-
-// ============================================================
-// ADMIN AUTHENTICATION
-// ============================================================
-
-$headers = array_change_key_case(
-    getallheaders(),
-    CASE_LOWER
-);
-
-$auth = $headers['authorization']
-    ?? $_SERVER['HTTP_AUTHORIZATION']
-    ?? '';
-
-$adminId = 0;
-$isAdmin = false;
-
-
-if (
-    preg_match(
-        '/bearer\s(\S+)/i',
-        $auth,
-        $m
-    )
-) {
-
+// -- JWT Auth --
+$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
+$auth       = $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+$adminId    = 0;
+$isAdmin    = false;
+if (preg_match('/bearer\\s(\\S+)/i', $auth, $m)) {
     try {
-
-        $decoded = JWT::decode(
-            $m[1],
-            new Key(JWT_SECRET, 'HS256')
-        );
-
-        $adminId = (int)($decoded->uid ?? 0);
-
-        $role = (int)($decoded->role ?? 0);
-
-        $isAdmin =
-            ($role === 2 || $adminId === 21);
-
-    } catch (Exception $e) {
-
-        $isAdmin = false;
-
-    }
+        $decoded = JWT::decode($m[1], new Key(JWT_SECRET, 'HS256'));
+        $adminId = (int)($decoded->uid  ?? 0);
+        $role    = (int)($decoded->role ?? 0);
+        $isAdmin = ($role === 2 || $adminId === 21);
+    } catch (Exception $e) {}
 }
-
-
 if (!$isAdmin) {
-
     http_response_code(403);
-
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Admin access required.'
-    ]);
-
+    echo json_encode(['status' => 'error', 'message' => 'Admin access required.']);
     exit;
 }
+$current_user_id  = $adminId;
+$current_admin_id = $adminId;
+$is_admin         = true;
 
+$data    = json_decode(file_get_contents('php://input'), true);
+$user_id = isset($data['user_id']) ? (int)$data['user_id'] : 0;
+$action  = $data['action'] ?? ''; // 'accept' or 'decline'
 
-// ============================================================
-// READ REQUEST
-// ============================================================
-
-$data = json_decode(
-    file_get_contents('php://input'),
-    true
-) ?? [];
-
-$user_id = isset($data['user_id'])
-    ? (int)$data['user_id']
-    : 0;
-
-
-// ============================================================
-// VALIDATE USER
-// ============================================================
-
-if (!$user_id) {
-
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid user'
-    ]);
-
+if (!$user_id || !in_array($action, ['accept', 'decline'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid data']);
     exit;
 }
-
-
-// ============================================================
-// LIVE CHAT
-// ============================================================
-//
-// ACCEPT / DECLINE HAS BEEN REMOVED.
-//
-// This endpoint now simply makes sure that the selected
-// customer is in live chat mode.
-//
-// ============================================================
 
 try {
+    if ($action === 'accept') {
+        // Set user to live mode
+        $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
 
-    $stmt = $conn->prepare(
-        "UPDATE users
-         SET chat_session = 'live'
-         WHERE id = ?"
-    );
+        // Notify user that admin accepted
+        $msg  = "An admin has joined the chat. How can we help you?";
+        $ins  = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
+        $ins->bind_param("is", $user_id, $msg);
+        $ins->execute();
 
-    $stmt->bind_param(
-        "i",
-        $user_id
-    );
+        echo json_encode(['status' => 'success', 'message' => 'Session accepted']);
 
-    $stmt->execute();
+    } elseif ($action === 'decline') {
+        // Reset back to bot mode
+        $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
 
+        // Notify user that request was declined
+        $msg  = "Sorry, no agents are available right now. Our bot will continue to assist you.";
+        $ins  = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
+        $ins->bind_param("is", $user_id, $msg);
+        $ins->execute();
 
-    /*
-     * Send a message informing the customer that the
-     * admin is available.
-     *
-     * We do not use "accepted" or "declined".
-     */
-
-    $msg =
-        "An EJR Garage admin is now available to chat with you. How can we help you?";
-
-
-    $ins = $conn->prepare(
-        "INSERT INTO ejr_chat
-        (user_id, sender, message)
-        VALUES (?, 'admin', ?)"
-    );
-
-    $ins->bind_param(
-        "is",
-        $user_id,
-        $msg
-    );
-
-    $ins->execute();
-
-
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Live chat started',
-        'mode' => 'live'
-    ]);
-
-
+        echo json_encode(['status' => 'success', 'message' => 'Session declined']);
+    }
 } catch (Exception $e) {
-
     http_response_code(500);
-
-    echo json_encode([
-        'status' => 'error',
-        'message' => $e->getMessage()
-    ]);
-
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
-
 ?>
