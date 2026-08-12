@@ -946,42 +946,134 @@ function toggleChat() {
 // SESSION UI
 // ============================================================
 
+// ── Update UI based on session state ────────────────────────
 function applySessionUI(session) {
+    currentChatMode = session;
 
-    // The only active customer chat states are bot and live.
-    // A live-agent request starts the live chat immediately.
     const waiting = document.getElementById('waitingIndicator');
     const live = document.getElementById('liveIndicator');
     const statusLabel = document.getElementById('chatStatusLabel');
     const btnContainer = document.getElementById('dynamicButtonContainer');
+    const chatOptions = document.getElementById('chatOptions');
+    const endSessionBar = document.getElementById('userEndSessionBar');
 
-    currentChatMode = session === 'live' ? 'live' : 'bot';
+    // ---------------------------------------------------------
+    // LIVE CHAT MODE
+    // ---------------------------------------------------------
+    if (session === 'live') {
 
-    if (lastChatSession === 'live' && session === 'bot') {
-        resetChatUI();
+        lastChatSession = 'live';
+
+        // Hide the bot quick-question buttons
+        if (chatOptions) {
+            chatOptions.style.display = 'none';
+        }
+
+        // Show live status
+        if (waiting) {
+            waiting.style.display = 'none';
+        }
+
+        if (live) {
+            live.style.display = 'block';
+        }
+
+        if (statusLabel) {
+            statusLabel.textContent = 'Live with Admin';
+        }
+
+        // Show the End Live Session button
+        if (endSessionBar) {
+            endSessionBar.style.display = 'block';
+        }
+
+        // Make sure the dynamic button is hidden
+        if (btnContainer) {
+            btnContainer.style.display = 'none';
+        }
+
+        return;
     }
 
-    lastChatSession = session;
+    // ---------------------------------------------------------
+    // WAITING MODE
+    // ---------------------------------------------------------
+    if (session === 'waiting') {
 
-    // No waiting/approval state is used anymore.
-    if (waiting) waiting.style.display = 'none';
+        lastChatSession = 'waiting';
 
-    if (session === 'live') {
-        btnContainer.innerHTML = `
-            <button
-                onclick="userEndSession()"
-                class="opt-btn"
-                style="border-color:#e62429;color:#e62429;width:100%;justify-content:center;"
-            >
-                <i class="bi bi-x-circle me-1"></i>
-                End Live Session
-            </button>
-        `;
+        // Keep the bot options visible while waiting
+        if (chatOptions) {
+            chatOptions.style.display = 'flex';
+        }
 
-        if (live) live.style.display = 'block';
-        statusLabel.textContent = '🟢 Live with Admin';
+        if (waiting) {
+            waiting.style.display = 'block';
+        }
 
-    } else {
+        if (live) {
+            live.style.display = 'none';
+        }
+
+        if (statusLabel) {
+            statusLabel.textContent = 'Connecting to Live Agent...';
+        }
+
+        if (endSessionBar) {
+            endSessionBar.style.display = 'none';
+        }
+
+        // Replace live-agent button with cancel button
+        if (btnContainer) {
+            btnContainer.style.display = 'block';
+
+            btnContainer.innerHTML = `
+                <button
+                    onclick="cancelLiveRequest()"
+                    class="opt-btn"
+                    style="border-color:#6c757d;color:#6c757d;width:100%;justify-content:center;"
+                >
+                    <i class="bi bi-x-circle me-1"></i>
+                    Cancel Request
+                </button>
+            `;
+        }
+
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // BOT MODE
+    // ---------------------------------------------------------
+
+    lastChatSession = 'bot';
+
+    // Show bot quick-question buttons again
+    if (chatOptions) {
+        chatOptions.style.display = 'flex';
+    }
+
+    if (waiting) {
+        waiting.style.display = 'none';
+    }
+
+    if (live) {
+        live.style.display = 'none';
+    }
+
+    if (statusLabel) {
+        statusLabel.textContent = 'Bot Mode • Always here to help';
+    }
+
+    // Hide end-session button
+    if (endSessionBar) {
+        endSessionBar.style.display = 'none';
+    }
+
+    // Show Talk to Live Agent button
+    if (btnContainer) {
+        btnContainer.style.display = 'block';
+
         btnContainer.innerHTML = `
             <button
                 id="btnRequestLive"
@@ -993,41 +1085,37 @@ function applySessionUI(session) {
                 Talk to a Live Agent
             </button>
         `;
-
-        if (live) live.style.display = 'none';
-        statusLabel.textContent = 'Bot Mode • Always here to help';
     }
 }
-
-
 
 // ============================================================
 // RESET CHAT
 // ============================================================
 
+// ── Reset chat to fresh bot state ────────────────────────────
 function resetChatUI() {
-
-    const body =
-        document.getElementById(
-            'chatBody'
-        );
-
+    const body = document.getElementById('chatBody');
 
     body.innerHTML = `
-
         <div class="ejr-bot-msg">
-
-            Your session with the admin has ended.
-            Bot mode is now re-enabled.
-            How else can I help you? 😊
-
+            Your session with the admin has ended. Bot mode is now re-enabled. How else can I help you? 😊
         </div>
-
     `;
-
 
     body.scrollTop = 0;
 
+    // Restore bot buttons
+    const chatOptions = document.getElementById('chatOptions');
+
+    if (chatOptions) {
+        chatOptions.style.display = 'flex';
+    }
+
+    const endSessionBar = document.getElementById('userEndSessionBar');
+
+    if (endSessionBar) {
+        endSessionBar.style.display = 'none';
+    }
 }
 
 
