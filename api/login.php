@@ -81,6 +81,29 @@ if ($user) {
         ];
         $jwt = JWT::encode($payload, JWT_SECRET, 'HS256');
 
+        // For mechanics (role_id 3), tell the app their current
+        // available/unavailable state so the toggle on
+        // mechanic_main_screen.dart reflects reality on load instead of
+        // always defaulting to unavailable. Wrapped defensively — the
+        // mechanics table/user_id column self-heals via
+        // get_mechanic_jobs.php / update_availability.php, but login
+        // must never break if that hasn't run yet on a fresh install.
+        $isAvailable = 0;
+        if ((int)$user['role_id'] === 3) {
+            try {
+                $mStmt = $conn->prepare("SELECT status FROM mechanics WHERE user_id = ? LIMIT 1");
+                $mStmt->bind_param("i", $user['id']);
+                $mStmt->execute();
+                $mRow = $mStmt->get_result()->fetch_assoc();
+                if ($mRow && $mRow['status'] === 'available') {
+                    $isAvailable = 1;
+                }
+            } catch (\Throwable $e) {
+                // mechanics table/user_id column not created yet — fine,
+                // it self-heals on first mechanic-app API call.
+            }
+        }
+
         echo json_encode([
             "status"        => "success",
             "token"         => $jwt,
@@ -95,6 +118,7 @@ if ($user) {
                 "address"          => $user['address'],
                 "profile_picture"  => $user['profile_picture'],
                 "role_id"          => $user['role_id'],
+                "is_available"     => $isAvailable,
                 "is_phone_verified"=> $user['is_phone_verified'],
                 "created_at"       => $user['created_at'],
             ]

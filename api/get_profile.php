@@ -35,6 +35,24 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         $result = $stmt->get_result();
 
         if ($user = $result->fetch_assoc()) {
+            // Same is_available lookup as login.php — keeps the mechanic
+            // app's availability toggle accurate after a splash-screen
+            // auto-login / profile refresh, not just a fresh login.
+            $user['is_available'] = 0;
+            if ((int)$user['role_id'] === 3) {
+                try {
+                    $mStmt = $conn->prepare("SELECT status FROM mechanics WHERE user_id = ? LIMIT 1");
+                    $mStmt->bind_param("i", $userId);
+                    $mStmt->execute();
+                    $mRow = $mStmt->get_result()->fetch_assoc();
+                    if ($mRow && $mRow['status'] === 'available') {
+                        $user['is_available'] = 1;
+                    }
+                } catch (\Throwable $e) {
+                    // mechanics table/user_id column not created yet.
+                }
+            }
+
             echo json_encode([
                 "status" => "success",
                 "user" => $user
