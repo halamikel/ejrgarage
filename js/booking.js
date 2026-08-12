@@ -288,7 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-                window.location.href = "booking-details.php";
+                window.location.href = "booking-confirmation.php";
 
             });
 
