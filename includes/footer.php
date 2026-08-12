@@ -1500,16 +1500,15 @@ function sendChatMessage() {
 // ── Quick question buttons ───────────────────────────────────
 function askQuickQuestion(question) {
 
-    // Check if the user is logged in
     const token = localStorage.getItem('jwt_token');
 
-    // If NOT logged in, redirect to login page
+    // Not logged in → go to login
     if (!token) {
         window.location.href = '/login.php';
         return;
     }
 
-    // If logged in, continue with the chatbot normally
+    // Logged in → continue normally
     document.getElementById('chatInput').value = question;
     sendChatMessage();
 }
