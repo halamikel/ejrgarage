@@ -1328,7 +1328,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 // ==================================================
-                // GO TO CONFIRMATION
+                // GO TO SERVICE
                 // ==================================================
 
                 window.location.href =
