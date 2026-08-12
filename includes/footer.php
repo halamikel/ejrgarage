@@ -1269,18 +1269,13 @@ function appendMessage(
             <div style="margin-top:12px;">
 
                 <button
-                    type="button"
-                    class="ejr-get-started-btn"
-                    onclick="
-                        window.location.href='booking-details.php'
-                    "
-                >
-
-                    <i class="bi bi-calendar-check me-1"></i>
-
-                    Get Started
-
-                </button>
+    type="button"
+    class="ejr-get-started-btn"
+    onclick="startBookingFromChat()"
+>
+    <i class="bi bi-calendar-check me-1"></i>
+    Get Started
+</button>
 
             </div>
 
@@ -1323,11 +1318,26 @@ function showTyping(show) {
 
 }
 
+function startBookingFromChat() {
+    const token = localStorage.getItem('jwt_token');
+
+    if (!token) {
+        window.location.href = '/login.php';
+        return;
+    }
+
+    window.location.href = '/booking-details.php';
+}
 
 
 // ============================================================
 // SEND CHAT MESSAGE
 // ============================================================
+
+// ============================================================
+// BOOKING GET STARTED BUTTON
+// ============================================================
+
 
 function sendChatMessage() {
 
