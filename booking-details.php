@@ -74,7 +74,7 @@
               id="btnAddNewManual"
             >
               <i class="bi bi-plus-circle me-1"></i>
-              Use a different vehicle
+              Add a vehicle
             </button>
 
           </div>
