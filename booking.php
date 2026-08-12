@@ -51,7 +51,7 @@ include 'includes/header.php';
 
             <!-- STEP 1 -->
 
-            <div class="step active">
+            <div class="step">
                 1
             </div>
 
@@ -65,7 +65,7 @@ include 'includes/header.php';
 
             <!-- STEP 2 -->
 
-            <div class="step">
+            <div class="step active">
                 2
             </div>
 

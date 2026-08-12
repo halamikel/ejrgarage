@@ -64,7 +64,7 @@
       </div>
       
       <div class="confirmation-actions text-center mt-5 d-flex flex-column flex-md-row justify-content-center gap-3">
-    <button type="button" class="btn btn-outline-secondary px-4" onclick="window.location.href='booking-details.php'">Back to Details</button>
+    <button type="button" class="btn btn-outline-secondary px-4" onclick="window.location.href='booking.php'">Back to Details</button>
     <button type="button" id="btnFinalize" class="btn btn-next px-5 fw-bold text-white" style="background: #e62429; border: none;">CONFIRM APPOINTMENT</button>
 </div>
       
