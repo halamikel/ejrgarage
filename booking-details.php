@@ -1,4 +1,3 @@
-```php
 <?php 
   $pageTitle = "Vehicle Details - EJR Garage";
   $extraJs = '<script src="js/booking.js"></script>';
