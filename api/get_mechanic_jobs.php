@@ -110,14 +110,15 @@ if ($mechId === null) {
 }
 
 // ── Fetch assigned jobs ───────────────────────────────────────────
-$query = "SELECT a.id, a.user_id, a.service_type, a.appointment_date, a.status,
-                 v.brand AS vehicle_brand, v.model AS vehicle_model, v.plate_number,
-                 u.full_name AS customer_name, u.phone AS customer_phone
-          FROM appointments a
-          LEFT JOIN vehicles v ON a.vehicle_id = v.id
-          LEFT JOIN users u ON a.user_id = u.id
-          WHERE a.mechanic_id = ?
-          ORDER BY a.appointment_date DESC";
+$query = "SELECT a.id, a.user_id, a.service_type, a.appointment_date, a.status, 
+          v.brand AS vehicle_brand, v.model AS vehicle_model, v.plate_number, 
+          u.full_name AS customer_name, u.phone AS customer_phone, 
+          u.profile_picture AS customer_profile_picture
+FROM appointments a
+LEFT JOIN vehicles v ON a.vehicle_id = v.id
+LEFT JOIN users u ON a.user_id = u.id
+WHERE a.mechanic_id = ?
+ORDER BY a.appointment_date DESC";
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $mechId);
