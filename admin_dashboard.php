@@ -132,7 +132,7 @@ include 'includes/header.php';
             </button>
             <button class="ejr-tab-btn" data-ejr-tab="tab-inquiries">
                 <i class="bi bi-envelope-open"></i>
-                <span>Inquiries</span>
+                <span>Part Inquiries</span>
                 <span class="ejr-tab-badge" id="badgeInquiries">0</span>
             </button>
             <button class="ejr-tab-btn" data-ejr-tab="tab-orders">
