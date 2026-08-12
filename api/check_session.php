@@ -170,16 +170,43 @@ if (in_array($type, ['chat', 'get_messages', 'end_session'])) {
     $user_msg = trim($input['message'] ?? '');
 
     if ($action === 'request_live') {
-        // Clear leftover messages from a previous ended live session so
-        // they don't reappear (both for the user and in the admin's
-        // chat view) when a new live request starts.
-        $clear = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
-        $clear->bind_param("i", $userId); $clear->execute();
 
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        echo json_encode(["status" => "success", "reply" => "You are now connected to a live agent. How can we help you?", "mode" => "live"]); exit;
-    }
+    // Start live chat immediately.
+    // No admin acceptance or decline is required.
+
+    // Clear previous chat history so every new live session starts clean.
+    $clear = $conn->prepare(
+        "DELETE FROM ejr_chat WHERE user_id = ?"
+    );
+    $clear->bind_param("i", $userId);
+    $clear->execute();
+
+    // Immediately put the customer into LIVE mode.
+    $stmt = $conn->prepare(
+        "UPDATE users SET chat_session = 'live' WHERE id = ?"
+    );
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+
+    // Add a system message so the admin knows a live chat started.
+    $sysMsg = "A customer has started a live chat.";
+
+    $stmt = $conn->prepare(
+        "INSERT INTO ejr_chat (user_id, sender, message)
+         VALUES (?, 'admin', ?)"
+    );
+
+    $stmt->bind_param("is", $userId, $sysMsg);
+    $stmt->execute();
+
+    echo json_encode([
+        "status" => "success",
+        "reply" => "You are now connected to EJR Garage support. How can we help you?",
+        "mode" => "live"
+    ]);
+
+    exit;
+}
 
     if ($action === 'cancel_live_request') {
         $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
