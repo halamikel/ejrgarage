@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         // ========================================================
-        // NEXT BUTTON
+        // NEXT BUTTON TO CONFIRMATION
         // ========================================================
 
         if (!step1Initialized) {
