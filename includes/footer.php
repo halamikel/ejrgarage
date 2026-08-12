@@ -1497,15 +1497,21 @@ function sendChatMessage() {
 // QUICK QUESTION
 // ============================================================
 
+// ── Quick question buttons ───────────────────────────────────
 function askQuickQuestion(question) {
 
-    document.getElementById(
-        'chatInput'
-    ).value = question;
+    // Check if the user is logged in
+    const token = localStorage.getItem('jwt_token');
 
+    // If NOT logged in, redirect to login page
+    if (!token) {
+        window.location.href = '/login.php';
+        return;
+    }
 
+    // If logged in, continue with the chatbot normally
+    document.getElementById('chatInput').value = question;
     sendChatMessage();
-
 }
 
 
