@@ -1332,7 +1332,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 // ==================================================
 
                 window.location.href =
-                    "booking-confirmation.php";
+                    "booking.php";
 
             }
         );
