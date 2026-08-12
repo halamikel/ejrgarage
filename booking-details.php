@@ -1,3 +1,4 @@
+```php
 <?php 
   $pageTitle = "Vehicle Details - EJR Garage";
   $extraJs = '<script src="js/booking.js"></script>';
@@ -45,9 +46,13 @@
         <!-- ==========================================
              SAVED VEHICLES
         =========================================== -->
+
         <div id="savedVehiclesSection" class="mb-4" style="display:none;">
 
-          <label class="form-label fw-bold text-dark" for="savedVehicleSelect">
+          <label
+            class="form-label fw-bold text-dark"
+            for="savedVehicleSelect"
+          >
             <i class="bi bi-car-front me-2 text-danger"></i>
             Select from Your Garage
           </label>
@@ -57,10 +62,13 @@
             id="savedVehicleSelect"
             style="border-color:#e62429;"
           >
-            <option value="">-- Choose a saved vehicle --</option>
+            <option value="">
+              -- Choose a saved vehicle --
+            </option>
           </select>
 
           <div class="text-end mt-2">
+
             <button
               type="button"
               class="btn btn-sm text-danger fw-bold"
@@ -69,6 +77,7 @@
               <i class="bi bi-plus-circle me-1"></i>
               Use a different vehicle
             </button>
+
           </div>
 
         </div>
@@ -77,19 +86,31 @@
         <!-- ==========================================
              MANUAL VEHICLE FORM
         =========================================== -->
+
         <div id="manualVehicleForm">
 
           <p class="text-muted small mb-3">
+
             <i class="bi bi-info-circle me-1"></i>
+
             Fill in your vehicle information below.
+
           </p>
+
 
           <div class="row g-3">
 
-            <!-- CAR BRAND -->
+
+            <!-- ==========================================
+                 CAR BRAND
+            =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="brand">
+              <label
+                class="form-label"
+                for="brand"
+              >
                 Car Brand
               </label>
 
@@ -154,11 +175,18 @@
             <!-- ==========================================
                  CAR MODEL
             =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="model">
+              <label
+                class="form-label"
+                for="model"
+              >
                 Car Model
               </label>
+
+
+              <!-- Normal model dropdown -->
 
               <select
                 class="form-select"
@@ -172,7 +200,23 @@
 
               </select>
 
-              <small class="text-muted d-block mt-1">
+
+              <!-- Model textbox shown when Brand = Other -->
+
+              <input
+                type="text"
+                class="form-control"
+                id="modelOther"
+                placeholder="Enter your car model"
+                style="display:none;"
+                disabled
+              >
+
+
+              <small
+                class="text-muted d-block mt-1"
+                id="modelHelpText"
+              >
                 Models are based on vehicles commonly
                 sold/registered in the Philippines.
               </small>
@@ -180,10 +224,16 @@
             </div>
 
 
-            <!-- YEAR -->
+            <!-- ==========================================
+                 YEAR
+            =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="year">
+              <label
+                class="form-label"
+                for="year"
+              >
                 Year Model
               </label>
 
@@ -201,10 +251,16 @@
             </div>
 
 
-            <!-- PLATE NUMBER -->
+            <!-- ==========================================
+                 PLATE NUMBER
+            =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="plate">
+              <label
+                class="form-label"
+                for="plate"
+              >
                 Plate Number
               </label>
 
@@ -218,10 +274,16 @@
             </div>
 
 
-            <!-- TRANSMISSION -->
+            <!-- ==========================================
+                 TRANSMISSION
+            =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="transmission">
+              <label
+                class="form-label"
+                for="transmission"
+              >
                 Transmission
               </label>
 
@@ -234,15 +296,15 @@
                   Select transmission
                 </option>
 
-                <option>
+                <option value="Automatic">
                   Automatic
                 </option>
 
-                <option>
+                <option value="Manual">
                   Manual
                 </option>
 
-                <option>
+                <option value="CVT">
                   CVT
                 </option>
 
@@ -251,10 +313,16 @@
             </div>
 
 
-            <!-- FUEL TYPE -->
+            <!-- ==========================================
+                 FUEL TYPE
+            =========================================== -->
+
             <div class="col-6 col-md-6">
 
-              <label class="form-label" for="fuel">
+              <label
+                class="form-label"
+                for="fuel"
+              >
                 Fuel Type
               </label>
 
@@ -267,19 +335,19 @@
                   Select fuel type
                 </option>
 
-                <option>
+                <option value="Gasoline">
                   Gasoline
                 </option>
 
-                <option>
+                <option value="Diesel">
                   Diesel
                 </option>
 
-                <option>
+                <option value="Hybrid">
                   Hybrid
                 </option>
 
-                <option>
+                <option value="Electric">
                   Electric
                 </option>
 
@@ -288,7 +356,10 @@
             </div>
 
 
-            <!-- BACK TO SAVED VEHICLES -->
+            <!-- ==========================================
+                 BACK TO SAVED VEHICLES
+            =========================================== -->
+
             <div
               class="col-12 text-end"
               id="backToSavedContainer"
@@ -302,6 +373,7 @@
               >
 
                 <i class="bi bi-arrow-left me-1"></i>
+
                 Back to my garage
 
               </button>
@@ -319,6 +391,7 @@
         <!-- ==========================================
              APPOINTMENT DATE
         =========================================== -->
+
         <div class="col-12 col-md-6">
 
           <label
@@ -327,6 +400,7 @@
           >
 
             <i class="bi bi-calendar3 me-1 text-danger"></i>
+
             Appointment Date
 
           </label>
@@ -363,6 +437,7 @@
         <!-- ==========================================
              ADDITIONAL NOTES
         =========================================== -->
+
         <div class="col-12 mt-3">
 
           <label
@@ -371,6 +446,7 @@
           >
 
             <i class="bi bi-chat-left-text me-1 text-danger"></i>
+
             Additional Notes
 
           </label>
@@ -388,6 +464,7 @@
         <!-- ==========================================
              ERROR MESSAGE
         =========================================== -->
+
         <div
           class="mt-3"
           id="errorMsg"
@@ -408,14 +485,15 @@
         <!-- ==========================================
              NEXT BUTTON
         =========================================== -->
+
         <div class="d-flex justify-content-end mt-5">
 
           <button
             type="submit"
             class="btn btn-next px-5 fw-bold text-white"
             style="
-              background: linear-gradient(45deg, #e62429, #ff6b00);
-              border: none;
+              background:linear-gradient(45deg,#e62429,#ff6b00);
+              border:none;
             "
           >
 
@@ -442,6 +520,7 @@
   font-weight: 600;
   color: #5f6b7a;
 }
+
 
 @media (max-width: 576px) {
 
@@ -476,3 +555,4 @@
 
 
 <?php include 'includes/footer.php'; ?>
+```
