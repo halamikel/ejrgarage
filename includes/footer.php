@@ -348,7 +348,7 @@ if (localStorage.getItem('jwt_token')) {
                 style="width:11px;height:11px;"
             ></span>
 
-            Waiting for an admin to accept your request...
+            Live chat starts immediately when you request an agent.
 
         </div>
 
@@ -948,149 +948,55 @@ function toggleChat() {
 
 function applySessionUI(session) {
 
-    currentChatMode = session;
+    // The only active customer chat states are bot and live.
+    // A live-agent request starts the live chat immediately.
+    const waiting = document.getElementById('waitingIndicator');
+    const live = document.getElementById('liveIndicator');
+    const statusLabel = document.getElementById('chatStatusLabel');
+    const btnContainer = document.getElementById('dynamicButtonContainer');
 
+    currentChatMode = session === 'live' ? 'live' : 'bot';
 
-    const waiting =
-        document.getElementById(
-            'waitingIndicator'
-        );
-
-
-    const live =
-        document.getElementById(
-            'liveIndicator'
-        );
-
-
-    const statusLabel =
-        document.getElementById(
-            'chatStatusLabel'
-        );
-
-
-    const btnContainer =
-        document.getElementById(
-            'dynamicButtonContainer'
-        );
-
-
-    if (
-        lastChatSession === 'live' &&
-        session === 'bot'
-    ) {
-
+    if (lastChatSession === 'live' && session === 'bot') {
         resetChatUI();
-
     }
-
 
     lastChatSession = session;
 
+    // No waiting/approval state is used anymore.
+    if (waiting) waiting.style.display = 'none';
 
-
-    if (session === 'waiting') {
-
+    if (session === 'live') {
         btnContainer.innerHTML = `
-
-            <button
-                onclick="cancelLiveRequest()"
-                class="opt-btn"
-                style="
-                    border-color:#6c757d;
-                    color:#6c757d;
-                    width:100%;
-                    justify-content:center;
-                "
-            >
-
-                <i class="bi bi-x-circle me-1"></i>
-
-                Cancel Request
-
-            </button>
-
-        `;
-
-
-        waiting.style.display = 'block';
-
-        live.style.display = 'none';
-
-        statusLabel.textContent =
-            'Waiting for admin...';
-
-    }
-
-
-    else if (session === 'live') {
-
-        btnContainer.innerHTML = `
-
             <button
                 onclick="userEndSession()"
                 class="opt-btn"
-                style="
-                    border-color:#e62429;
-                    color:#e62429;
-                    width:100%;
-                    justify-content:center;
-                "
+                style="border-color:#e62429;color:#e62429;width:100%;justify-content:center;"
             >
-
                 <i class="bi bi-x-circle me-1"></i>
-
                 End Live Session
-
             </button>
-
         `;
 
+        if (live) live.style.display = 'block';
+        statusLabel.textContent = '🟢 Live with Admin';
 
-        waiting.style.display = 'none';
-
-        live.style.display = 'block';
-
-        statusLabel.textContent =
-            '🟢 Live with Admin';
-
-    }
-
-
-    else {
-
+    } else {
         btnContainer.innerHTML = `
-
             <button
                 id="btnRequestLive"
                 onclick="requestLiveChat()"
                 class="opt-btn"
-                style="
-                    border-color:#1e2a36;
-                    color:#1e2a36;
-                    width:100%;
-                    justify-content:center;
-                "
+                style="border-color:#1e2a36;color:#1e2a36;width:100%;justify-content:center;"
             >
-
                 <i class="bi bi-headset me-1"></i>
-
                 Talk to a Live Agent
-
             </button>
-
         `;
 
-
-        waiting.style.display = 'none';
-
-        live.style.display = 'none';
-
-        statusLabel.textContent =
-            'Bot Mode • Always here to help';
-
+        if (live) live.style.display = 'none';
+        statusLabel.textContent = 'Bot Mode • Always here to help';
     }
-
 }
 
 
@@ -1512,88 +1418,35 @@ function askQuickQuestion(question) {
 
 function requestLiveChat() {
 
-    const liveToken =
-        localStorage.getItem(
-            'jwt_token'
-        ) || '';
+    const liveToken = localStorage.getItem('jwt_token') || '';
 
+    fetch('/api/check_session.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + liveToken
+        },
+        body: JSON.stringify({
+            type: 'chat',
+            action: 'request_live'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            applySessionUI('live');
 
-    fetch(
-        '/api/check_session.php',
-        {
-            method:'POST',
+            appendMessage(
+                data.reply || 'You are now connected to a live agent. How can we help you?',
+                'admin'
+            );
 
-            headers:{
-                'Content-Type':
-                    'application/json',
-
-                'Authorization':
-                    'Bearer ' +
-                    liveToken
-            },
-
-            body:JSON.stringify({
-
-                type:'chat',
-
-                action:'request_live'
-
-            })
-
+            loadMessages();
+        } else {
+            console.error('Live request error:', data.message || 'Unknown error');
         }
-    )
-
-
-    .then(
-        res => res.json()
-    )
-
-
-    .then(
-        data => {
-
-            if (
-                data.status ===
-                'success'
-            ) {
-
-                document.getElementById(
-                    'chatBody'
-                ).innerHTML = `
-
-                    <div class="ejr-bot-msg">
-
-                        <i
-                            class="bi bi-headset me-1"
-                        ></i>
-
-                        Request sent!
-                        Please wait while an admin
-                        connects...
-
-                    </div>
-
-                `;
-
-
-                applySessionUI(
-                    'waiting'
-                );
-
-            }
-
-        }
-    )
-
-
-    .catch(
-        err =>
-            console.error(
-                'Live request error:',
-                err
-            )
-    );
-
+    })
+    .catch(err => console.error('Live request error:', err));
 }
 
 
@@ -1601,94 +1454,6 @@ function requestLiveChat() {
 // ============================================================
 // CANCEL LIVE REQUEST
 // ============================================================
-
-function cancelLiveRequest() {
-
-    const cancelToken =
-        localStorage.getItem(
-            'jwt_token'
-        ) || '';
-
-
-    fetch(
-        '/api/check_session.php',
-        {
-            method:'POST',
-
-            headers:{
-                'Content-Type':
-                    'application/json',
-
-                'Authorization':
-                    'Bearer ' +
-                    cancelToken
-            },
-
-            body:JSON.stringify({
-
-                type:'chat',
-
-                action:'cancel_live_request'
-
-            })
-
-        }
-    )
-
-
-    .then(
-        res => res.json()
-    )
-
-
-    .then(
-        data => {
-
-            if (
-                data.status ===
-                'success'
-            ) {
-
-                suppressNextPoll =
-                    true;
-
-
-                applySessionUI(
-                    'bot'
-                );
-
-
-                document.getElementById(
-                    'chatBody'
-                ).innerHTML = `
-
-                    <div class="ejr-bot-msg">
-
-                        Hi! 👋 Welcome to
-                        <strong>EJR Garage</strong>.
-                        How can I help you today?
-
-                    </div>
-
-                `;
-
-            }
-
-        }
-    )
-
-
-    .catch(
-        err =>
-            console.error(
-                'Cancel request error:',
-                err
-            )
-    );
-
-}
-
-
 
 // ============================================================
 // END LIVE SESSION
@@ -1843,8 +1608,7 @@ setInterval(
 
 
         if (
-            currentChatMode !== 'live' &&
-            currentChatMode !== 'waiting'
+            currentChatMode !== 'live'
         ) {
 
             return;

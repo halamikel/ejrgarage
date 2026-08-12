@@ -61,7 +61,7 @@ if ($type === 'admin_get_chat_users') {
             FROM users u
             INNER JOIN ejr_chat c ON u.id = c.user_id
             WHERE c.id IN (SELECT MAX(id) FROM ejr_chat GROUP BY user_id)
-            AND u.chat_session IN ('waiting', 'live')
+            AND u.chat_session = 'live'
             AND u.id != ?
             ORDER BY c.created_at DESC";
     $stmt = $conn->prepare($sql);
@@ -105,21 +105,8 @@ if ($type === 'admin_send') {
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized']); exit;
     }
     $target_uid   = (int)($input['user_id'] ?? 0);
-    $admin_msg    = trim($input['message'] ?? '');
-    $admin_action = $input['action'] ?? 'send';
-    if ($admin_action === 'accept') {
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
-        $stmt->bind_param("i", $target_uid); $stmt->execute();
-        echo json_encode(['status' => 'success']); exit;
-    }
-    if ($admin_action === 'decline') {
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
-        $stmt->bind_param("i", $target_uid); $stmt->execute();
-        $declineMsg = "Sorry, no agents are available right now. Our bot will continue to assist you.";
-        $ins = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
-        $ins->bind_param("is", $target_uid, $declineMsg); $ins->execute();
-        echo json_encode(['status' => 'success']); exit;
-    }
+    $admin_msg = trim($input['message'] ?? '');
+    // Live-agent requests are already live. There is no accept/decline step.
     if (!empty($admin_msg)) {
         $stmt = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
         $stmt->bind_param("is", $target_uid, $admin_msg); $stmt->execute();
@@ -189,12 +176,9 @@ if (in_array($type, ['chat', 'get_messages', 'end_session'])) {
         $clear = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
         $clear->bind_param("i", $userId); $clear->execute();
 
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'waiting' WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
         $stmt->bind_param("i", $userId); $stmt->execute();
-        $sysMsg = "A user has requested live assistance.";
-        $stmt = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
-        $stmt->bind_param("is", $userId, $sysMsg); $stmt->execute();
-        echo json_encode(["status" => "success", "reply" => "Connecting to admin...", "mode" => "waiting"]); exit;
+        echo json_encode(["status" => "success", "reply" => "You are now connected to a live agent. How can we help you?", "mode" => "live"]); exit;
     }
 
     if ($action === 'cancel_live_request') {

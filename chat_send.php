@@ -16,14 +16,10 @@ if ($userId === 0) {
 }
 
 if ($action === 'request_live') {
-    $stmt = $conn->prepare("UPDATE users SET chat_session = 'waiting' WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
-    $sysMsg = "A user has requested live assistance.";
-    $stmt   = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
-    $stmt->bind_param("is", $userId, $sysMsg);
-    $stmt->execute();
-    echo json_encode(["status" => "success", "reply" => "Connecting to admin...", "mode" => "waiting"]);
+    echo json_encode(["status" => "success", "reply" => "You are now connected to a live agent. How can we help you?", "mode" => "live"]);
     exit;
 }
 

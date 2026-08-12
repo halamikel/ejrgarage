@@ -1155,189 +1155,654 @@ function deleteOrder(id) {
 // =============================================================
 
 function loadAdminChatUsers() {
-    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: JSON.stringify({type:'admin_get_chat_users'}) })
-        .then(res => {
-            if (!res.ok) throw new Error('Unauthorized');
-            return res.json();
+
+    fetch('api/check_session.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            type: 'admin_get_chat_users'
         })
-        .then(data => {
-            if (data.status !== 'success') throw new Error(data.message);
-            const list  = document.getElementById('adminChatUserList');
-            const users = data.users ?? [];
-
-            list.innerHTML = users.length
-                ? users.map(u => {
-                    const isWaiting = u.chat_session === 'waiting';
-                    const isLive    = u.chat_session === 'live';
-                    const isActive  = currentChatUserId == u.id;
-                    return `
-                    <div class="p-3 border-bottom chat-user-item ${isActive ? 'active-chat' : ''}"
-                         style="cursor:pointer;"
-                         data-id="${u.id}"
-                         data-name="${u.full_name.replace(/"/g, '&quot;')}"
-                         onclick="selectUserChat(this)">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-truncate" style="max-width:150px;">${u.full_name}</span>
-                            <div class="d-flex gap-1 align-items-center">
-                                ${u.unread_count > 0 ? `<span class="badge rounded-pill bg-danger">${u.unread_count}</span>` : ''}
-                                ${isWaiting ? `<span class="badge bg-warning text-dark">Waiting</span>` : ''}
-                                ${isLive    ? `<span class="badge bg-success">Live</span>` : ''}
-                            </div>
-                        </div>
-                        <small class="text-muted text-truncate d-block mb-2">${u.last_message || 'No messages yet'}</small>
-                        ${isWaiting ? `
-                        <div class="d-flex gap-2 mt-2" onclick="event.stopPropagation()">
-                            <button class="btn btn-sm btn-success flex-grow-1"
-                                    onclick="handleSession(${u.id}, 'accept', '${u.full_name.replace(/'/g, "\\'")}')">
-                                <i class="bi bi-check-lg me-1"></i>Accept
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger flex-grow-1"
-                                    onclick="handleSession(${u.id}, 'decline')">
-                                <i class="bi bi-x-lg me-1"></i>Decline
-                            </button>
-                        </div>` : ''}
-                    </div>`;
-                }).join('')
-                : '<div class="p-4 text-center text-muted">No active conversations.</div>';
-
-            const waitingCount = users.filter(u => u.chat_session === 'waiting').length;
-            document.getElementById('badgeChat').textContent = (data.total_unread ?? 0) + waitingCount;
-        })
-        .catch(err => {
-            console.error('Chat users error:', err.message);
-            document.getElementById('adminChatUserList').innerHTML =
-                '<div class="p-4 text-center text-danger small">Could not load chats.</div>';
-        });
-}
-
-function handleSession(userId, action, userName = 'User') {
-    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
-        body: JSON.stringify({ type: 'admin_send', user_id: userId, action })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') {
-            if (action === 'accept') {
-                currentChatUserId = userId;
-                document.getElementById('adminInputArea').classList.remove('d-none');
-                const titleEl = document.getElementById('chattingWithTitle');
-                if (titleEl) titleEl.innerText = 'Chatting with: ' + userName;
-                loadAdminMessages(userId);
-            }
-            loadAdminChatUsers();
-            Swal.fire({
-                toast: true, position: 'bottom-end',
-                icon: action === 'accept' ? 'success' : 'info',
-                title: action === 'accept' ? 'Session accepted!' : 'Session declined',
-                showConfirmButton: false, timer: 2000
-            });
-        } else {
-            Swal.fire('Error', data.message, 'error');
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Unable to load chat users.');
         }
+
+        return res.json();
     })
-    .catch(err => console.error('Session error:', err));
+    .then(data => {
+
+        if (data.status !== 'success') {
+            throw new Error(
+                data.message || 'Unable to load chat users.'
+            );
+        }
+
+        const list =
+            document.getElementById('adminChatUserList');
+
+        if (!list) {
+            return;
+        }
+
+        const users = data.users || [];
+
+        if (!users.length) {
+
+            list.innerHTML = `
+                <div class="p-4 text-center text-muted">
+                    No active conversations.
+                </div>
+            `;
+
+        } else {
+
+            list.innerHTML = users.map(user => {
+
+                const isActive =
+                    String(currentChatUserId) ===
+                    String(user.id);
+
+                const unread =
+                    parseInt(user.unread_count || 0);
+
+                const safeName =
+                    String(user.full_name || 'User')
+                        .replace(/"/g, '&quot;');
+
+                return `
+                    <div
+                        class="p-3 border-bottom chat-user-item
+                        ${isActive ? 'active-chat' : ''}"
+                        style="cursor:pointer;"
+                        data-id="${user.id}"
+                        data-name="${safeName}"
+                        onclick="selectUserChat(this)"
+                    >
+
+                        <div
+                            class="d-flex
+                            justify-content-between
+                            align-items-center mb-1"
+                        >
+
+                            <span
+                                class="fw-bold text-truncate"
+                                style="max-width:150px;"
+                            >
+                                ${user.full_name || 'User'}
+                            </span>
+
+                            <div
+                                class="d-flex
+                                gap-1
+                                align-items-center"
+                            >
+
+                                ${
+                                    unread > 0
+                                    ? `
+                                        <span
+                                            class="badge
+                                            rounded-pill
+                                            bg-danger"
+                                        >
+                                            ${unread}
+                                        </span>
+                                    `
+                                    : ''
+                                }
+
+                                ${
+                                    user.chat_session === 'live'
+                                    ? `
+                                        <span
+                                            class="badge
+                                            bg-success"
+                                        >
+                                            Live
+                                        </span>
+                                    `
+                                    : ''
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <small
+                            class="text-muted
+                            text-truncate d-block"
+                        >
+                            ${user.last_message || 'No messages yet'}
+                        </small>
+
+                    </div>
+                `;
+
+            }).join('');
+
+        }
+
+        const badge =
+            document.getElementById('badgeChat');
+
+        if (badge) {
+
+            const unread =
+                parseInt(data.total_unread || 0);
+
+            badge.textContent = unread;
+
+            badge.style.display =
+                unread > 0
+                    ? 'inline-block'
+                    : 'none';
+        }
+
+    })
+    .catch(err => {
+
+        console.error(
+            'Chat users error:',
+            err
+        );
+
+        const list =
+            document.getElementById(
+                'adminChatUserList'
+            );
+
+        if (list) {
+
+            list.innerHTML = `
+                <div
+                    class="p-4
+                    text-center
+                    text-danger
+                    small"
+                >
+                    Could not load chats.
+                </div>
+            `;
+
+        }
+
+    });
+
 }
 
-function selectUserChat(el) {
-    const userId   = el.dataset.id;
-    const userName = el.dataset.name;
-    currentChatUserId = userId;
-    document.getElementById('adminInputArea').classList.remove('d-none');
-    document.getElementById('chattingWithTitle').innerText = 'Chatting with: ' + userName;
+
+/* =============================================================
+   SELECT CUSTOMER
+   ============================================================= */
+
+function selectUserChat(element) {
+
+    if (!element) {
+        return;
+    }
+
+    const userId =
+        element.dataset.id;
+
+    const userName =
+        element.dataset.name || 'Customer';
+
+    currentChatUserId =
+        userId;
+
+    const inputArea =
+        document.getElementById(
+            'adminInputArea'
+        );
+
+    if (inputArea) {
+        inputArea.classList.remove('d-none');
+    }
+
+    const title =
+        document.getElementById(
+            'chattingWithTitle'
+        );
+
+    if (title) {
+
+        title.innerText =
+            'Chatting with: ' + userName;
+
+    }
+
     loadAdminMessages(userId);
+
     loadAdminChatUsers();
+
 }
+
+
+/* =============================================================
+   LOAD CUSTOMER MESSAGES
+   ============================================================= */
 
 function loadAdminMessages(userId) {
-    if (!userId) return;
-    currentChatUserId = userId;
-    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: JSON.stringify({type:'admin_get_messages', user_id: userId}) })
-        .then(res => res.json())
-        .then(data => {
-            const body = document.getElementById('adminChatBody');
-            if (!body) return;
-            if (data.chat_session !== 'live') {
-                document.getElementById('adminInputArea').classList.add('d-none');
-                currentChatUserId = null;
-            }
-            const msgs = data.messages ?? [];
-            body.innerHTML = msgs.length
-                ? msgs.map(m => `
-                    <div class="mb-3 d-flex ${m.sender === 'admin' ? 'justify-content-end' : 'justify-content-start'}">
-                        <div class="p-3 rounded-3 shadow-sm" style="max-width:75%;
-                            ${m.sender === 'admin'
-                                ? 'background:#b30000;color:white;'
-                                : 'background:#fff;border:1px solid #ddd;'}">
-                            <div>${m.message}</div>
-                            <small style="font-size:0.7rem;display:block;margin-top:5px;opacity:0.8;">${m.time}</small>
-                        </div>
-                    </div>`).join('')
-                : '<div class="text-center text-muted mt-5">No messages yet.</div>';
-            setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
+
+    if (!userId) {
+        return;
+    }
+
+    currentChatUserId =
+        userId;
+
+    fetch('api/check_session.php', {
+
+        method: 'POST',
+
+        credentials: 'include',
+
+        headers: getAuthHeaders(),
+
+        body: JSON.stringify({
+
+            type:
+                'admin_get_messages',
+
+            user_id:
+                userId
+
         })
-        .catch(err => console.error('Messages error:', err));
+
+    })
+    .then(res => {
+
+        if (!res.ok) {
+            throw new Error(
+                'Unable to load messages.'
+            );
+        }
+
+        return res.json();
+
+    })
+    .then(data => {
+
+        const body =
+            document.getElementById(
+                'adminChatBody'
+            );
+
+        if (!body) {
+            return;
+        }
+
+        const msgs =
+            data.messages || [];
+
+        body.innerHTML =
+            msgs.length
+
+            ?
+
+            msgs.map(message => {
+
+                const isAdmin =
+                    message.sender === 'admin';
+
+                return `
+                    <div
+                        class="mb-3 d-flex
+                        ${
+                            isAdmin
+                            ? 'justify-content-end'
+                            : 'justify-content-start'
+                        }"
+                    >
+
+                        <div
+                            class="p-3 rounded-3 shadow-sm"
+                            style="
+                                max-width:75%;
+                                ${
+                                    isAdmin
+                                    ?
+                                    'background:#b30000;color:white;'
+                                    :
+                                    'background:#fff;border:1px solid #ddd;'
+                                }
+                            "
+                        >
+
+                            <div>
+                                ${message.message}
+                            </div>
+
+                            <small
+                                style="
+                                    font-size:0.7rem;
+                                    display:block;
+                                    margin-top:5px;
+                                    opacity:0.8;
+                                "
+                            >
+                                ${message.time || ''}
+                            </small>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join('')
+
+            :
+
+            `
+                <div
+                    class="text-center
+                    text-muted
+                    mt-5"
+                >
+                    No messages yet.
+                </div>
+            `;
+
+        setTimeout(() => {
+
+            body.scrollTop =
+                body.scrollHeight;
+
+        }, 50);
+
+    })
+    .catch(err => {
+
+        console.error(
+            'Messages error:',
+            err
+        );
+
+    });
+
 }
+
+
+/* =============================================================
+   SEND ADMIN REPLY
+   ============================================================= */
 
 function sendAdminReply() {
-    const input = document.getElementById('adminReplyInput');
-    const msg   = input.value.trim();
-    if (!msg || !currentChatUserId) return;
-    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
-        body: JSON.stringify({ type: 'admin_send', user_id: currentChatUserId, message: msg })
+
+    const input =
+        document.getElementById(
+            'adminReplyInput'
+        );
+
+    if (!input) {
+        return;
+    }
+
+    const msg =
+        input.value.trim();
+
+    if (!msg) {
+        return;
+    }
+
+    if (!currentChatUserId) {
+
+        Swal.fire(
+            'No Customer Selected',
+            'Please select a customer first.',
+            'info'
+        );
+
+        return;
+    }
+
+
+    fetch('api/check_session.php', {
+
+        method: 'POST',
+
+        credentials: 'include',
+
+        headers: getAuthHeaders(),
+
+        body: JSON.stringify({
+
+            type:
+                'admin_send',
+
+            user_id:
+                currentChatUserId,
+
+            message:
+                msg
+
+        })
+
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') {
-            input.value = '';
-            loadAdminMessages(currentChatUserId);
-            loadAdminChatUsers();
-        } else {
-            console.error('Send failed:', data.message);
+    .then(res => {
+
+        if (!res.ok) {
+            throw new Error(
+                'Unable to send message.'
+            );
         }
+
+        return res.json();
+
     })
-    .catch(err => console.error('Send error:', err));
+    .then(data => {
+
+        if (data.status !== 'success') {
+
+            Swal.fire(
+                'Error',
+                data.message ||
+                'Unable to send message.',
+                'error'
+            );
+
+            return;
+        }
+
+        input.value = '';
+
+        loadAdminMessages(
+            currentChatUserId
+        );
+
+        loadAdminChatUsers();
+
+    })
+    .catch(err => {
+
+        console.error(
+            'Send error:',
+            err
+        );
+
+        Swal.fire(
+            'Error',
+            'Unable to send your message.',
+            'error'
+        );
+
+    });
+
 }
+
+
+/* =============================================================
+   END LIVE SESSION
+   ============================================================= */
 
 function endLiveSession() {
-    if (!currentChatUserId) return;
+
+    if (!currentChatUserId) {
+        return;
+    }
+
     Swal.fire({
-        title: 'End Live Session?',
-        text: 'This will switch the user back to Bot Mode.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ffc107',
-        confirmButtonText: 'Yes, End Session'
-    }).then(result => {
-        if (!result.isConfirmed) return;
-        fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
-            body: JSON.stringify({ type: 'admin_end_session', user_id: currentChatUserId })
-        })
+
+        title:
+            'End Live Session?',
+
+        text:
+            'This will switch the customer back to Bot Mode.',
+
+        icon:
+            'warning',
+
+        showCancelButton:
+            true,
+
+        confirmButtonColor:
+            '#e62429',
+
+        cancelButtonColor:
+            '#6c757d',
+
+        confirmButtonText:
+            'Yes, End Session',
+
+        cancelButtonText:
+            'Cancel'
+
+    })
+    .then(result => {
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        fetch(
+            'api/check_session.php',
+            {
+                method: 'POST',
+
+                credentials: 'include',
+
+                headers: getAuthHeaders(),
+
+                body: JSON.stringify({
+
+                    type:
+                        'admin_end_session',
+
+                    user_id:
+                        currentChatUserId
+
+                })
+
+            }
+        )
         .then(res => {
-            if (!res.ok) throw new Error('File not found (404) or Server Error');
+
+            if (!res.ok) {
+
+                throw new Error(
+                    'Unable to end live session.'
+                );
+
+            }
+
             return res.json();
+
         })
         .then(data => {
-            if (data.status === 'success') {
-                document.getElementById('adminInputArea').classList.add('d-none');
-                document.getElementById('adminChatBody').innerHTML = `
-                    <div class="text-center mt-5 text-muted">
-                        <i class="bi bi-chat-left-dots fs-1 d-block mb-2"></i>
-                        <p>Select a customer to start chatting</p>
-                    </div>`;
-                currentChatUserId = null;
-                Swal.fire('Ended', 'Session closed.', 'success');
-                loadAdminChatUsers();
-            } else {
-                Swal.fire('Error', data.message || 'Failed to end session', 'error');
+
+            if (
+                data.status !==
+                'success'
+            ) {
+
+                Swal.fire(
+                    'Error',
+                    data.message ||
+                    'Failed to end session.',
+                    'error'
+                );
+
+                return;
             }
+
+            const inputArea =
+                document.getElementById(
+                    'adminInputArea'
+                );
+
+            if (inputArea) {
+
+                inputArea.classList.add(
+                    'd-none'
+                );
+
+            }
+
+            const body =
+                document.getElementById(
+                    'adminChatBody'
+                );
+
+            if (body) {
+
+                body.innerHTML = `
+                    <div
+                        class="text-center
+                        mt-5
+                        text-muted"
+                    >
+
+                        <i
+                            class="bi
+                            bi-chat-left-dots
+                            fs-1
+                            d-block
+                            mb-2"
+                        ></i>
+
+                        <p>
+                            Select a customer
+                            to start chatting
+                        </p>
+
+                    </div>
+                `;
+
+            }
+
+            currentChatUserId =
+                null;
+
+            loadAdminChatUsers();
+
+            Swal.fire(
+                'Ended',
+                'Live session ended.',
+                'success'
+            );
+
         })
         .catch(err => {
-            console.error(err);
-            Swal.fire('System Error', 'Could not end session. Please try again.', 'error');
-        });
-    });
-}
 
+            console.error(
+                'End session error:',
+                err
+            );
+
+            Swal.fire(
+                'System Error',
+                'Could not end the live session.',
+                'error'
+            );
+
+        });
+
+    });
+
+}
 
 // =============================================================
 // EXPORT CSV
