@@ -1,242 +1,304 @@
-<?php 
-  $pageTitle = "Book Appointment - EJR Garage";
-  $extraJs = '<script src="js/booking.js"></script>';
-  include 'includes/header.php'; 
+<?php
+
+$pageTitle = "Book Appointment - EJR Garage";
+
+$extraJs = '
+<script src="js/booking.js"></script>
+<script src="js/ev-services.js"></script>
+';
+
+include 'includes/header.php';
+
 ?>
 
 <script>
-    const userLoggedIn = !!localStorage.getItem('jwt_token');
+    const userLoggedIn =
+        !!localStorage.getItem('jwt_token');
 </script>
 
 
+<!-- ============================================================
+     APPOINTMENT HEADER
+============================================================ -->
+
 <section class="appointment-header text-center">
 
-  <div class="container">
+    <div class="container">
 
-    <h1>Book Your Appointment</h1>
+        <h1>
+            Book Your Appointment
+        </h1>
 
-    <p>
-      To provide our visitors with the best car service
-    </p>
+        <p>
+            To provide our visitors with the best car service
+        </p>
 
-  </div>
+    </div>
 
 </section>
 
+
+
+<!-- ============================================================
+     BOOKING STEPS
+============================================================ -->
 
 <section class="steps py-4">
 
-  <div class="container">
+    <div class="container">
 
-    <div class="step-wrapper">
+        <div class="step-wrapper">
 
-      <div class="step">
-        1
-      </div>
+            <!-- STEP 1 -->
 
-      <span class="step-label">
-        Your Details
-      </span>
+            <div class="step active">
+                1
+            </div>
 
-
-      <div class="line"></div>
-
-
-      <div class="step active">
-        2
-      </div>
-
-      <span class="step-label">
-        Select Service
-      </span>
+            <span class="step-label">
+                Your Details
+            </span>
 
 
-      <div class="line"></div>
+            <div class="line"></div>
 
 
-      <div class="step">
-        3
-      </div>
+            <!-- STEP 2 -->
 
-      <span class="step-label">
-        Confirm
-      </span>
+            <div class="step">
+                2
+            </div>
+
+            <span class="step-label">
+                Select Service
+            </span>
+
+
+            <div class="line"></div>
+
+
+            <!-- STEP 3 -->
+
+            <div class="step">
+                3
+            </div>
+
+            <span class="step-label">
+                Confirm
+            </span>
+
+        </div>
 
     </div>
 
-  </div>
-
 </section>
 
+
+
+<!-- ============================================================
+     SERVICES SECTION
+============================================================ -->
 
 <section class="services-section">
 
-  <div class="container">
-
-    <h4 class="mb-4 fw-bold">
-      Select Your Service
-    </h4>
+    <div class="container">
 
 
-    <!-- ==========================================
-         ELECTRIC VEHICLE NOTICE
-    =========================================== -->
-
-    <div
-      id="electricVehicleNotice"
-      class="alert alert-info mb-4"
-      style="display:none;"
-    >
-
-      <i class="bi bi-lightning-charge-fill me-2"></i>
-
-      <strong>Electric Vehicle Selected</strong>
-
-      <br>
-
-      <small>
-        Some services are disabled because they are not
-        applicable to electric vehicles.
-      </small>
-
-    </div>
+        <h4 class="mb-4 fw-bold">
+            Select Your Service
+        </h4>
 
 
-    <div class="service-card">
 
-
-      <!-- ==========================================
-           LOADING
-      =========================================== -->
-
-      <div
-        id="servicesLoading"
-        class="text-center text-muted py-4"
-      >
+        <!-- =====================================================
+             ELECTRIC VEHICLE NOTICE
+        ====================================================== -->
 
         <div
-          class="spinner-border spinner-border-sm text-danger me-2"
-        ></div>
-
-        Loading services...
-
-      </div>
-
-
-      <!-- ==========================================
-           SERVICES
-      =========================================== -->
-
-      <div
-        id="servicesDynamicContainer"
-        style="display:none;"
-      ></div>
-
-
-      <!-- ==========================================
-           SERVICE INFORMATION
-      =========================================== -->
-
-      <div class="mt-3 text-muted small">
-
-        <i class="bi bi-info-circle me-1"></i>
-
-        You may select up to
-        <strong>5 services</strong>
-        per booking.
-
-      </div>
-
-
-      <!-- ==========================================
-           NAVIGATION
-      =========================================== -->
-
-      <div
-        class="d-flex justify-content-between align-items-center mt-4"
-      >
-
-        <button
-          type="button"
-          class="btn btn-outline-secondary px-4 fw-bold"
-          onclick="window.location.href='booking-details.php'"
+            id="electricVehicleNotice"
+            class="alert alert-info mb-4"
+            style="display:none;"
         >
 
-          <i class="bi bi-arrow-left me-1"></i>
+            <i class="bi bi-lightning-charge-fill me-2"></i>
 
-          Back to Details
+            <strong>
+                Electric Vehicle Selected
+            </strong>
 
-        </button>
+            <br>
 
-
-        <button
-          type="button"
-          class="btn btn-next px-5"
-        >
-
-          Next
-
-          <i class="bi bi-arrow-right ms-1"></i>
-
-        </button>
-
-      </div>
-
-
-      <!-- ==========================================
-           SERVICE ERROR
-      =========================================== -->
-
-      <div
-        class="mt-3"
-        id="serviceError"
-        style="display:none;"
-      >
-
-        <div class="alert alert-danger py-2 mb-0">
-
-          <i class="bi bi-exclamation-circle me-1"></i>
-
-          Please select at least one service before continuing.
+            <small>
+                Some services are disabled because they are not
+                applicable to electric vehicles.
+            </small>
 
         </div>
 
-      </div>
 
 
-      <!-- ==========================================
-           SERVICE LIMIT ERROR
-      =========================================== -->
+        <!-- =====================================================
+             SERVICE CARD
+        ====================================================== -->
 
-      <div
-        class="mt-3"
-        id="serviceLimitError"
-        style="display:none;"
-      >
+        <div class="service-card">
 
-        <div class="alert alert-warning py-2 mb-0">
 
-          <i class="bi bi-exclamation-triangle me-1"></i>
+            <!-- =================================================
+                 LOADING
+            ================================================== -->
 
-          You can select up to 5 services only per booking.
+            <div
+                id="servicesLoading"
+                class="text-center text-muted py-4"
+            >
+
+                <div
+                    class="spinner-border spinner-border-sm text-danger me-2"
+                    role="status"
+                ></div>
+
+                Loading services...
+
+            </div>
+
+
+
+            <!-- =================================================
+                 DYNAMIC SERVICES
+            ================================================== -->
+
+            <div
+                id="servicesDynamicContainer"
+                style="display:none;"
+            ></div>
+
+
+
+            <!-- =================================================
+                 SERVICE INFORMATION
+            ================================================== -->
+
+            <div class="mt-3 text-muted small">
+
+                <i class="bi bi-info-circle me-1"></i>
+
+                You may select up to
+                <strong>5 services</strong>
+                per booking.
+
+            </div>
+
+
+
+            <!-- =================================================
+                 NAVIGATION BUTTONS
+            ================================================== -->
+
+            <div
+                class="d-flex justify-content-between align-items-center mt-4"
+            >
+
+
+                <!-- BACK -->
+
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary px-4 fw-bold"
+                    onclick="window.location.href='booking-details.php'"
+                >
+
+                    <i class="bi bi-arrow-left me-1"></i>
+
+                    Back to Details
+
+                </button>
+
+
+
+                <!-- NEXT -->
+
+                <button
+                    type="button"
+                    class="btn btn-next px-5"
+                >
+
+                    Next
+
+                    <i class="bi bi-arrow-right ms-1"></i>
+
+                </button>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 NO SERVICE ERROR
+            ================================================== -->
+
+            <div
+                class="mt-3"
+                id="serviceError"
+                style="display:none;"
+            >
+
+                <div
+                    class="alert alert-danger py-2 mb-0"
+                >
+
+                    <i
+                        class="bi bi-exclamation-circle me-1"
+                    ></i>
+
+                    Please select at least one service
+                    before continuing.
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SERVICE LIMIT ERROR
+            ================================================== -->
+
+            <div
+                class="mt-3"
+                id="serviceLimitError"
+                style="display:none;"
+            >
+
+                <div
+                    class="alert alert-warning py-2 mb-0"
+                >
+
+                    <i
+                        class="bi bi-exclamation-triangle me-1"
+                    ></i>
+
+                    You can select up to 5 services only
+                    per booking.
+
+                </div>
+
+            </div>
+
 
         </div>
-
-      </div>
-
 
     </div>
-
-  </div>
 
 </section>
 
 
-<script>
 
-// ============================================================
-// LOAD SERVICES
-// ============================================================
+<!-- ============================================================
+     LOAD SERVICES FROM DATABASE
+============================================================ -->
+
+<script>
 
 (function () {
 
@@ -254,11 +316,20 @@
 
     fetch('api/get_services.php')
 
-        .then(function (res) {
+        .then(function (response) {
 
-            return res.json();
+            if (!response.ok) {
+
+                throw new Error(
+                    'Unable to load services'
+                );
+
+            }
+
+            return response.json();
 
         })
+
 
         .then(function (data) {
 
@@ -270,26 +341,36 @@
                 'block';
 
 
+            // ==================================================
+            // CHECK SERVICE DATA
+            // ==================================================
+
             if (
                 data.status !== 'success' ||
                 !data.services ||
                 !data.services.length
             ) {
 
-                containerEl.innerHTML =
-                    '<p class="text-muted">' +
-                    'No services available right now. ' +
-                    'Please contact us directly.' +
-                    '</p>';
+                containerEl.innerHTML = `
+
+                    <p class="text-muted">
+
+                        No services available right now.
+                        Please contact us directly.
+
+                    </p>
+
+                `;
 
                 return;
 
             }
 
 
-            // ==============================================
+
+            // ==================================================
             // GROUP SERVICES BY CATEGORY
-            // ==============================================
+            // ==================================================
 
             const grouped = {};
 
@@ -317,9 +398,10 @@
             );
 
 
-            // ==============================================
+
+            // ==================================================
             // CATEGORY ORDER
-            // ==============================================
+            // ==================================================
 
             const categoryOrder =
                 Object.keys(
@@ -328,7 +410,8 @@
                     function (a, b) {
 
                         if (
-                            a === 'Popular Services'
+                            a ===
+                            'Popular Services'
                         ) {
 
                             return -1;
@@ -337,7 +420,8 @@
 
 
                         if (
-                            b === 'Popular Services'
+                            b ===
+                            'Popular Services'
                         ) {
 
                             return 1;
@@ -351,60 +435,84 @@
                 );
 
 
+
+            // ==================================================
+            // BUILD HTML
+            // ==================================================
+
             let html = '';
 
-
-            // ==============================================
-            // CREATE SERVICE CARDS
-            // ==============================================
 
             categoryOrder.forEach(
                 function (category, index) {
 
+
                     html += `
 
                         <h5
-                            class="${index > 0 ? 'mt-5' : ''} mb-3 fw-bold text-dark"
+                            class="${
+                                index > 0
+                                    ? 'mt-5'
+                                    : ''
+                            } mb-3 fw-bold text-dark"
                         >
 
-                            <i class="bi bi-tools me-2 text-danger"></i>
+                            <i
+                                class="bi bi-tools me-2 text-danger"
+                            ></i>
 
-                            ${category}
+                            ${escapeHtml(category)}
 
                         </h5>
 
 
                         <div class="row g-3">
 
-                            ${grouped[category]
-                                .map(
-                                    function (service) {
+                    `;
 
-                                        return `
 
-                                            <div class="col-6 col-md-3">
 
-                                                <div
-                                                    class="service-item"
-                                                    data-service-name="${escapeHtml(service.name)}"
-                                                    ${
-                                                        service.price_from > 0
-                                                        ? `data-price="${service.price_from}"`
-                                                        : ''
-                                                    }
-                                                >
+                    grouped[category].forEach(
+                        function (service) {
 
-                                                    ${escapeHtml(service.name)}
+                            const price =
+                                parseFloat(
+                                    service.price_from
+                                ) || 0;
 
-                                                </div>
 
-                                            </div>
+                            html += `
 
-                                        `;
+                                <div
+                                    class="col-6 col-md-3"
+                                >
 
-                                    }
-                                )
-                                .join('')}
+                                    <div
+                                        class="service-item"
+                                        data-service-name="${escapeHtml(service.name)}"
+                                        ${
+                                            price > 0
+                                                ? `data-price="${price}"`
+                                                : ''
+                                        }
+                                    >
+
+                                        ${escapeHtml(
+                                            service.name
+                                        )}
+
+                                    </div>
+
+                                </div>
+
+                            `;
+
+                        }
+                    );
+
+
+
+                    html += `
 
                         </div>
 
@@ -414,13 +522,20 @@
             );
 
 
+
+            // ==================================================
+            // DISPLAY SERVICES
+            // ==================================================
+
             containerEl.innerHTML =
                 html;
 
 
-            // ==============================================
-            // TELL booking.js THAT SERVICES ARE READY
-            // ==============================================
+
+            // ==================================================
+            // TELL booking.js / ev-services.js
+            // THAT SERVICES ARE READY
+            // ==================================================
 
             document.dispatchEvent(
                 new CustomEvent(
@@ -432,21 +547,33 @@
 
 
         .catch(
-            function () {
+            function (error) {
 
-                loadingEl.innerHTML =
-                    '<p class="text-danger">' +
-                    'Could not load services. ' +
-                    'Please refresh the page.' +
-                    '</p>';
+                console.error(
+                    'Service loading error:',
+                    error
+                );
+
+
+                loadingEl.innerHTML = `
+
+                    <p class="text-danger">
+
+                        Could not load services.
+                        Please refresh the page.
+
+                    </p>
+
+                `;
 
             }
         );
 
 
-    // ==============================================
-    // SIMPLE HTML ESCAPE
-    // ==============================================
+
+    // ==========================================================
+    // ESCAPE HTML
+    // ==========================================================
 
     function escapeHtml(value) {
 
@@ -484,7 +611,13 @@
 </script>
 
 
+
+<!-- ============================================================
+     PAGE STYLES
+============================================================ -->
+
 <style>
+
 
 /* ============================================================
    STEP LABEL
@@ -492,13 +625,14 @@
 
 .step-label {
 
-  font-size: 13px;
+    font-size: 13px;
 
-  font-weight: 600;
+    font-weight: 600;
 
-  color: #5f6b7a;
+    color: #5f6b7a;
 
 }
+
 
 
 /* ============================================================
@@ -507,9 +641,10 @@
 
 #electricVehicleNotice {
 
-  border-left: 5px solid #0dcaf0;
+    border-left: 5px solid #0dcaf0;
 
 }
+
 
 
 /* ============================================================
@@ -518,51 +653,62 @@
 
 .service-item.ev-disabled {
 
-  background: #eeeeee !important;
+    background: #eeeeee !important;
 
-  color: #999999 !important;
+    color: #999999 !important;
 
-  border-color: #dddddd !important;
+    border-color: #dddddd !important;
 
-  cursor: not-allowed !important;
+    cursor: not-allowed !important;
 
-  opacity: 0.65;
+    opacity: 0.60;
 
-  position: relative;
+    transform: none !important;
 
-}
-
-
-/* Prevent hover animation */
-
-.service-item.ev-disabled:hover {
-
-  transform: none !important;
-
-  box-shadow: none !important;
+    box-shadow: none !important;
 
 }
+
 
 
 /* ============================================================
-   EV DISABLED LABEL
+   DISABLED SERVICE HOVER
+============================================================ */
+
+.service-item.ev-disabled:hover {
+
+    transform: none !important;
+
+    box-shadow: none !important;
+
+    cursor: not-allowed !important;
+
+}
+
+
+
+/* ============================================================
+   EV DISABLED MESSAGE
 ============================================================ */
 
 .ev-disabled-label {
 
-  display: block;
+    display: block;
 
-  font-size: 10px;
+    width: 100%;
 
-  line-height: 1.2;
+    margin-top: 5px;
 
-  margin-top: 5px;
+    font-size: 9px;
 
-  color: #888888;
+    line-height: 1.2;
 
-  font-weight: 600;
+    color: #888888;
+
+    font-weight: 600;
 
 }
+
 
 
 /* ============================================================
@@ -571,75 +717,81 @@
 
 @media (max-width: 576px) {
 
-  .step-label {
 
-    font-size: 11px;
+    .step-label {
 
-  }
+        font-size: 11px;
 
-
-  .line {
-
-    width: 30px !important;
-
-  }
+    }
 
 
-  .service-item {
+    .line {
 
-    font-size: 13px;
+        width: 30px !important;
 
-    padding: 12px 8px;
-
-    height: 84px !important;
-
-    min-height: 84px !important;
-
-    line-height: 1.3;
-
-    display: flex !important;
-
-    align-items: center !important;
-
-    justify-content: center !important;
-
-    text-align: center !important;
-
-    flex-direction: column;
-
-  }
+    }
 
 
-  .appointment-header {
+    .service-item {
 
-    padding: 40px 0;
+        font-size: 13px;
 
-  }
+        padding: 12px 8px;
+
+        height: 84px !important;
+
+        min-height: 84px !important;
+
+        line-height: 1.3;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        text-align: center !important;
+
+        flex-direction: column;
+
+    }
 
 
-  .appointment-header h1 {
+    .appointment-header {
 
-    font-size: 1.8rem;
+        padding: 40px 0;
 
-  }
-
-
-  .service-card {
-
-    padding: 20px !important;
-
-  }
+    }
 
 
-  .ev-disabled-label {
+    .appointment-header h1 {
 
-    font-size: 9px;
+        font-size: 1.8rem;
 
-  }
+    }
+
+
+    .service-card {
+
+        padding: 20px !important;
+
+    }
+
+
+    .ev-disabled-label {
+
+        font-size: 9px;
+
+    }
 
 }
 
 </style>
 
 
-<?php include 'includes/footer.php'; ?>
+
+<?php
+
+include 'includes/footer.php';
+
+?>
