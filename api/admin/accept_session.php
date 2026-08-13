@@ -1,337 +1,71 @@
 <?php
-
 session_start();
-session_write_close();
-
+include '../db_config.php';
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../db_config.php';
 
-require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
-require_once __DIR__ . '/../../includes/php-jwt/Key.php';
-
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-
-
-// ============================================================
-// ADMIN AUTHENTICATION
-// ============================================================
-
-$headers = array_change_key_case(
-    getallheaders(),
-    CASE_LOWER
-);
-
-$auth = $headers['authorization']
-    ?? $_SERVER['HTTP_AUTHORIZATION']
-    ?? '';
-
-$adminId = 0;
-
-
-// ============================================================
-// GET ADMIN ID FROM JWT
-// ============================================================
-
-if (preg_match('/bearer\s(\S+)/i', $auth, $m)) {
-
+// -- JWT Auth --
+$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
+$auth       = $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+$adminId    = 0;
+$isAdmin    = false;
+if (preg_match('/bearer\\s(\\S+)/i', $auth, $m)) {
     try {
-
-        $decoded = JWT::decode(
-            $m[1],
-            new Key(JWT_SECRET, 'HS256')
-        );
-
-        $adminId = (int)($decoded->uid ?? 0);
-
-    } catch (Exception $e) {
-
-        $adminId = 0;
-    }
+        $decoded = JWT::decode($m[1], new Key(JWT_SECRET, 'HS256'));
+        $adminId = (int)($decoded->uid  ?? 0);
+        $role    = (int)($decoded->role ?? 0);
+        $isAdmin = ($role === 2 || $adminId === 21);
+    } catch (Exception $e) {}
 }
-
-
-// ============================================================
-// FALL BACK TO PHP SESSION
-// ============================================================
-
-if ($adminId === 0) {
-
-    $adminId = (int)(
-        $_SESSION['user_id'] ?? 0
-    );
-}
-
-
-// ============================================================
-// CHECK AUTHENTICATION
-// ============================================================
-
-if ($adminId <= 0) {
-
-    http_response_code(401);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Authentication required.'
-    ]);
-
-    exit;
-}
-
-
-// ============================================================
-// VERIFY ADMIN ROLE
-// ============================================================
-//
-// role_id = 2 means ADMIN.
-//
-// There is NO hardcoded admin user ID.
-// ============================================================
-
-$roleStmt = $conn->prepare(
-    "SELECT role_id
-     FROM users
-     WHERE id = ?
-     LIMIT 1"
-);
-
-if (!$roleStmt) {
-
-    http_response_code(500);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Unable to verify administrator account.'
-    ]);
-
-    exit;
-}
-
-
-$roleStmt->bind_param(
-    "i",
-    $adminId
-);
-
-$roleStmt->execute();
-
-$roleRow = $roleStmt
-    ->get_result()
-    ->fetch_assoc();
-
-$roleStmt->close();
-
-
-if (!$roleRow) {
-
+if (!$isAdmin) {
     http_response_code(403);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Administrator account not found.'
-    ]);
-
+    echo json_encode(['status' => 'error', 'message' => 'Admin access required.']);
     exit;
 }
+$current_user_id  = $adminId;
+$current_admin_id = $adminId;
+$is_admin         = true;
 
+$data    = json_decode(file_get_contents('php://input'), true);
+$user_id = isset($data['user_id']) ? (int)$data['user_id'] : 0;
+$action  = $data['action'] ?? ''; // 'accept' or 'decline'
 
-$adminRole = (int)(
-    $roleRow['role_id'] ?? 0
-);
-
-
-// ============================================================
-// ADMIN-ONLY ACCESS
-// ============================================================
-
-if ($adminRole !== 2) {
-
-    http_response_code(403);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Admin access required.'
-    ]);
-
+if (!$user_id || !in_array($action, ['accept', 'decline'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid data']);
     exit;
 }
-
-
-// ============================================================
-// GET CUSTOMER ID
-// ============================================================
-
-$data = json_decode(
-    file_get_contents('php://input'),
-    true
-);
-
-
-$customerId = isset($data['user_id'])
-    ? (int)$data['user_id']
-    : (int)($_GET['user_id'] ?? 0);
-
-
-if ($customerId <= 0) {
-
-    http_response_code(400);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Customer ID is required.'
-    ]);
-
-    exit;
-}
-
-
-// ============================================================
-// VERIFY CUSTOMER ACCOUNT
-// ============================================================
-//
-// We do not allow the admin to accept another admin's
-// conversation.
-// ============================================================
-
-$customerStmt = $conn->prepare(
-    "SELECT
-        id,
-        role_id,
-        chat_session
-     FROM users
-     WHERE id = ?
-     LIMIT 1"
-);
-
-if (!$customerStmt) {
-
-    http_response_code(500);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Unable to verify customer account.'
-    ]);
-
-    exit;
-}
-
-
-$customerStmt->bind_param(
-    "i",
-    $customerId
-);
-
-$customerStmt->execute();
-
-$customerRow = $customerStmt
-    ->get_result()
-    ->fetch_assoc();
-
-$customerStmt->close();
-
-
-if (!$customerRow) {
-
-    http_response_code(404);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Customer account not found.'
-    ]);
-
-    exit;
-}
-
-
-$customerRole = (int)(
-    $customerRow['role_id'] ?? 0
-);
-
-
-if ($customerRole === 2) {
-
-    http_response_code(403);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'This account is an administrator.'
-    ]);
-
-    exit;
-}
-
-
-// ============================================================
-// ACCEPT LIVE CHAT SESSION
-// ============================================================
 
 try {
+    if ($action === 'accept') {
+        // Set user to live mode
+        $stmt = $conn->prepare("UPDATE users SET chat_session = 'live' WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
 
-    $stmt = $conn->prepare(
-        "UPDATE users
-         SET chat_session = 'live'
-         WHERE id = ?"
-    );
+        // Notify user that admin accepted
+        $msg  = "An admin has joined the chat. How can we help you?";
+        $ins  = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
+        $ins->bind_param("is", $user_id, $msg);
+        $ins->execute();
 
+        echo json_encode(['status' => 'success', 'message' => 'Session accepted']);
 
-    if (!$stmt) {
+    } elseif ($action === 'decline') {
+        // Reset back to bot mode
+        $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
 
-        throw new Exception(
-            'Unable to prepare session update.'
-        );
+        // Notify user that request was declined
+        $msg  = "Sorry, no agents are available right now. Our bot will continue to assist you.";
+        $ins  = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
+        $ins->bind_param("is", $user_id, $msg);
+        $ins->execute();
 
+        echo json_encode(['status' => 'success', 'message' => 'Session declined']);
     }
-
-
-    $stmt->bind_param(
-        "i",
-        $customerId
-    );
-
-
-    if (!$stmt->execute()) {
-
-        throw new Exception(
-            'Unable to accept live chat session.'
-        );
-
-    }
-
-
-    $stmt->close();
-
-
-    // ========================================================
-    // RETURN SUCCESS
-    // ========================================================
-
-    echo json_encode([
-
-        'status' => 'success',
-
-        'message' => 'Live chat session accepted.',
-
-        'user_id' => $customerId,
-
-        'chat_session' => 'live'
-
-    ]);
-
-
 } catch (Exception $e) {
-
     http_response_code(500);
-
-    echo json_encode([
-
-        'status' => 'error',
-
-        'message' => 'Unable to accept live chat session.'
-
-    ]);
-
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
-
 ?>

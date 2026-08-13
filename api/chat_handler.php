@@ -58,60 +58,6 @@ if ($userId === 0) {
     exit;
 }
 
-// ── ADMIN GUARD ───────────────────────────────────────────────
-// role_id = 2 means ADMIN.
-//
-// Admin accounts use the Live Chat inbox in the admin dashboard.
-// They must NOT use the customer-side chat API.
-
-$userRole = 0;
-
-/*
- * First try the PHP session.
- */
-if (isset($_SESSION['role_id'])) {
-    $userRole = (int)$_SESSION['role_id'];
-}
-
-/*
- * If the session does not contain the role, get it directly
- * from the database using the authenticated user ID.
- */
-if ($userRole === 0 && $userId > 0) {
-
-    $roleStmt = $conn->prepare(
-        "SELECT role_id FROM users WHERE id = ? LIMIT 1"
-    );
-
-    if ($roleStmt) {
-
-        $roleStmt->bind_param("i", $userId);
-        $roleStmt->execute();
-
-        $roleResult = $roleStmt->get_result()->fetch_assoc();
-
-        if ($roleResult) {
-            $userRole = (int)($roleResult['role_id'] ?? 0);
-        }
-
-        $roleStmt->close();
-    }
-}
-
-/*
- * Admins are not allowed to use customer chat.
- */
-if ($userRole === 2) {
-
-    echo json_encode([
-        "status" => "error",
-        "reply"  => "Administrators must use the Admin Live Chat dashboard.",
-        "mode"   => "admin"
-    ]);
-
-    exit;
-}
-
 // ── 1. LIVE CHAT REQUEST ──────────────────────────────────────
 if ($action === 'request_live') {
     // Clear any leftover messages from a previous, already-ended live

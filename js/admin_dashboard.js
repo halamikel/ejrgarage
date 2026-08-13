@@ -1156,19 +1156,20 @@ function deleteOrder(id) {
 
 function loadAdminChatUsers() {
 
-    fetch('api/admin/get_chat_users.php?t=' + Date.now(), {
-        method: 'GET',
+    fetch('api/check_session.php', {
+        method: 'POST',
         credentials: 'include',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            type: 'admin_get_chat_users'
+        })
     })
     .then(res => {
-
         if (!res.ok) {
             throw new Error('Unable to load chat users.');
         }
 
         return res.json();
-
     })
     .then(data => {
 
@@ -1187,13 +1188,11 @@ function loadAdminChatUsers() {
 
         const users = data.users || [];
 
-
         if (!users.length) {
 
             list.innerHTML = `
                 <div class="p-4 text-center text-muted">
-                    <i class="bi bi-chat-dots fs-2 d-block mb-2"></i>
-                    No customer conversations.
+                    No active conversations.
                 </div>
             `;
 
@@ -1209,19 +1208,8 @@ function loadAdminChatUsers() {
                     parseInt(user.unread_count || 0);
 
                 const safeName =
-                    String(user.full_name || 'Customer')
-                        .replace(/"/g, '&quot;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;');
-
-                const safeMessage =
-                    String(
-                        user.last_message ||
-                        'No messages yet'
-                    )
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-
+                    String(user.full_name || 'User')
+                        .replace(/"/g, '&quot;');
 
                 return `
                     <div
@@ -1243,7 +1231,7 @@ function loadAdminChatUsers() {
                                 class="fw-bold text-truncate"
                                 style="max-width:150px;"
                             >
-                                ${safeName}
+                                ${user.full_name || 'User'}
                             </span>
 
                             <div
@@ -1270,7 +1258,8 @@ function loadAdminChatUsers() {
                                     user.chat_session === 'live'
                                     ? `
                                         <span
-                                            class="badge bg-success"
+                                            class="badge
+                                            bg-success"
                                         >
                                             Live
                                         </span>
@@ -1286,7 +1275,7 @@ function loadAdminChatUsers() {
                             class="text-muted
                             text-truncate d-block"
                         >
-                            ${safeMessage}
+                            ${user.last_message || 'No messages yet'}
                         </small>
 
                     </div>
@@ -1295,11 +1284,6 @@ function loadAdminChatUsers() {
             }).join('');
 
         }
-
-
-        // =====================================================
-        // UPDATE CHAT BADGE
-        // =====================================================
 
         const badge =
             document.getElementById('badgeChat');
@@ -1339,7 +1323,7 @@ function loadAdminChatUsers() {
                     text-danger
                     small"
                 >
-                    Could not load customer chats.
+                    Could not load chats.
                 </div>
             `;
 
@@ -1407,20 +1391,28 @@ function loadAdminMessages(userId) {
         return;
     }
 
-    currentChatUserId = userId;
+    currentChatUserId =
+        userId;
 
+    fetch('api/check_session.php', {
 
-    fetch(
-        'api/admin/get_messages.php?user_id=' +
-        encodeURIComponent(userId) +
-        '&t=' +
-        Date.now(),
-        {
-            method: 'GET',
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
+        method: 'POST',
+
+        credentials: 'include',
+
+        headers: getAuthHeaders(),
+
+        body: JSON.stringify({
+
+            type:
+                'admin_get_messages',
+
+            user_id:
+                userId
+
+        })
+
+    })
     .then(res => {
 
         if (!res.ok) {
@@ -1434,16 +1426,6 @@ function loadAdminMessages(userId) {
     })
     .then(data => {
 
-        if (data.status !== 'success') {
-
-            throw new Error(
-                data.message ||
-                'Unable to load messages.'
-            );
-
-        }
-
-
         const body =
             document.getElementById(
                 'adminChatBody'
@@ -1453,55 +1435,18 @@ function loadAdminMessages(userId) {
             return;
         }
 
-
         const msgs =
             data.messages || [];
 
-
-        if (!msgs.length) {
-
-            body.innerHTML = `
-                <div
-                    class="text-center
-                    text-muted
-                    mt-5"
-                >
-
-                    <i
-                        class="bi
-                        bi-chat-left-dots
-                        fs-1
-                        d-block
-                        mb-2"
-                    ></i>
-
-                    <p>
-                        No messages yet.
-                    </p>
-
-                </div>
-            `;
-
-            return;
-        }
-
-
         body.innerHTML =
+            msgs.length
+
+            ?
+
             msgs.map(message => {
 
                 const isAdmin =
                     message.sender === 'admin';
-
-                const safeMessage =
-                    String(
-                        message.message || ''
-                    )
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-
 
                 return `
                     <div
@@ -1528,7 +1473,7 @@ function loadAdminMessages(userId) {
                         >
 
                             <div>
-                                ${safeMessage}
+                                ${message.message}
                             </div>
 
                             <small
@@ -1547,10 +1492,19 @@ function loadAdminMessages(userId) {
                     </div>
                 `;
 
-            }).join('');
+            }).join('')
 
+            :
 
-        // Scroll to latest message.
+            `
+                <div
+                    class="text-center
+                    text-muted
+                    mt-5"
+                >
+                    No messages yet.
+                </div>
+            `;
 
         setTimeout(() => {
 
@@ -1566,25 +1520,6 @@ function loadAdminMessages(userId) {
             'Messages error:',
             err
         );
-
-        const body =
-            document.getElementById(
-                'adminChatBody'
-            );
-
-        if (body) {
-
-            body.innerHTML = `
-                <div
-                    class="text-center
-                    text-danger
-                    mt-5"
-                >
-                    Unable to load messages.
-                </div>
-            `;
-
-        }
 
     });
 
@@ -1606,15 +1541,12 @@ function sendAdminReply() {
         return;
     }
 
-
     const msg =
         input.value.trim();
-
 
     if (!msg) {
         return;
     }
-
 
     if (!currentChatUserId) {
 
@@ -1628,49 +1560,34 @@ function sendAdminReply() {
     }
 
 
-    /*
-     * Disable the input while sending.
-     */
+    fetch('api/check_session.php', {
 
-    input.disabled = true;
+        method: 'POST',
 
+        credentials: 'include',
 
-    fetch(
-        'api/admin/send_message.php',
-        {
-            method: 'POST',
+        headers: getAuthHeaders(),
 
-            credentials: 'include',
+        body: JSON.stringify({
 
-            headers: getAuthHeaders(),
+            type:
+                'admin_send',
 
-            body: JSON.stringify({
+            user_id:
+                currentChatUserId,
 
-                user_id:
-                    Number(currentChatUserId),
+            message:
+                msg
 
-                message:
-                    msg
+        })
 
-            })
-
-        }
-    )
+    })
     .then(res => {
 
         if (!res.ok) {
-
-            return res.json()
-                .catch(() => ({}))
-                .then(data => {
-
-                    throw new Error(
-                        data.message ||
-                        'Unable to send message.'
-                    );
-
-                });
-
+            throw new Error(
+                'Unable to send message.'
+            );
         }
 
         return res.json();
@@ -1680,21 +1597,21 @@ function sendAdminReply() {
 
         if (data.status !== 'success') {
 
-            throw new Error(
+            Swal.fire(
+                'Error',
                 data.message ||
-                'Unable to send message.'
+                'Unable to send message.',
+                'error'
             );
 
+            return;
         }
 
-
         input.value = '';
-
 
         loadAdminMessages(
             currentChatUserId
         );
-
 
         loadAdminChatUsers();
 
@@ -1702,23 +1619,15 @@ function sendAdminReply() {
     .catch(err => {
 
         console.error(
-            'Send admin message error:',
+            'Send error:',
             err
         );
 
         Swal.fire(
             'Error',
-            err.message ||
             'Unable to send your message.',
             'error'
         );
-
-    })
-    .finally(() => {
-
-        input.disabled = false;
-
-        input.focus();
 
     });
 
@@ -1734,11 +1643,6 @@ function endLiveSession() {
     if (!currentChatUserId) {
         return;
     }
-
-
-    const customerId =
-        currentChatUserId;
-
 
     Swal.fire({
 
@@ -1773,9 +1677,8 @@ function endLiveSession() {
             return;
         }
 
-
         fetch(
-            'api/admin/end_session.php',
+            'api/check_session.php',
             {
                 method: 'POST',
 
@@ -1785,8 +1688,11 @@ function endLiveSession() {
 
                 body: JSON.stringify({
 
+                    type:
+                        'admin_end_session',
+
                     user_id:
-                        Number(customerId)
+                        currentChatUserId
 
                 })
 
@@ -1796,16 +1702,9 @@ function endLiveSession() {
 
             if (!res.ok) {
 
-                return res.json()
-                    .catch(() => ({}))
-                    .then(data => {
-
-                        throw new Error(
-                            data.message ||
-                            'Unable to end live session.'
-                        );
-
-                    });
+                throw new Error(
+                    'Unable to end live session.'
+                );
 
             }
 
@@ -1814,15 +1713,20 @@ function endLiveSession() {
         })
         .then(data => {
 
-            if (data.status !== 'success') {
+            if (
+                data.status !==
+                'success'
+            ) {
 
-                throw new Error(
+                Swal.fire(
+                    'Error',
                     data.message ||
-                    'Failed to end session.'
+                    'Failed to end session.',
+                    'error'
                 );
 
+                return;
             }
-
 
             const inputArea =
                 document.getElementById(
@@ -1836,7 +1740,6 @@ function endLiveSession() {
                 );
 
             }
-
 
             const body =
                 document.getElementById(
@@ -1861,26 +1764,19 @@ function endLiveSession() {
                         ></i>
 
                         <p>
-                            Live session ended.
+                            Select a customer
+                            to start chatting
                         </p>
-
-                        <small>
-                            Select another customer
-                            to continue.
-                        </small>
 
                     </div>
                 `;
 
             }
 
-
             currentChatUserId =
                 null;
 
-
             loadAdminChatUsers();
-
 
             Swal.fire(
                 'Ended',
@@ -1898,7 +1794,6 @@ function endLiveSession() {
 
             Swal.fire(
                 'System Error',
-                err.message ||
                 'Could not end the live session.',
                 'error'
             );
@@ -1995,88 +1890,20 @@ function startRealtime() {
 }
 
 function updateLiveChatBadge() {
-
-    fetch(
-        'api/admin/get_chat_users.php?t=' +
-        Date.now(),
-        {
-            method: 'GET',
-
-            credentials: 'include',
-
-            headers: getAuthHeaders()
-
-        }
-    )
-    .then(res => {
-
-        if (!res.ok) {
-
-            throw new Error(
-                'Unauthorized'
-            );
-
-        }
-
-        return res.json();
-
-    })
-    .then(data => {
-
-        if (data.status !== 'success') {
-            return;
-        }
-
-
-        const users =
-            data.users || [];
-
-
-        const waitingCount =
-            users.filter(
-                user =>
-                    user.chat_session === 'waiting'
-            ).length;
-
-
-        const totalUnread =
-            Number(
-                data.total_unread || 0
-            );
-
-
-        const badge =
-            document.getElementById(
-                'badgeChat'
-            );
-
-
-        if (badge) {
-
-            badge.textContent =
-                waitingCount +
-                totalUnread;
-
-            badge.style.display =
-                (
-                    waitingCount +
-                    totalUnread
-                ) > 0
-                    ? 'inline-block'
-                    : 'none';
-
-        }
-
-    })
-    .catch(err => {
-
-        console.error(
-            'Badge update error:',
-            err
-        );
-
-    });
-
+    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: JSON.stringify({type:'admin_get_chat_users'}) })
+        .then(res => {
+            if (!res.ok) throw new Error('Unauthorized');
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const users        = data.users ?? [];
+                const waitingCount = users.filter(u => u.chat_session === 'waiting').length;
+                const totalUnread  = data.total_unread ?? 0;
+                document.getElementById('badgeChat').textContent = waitingCount + totalUnread;
+            }
+        })
+        .catch(err => console.error('Badge update error:', err));
 }
 
 
