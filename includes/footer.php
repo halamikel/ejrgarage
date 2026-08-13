@@ -380,6 +380,29 @@ if (localStorage.getItem('jwt_token')) {
 
         </div>
 
+        <!-- ====================================================
+     CUSTOMER CHAT MESSAGES
+===================================================== -->
+
+<div
+    id="chatBody"
+    style="
+        height:300px;
+        padding:12px 14px;
+        background:#f0f2f5;
+        overflow-y:auto;
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+    "
+>
+
+    <div class="ejr-bot-msg">
+        Hello! 👋 I'm the EJR Assistant. How can I help you today?
+    </div>
+
+</div>
+
 <!-- ====================================================
      ADMIN CHAT PANEL
      
@@ -1868,32 +1891,13 @@ document.addEventListener(
 
     }
 );
-    const title =
-        document.getElementById(
-            'adminSelectedCustomer'
-        );
 
-
-    if (title) {
-
-        title.innerHTML = `
-
-            <i
-                class="bi bi-person-circle me-1"
-            ></i>
-
-            ${escapeAdminChatText(userName)}
-
-        `;
-
-    }
-
-
-    loadAdminWidgetMessages(
-        userId
-    );
-
-}
+/*
+ * Load messages for selected customer.
+ */
+function loadAdminWidgetMessages(
+    userId
+) {
 
 
 
