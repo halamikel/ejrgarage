@@ -30,22 +30,65 @@ function ejr_get_bearer_token(): string {
 }
 
 function resolveAdminId(string $secret): int {
+
+    /*
+     * Check JWT token first.
+     *
+     * role = 2 means ADMIN.
+     *
+     * We intentionally DO NOT check a hardcoded user ID.
+     * Any account with admin role can access admin chat.
+     */
+
     $tok = ejr_get_bearer_token();
+
     if ($tok) {
+
         try {
-            $d = \Firebase\JWT\JWT::decode($tok, new \Firebase\JWT\Key($secret, 'HS256'));
+
+            $d = \Firebase\JWT\JWT::decode(
+                $tok,
+                new \Firebase\JWT\Key($secret, 'HS256')
+            );
+
             $role = (int)($d->role ?? 0);
-            $uid  = (int)($d->uid  ?? 0);
-            if ($role === 2 || $uid === 21) return $uid;
-        } catch (\Exception $e) {}
+            $uid  = (int)($d->uid ?? 0);
+
+            if ($role === 2 && $uid > 0) {
+                return $uid;
+            }
+
+        } catch (\Exception $e) {
+
+            // Invalid/expired JWT.
+            // Continue to session authentication below.
+
+        }
     }
+
+
+    /*
+     * Check PHP session.
+     */
+
     if (isset($_SESSION['user_id'])) {
+
+        $uid = (int)$_SESSION['user_id'];
         $role = (int)($_SESSION['role_id'] ?? 0);
-        $uid  = (int)$_SESSION['user_id'];
-        if ($role === 2 || $uid === 21) return $uid;
+
+        if ($role === 2 && $uid > 0) {
+            return $uid;
+        }
     }
+
+
+    /*
+     * Not an admin.
+     */
+
     return 0;
 }
+
 $input      = json_decode(file_get_contents('php://input'), true) ?? [];
 $type       = $input['type'] ?? '';
 
@@ -258,9 +301,10 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
 
         // Admin dashboard doesn't send/store a session_token fingerprint, so it
         // can't be compared here — skip the single-device check for admins.
-        if ($role === 2 || $userId === 21) {
-            echo json_encode(['valid' => true]); exit;
-        }
+  if ($role === 2) {
+    echo json_encode(['valid' => true]);
+    exit;
+}
 
         $clientToken = $input['session_token'] ?? '';
         $stmt = $conn->prepare("SELECT session_token FROM users WHERE id = ?");

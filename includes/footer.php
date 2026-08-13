@@ -2,12 +2,120 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="/js/auth.js"></script>
 
+<script src="/js/auth.js"></script>
+
 <script>
 if (localStorage.getItem('jwt_token')) {
     if (typeof startSessionWatch === 'function') {
         startSessionWatch();
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN LIVE CHAT PROTECTION
+|--------------------------------------------------------------------------
+| role_id = 2 means ADMIN.
+|
+| Admin accounts should NOT see the customer-side Live Chat widget.
+| They will instead use the Live Chat section inside admin_dashboard.php.
+|--------------------------------------------------------------------------
+*/
+
+(function () {
+
+    function isAdminAccount() {
+
+        const token = localStorage.getItem('jwt_token');
+
+        if (!token) {
+            return false;
+        }
+
+        try {
+
+            const parts = token.split('.');
+
+            if (parts.length !== 3) {
+                return false;
+            }
+
+            const payload = JSON.parse(
+                atob(
+                    parts[1]
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/')
+                )
+            );
+
+            /*
+             * Support either:
+             * role_id = 2
+             * role = 2
+             */
+
+            return (
+                Number(payload.role_id) === 2 ||
+                Number(payload.role) === 2
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Unable to determine account role:',
+                error
+            );
+
+            return false;
+        }
+    }
+
+
+    function removeCustomerChatForAdmin() {
+
+        if (!isAdminAccount()) {
+            return;
+        }
+
+        /*
+         * Remove the entire customer chat widget.
+         */
+
+        const chatContainer =
+            document.getElementById('ejrChatContainer');
+
+        if (chatContainer) {
+            chatContainer.remove();
+        }
+
+        /*
+         * Prevent the customer chat functions
+         * from being used by an admin.
+         */
+
+        window.isEJRAdmin = true;
+
+    }
+
+
+    /*
+     * Run after the page has loaded.
+     */
+
+    if (document.readyState === 'loading') {
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            removeCustomerChatForAdmin
+        );
+
+    } else {
+
+        removeCustomerChatForAdmin();
+
+    }
+
+})();
 </script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">

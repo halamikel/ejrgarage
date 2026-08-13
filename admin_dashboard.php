@@ -4,16 +4,67 @@ include 'includes/header.php';
 ?>
 
 <script>
-// ── JWT-based admin gate ──────────────────────────────────────
-// PHP session is never set in this app — auth is JWT in localStorage.
-// Verify role client-side first; the real enforcement is on every
-// admin API endpoint server-side (role_id = 2 check via JWT decode).
+<script>
+// ============================================================
+// EJR GARAGE ADMIN ACCESS CHECK
+// ============================================================
+//
+// ONLY accounts with role_id = 2 are allowed to access
+// the Admin Dashboard.
+//
+// We no longer use a hardcoded admin user ID such as 21.
+//
+// The server-side admin APIs also verify role_id = 2,
+// so this JavaScript check is only the first layer.
+// ============================================================
+
 (function () {
+
     const token = localStorage.getItem('jwt_token');
-    const user  = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!token || (user.role_id != 2 && user.id != 21)) {
-        window.location.href = 'account.php';
+
+    let user = {};
+
+    try {
+
+        user = JSON.parse(
+            localStorage.getItem('user') || '{}'
+        );
+
+    } catch (error) {
+
+        user = {};
+
     }
+
+
+    /*
+     * No login token.
+     */
+    if (!token) {
+
+        window.location.href = 'account.php';
+
+        return;
+    }
+
+
+    /*
+     * Only role_id = 2 can access the admin dashboard.
+     */
+    if (Number(user.role_id) !== 2) {
+
+        window.location.href = 'account.php';
+
+        return;
+    }
+
+
+    /*
+     * Store a simple global flag that can be used by the
+     * admin dashboard and other scripts.
+     */
+    window.ejrIsAdmin = true;
+
 })();
 </script>
 
