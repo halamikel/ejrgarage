@@ -390,11 +390,15 @@ if (localStorage.getItem('jwt_token')) {
      They do not get the customer bot interface.
 ===================================================== -->
 
+<!-- ============================================================
+     ADMIN CHAT WIDGET
+============================================================ -->
+
 <div
     id="adminChatPanel"
     style="
         display:none;
-        height:390px;
+        height:430px;
         background:#f0f2f5;
         flex-direction:column;
     "
@@ -405,7 +409,8 @@ if (localStorage.getItem('jwt_token')) {
     <div
         id="adminChatCustomerList"
         style="
-            height:150px;
+            height:135px;
+            min-height:135px;
             overflow-y:auto;
             background:#fff;
             border-bottom:1px solid #ddd;
@@ -438,11 +443,13 @@ if (localStorage.getItem('jwt_token')) {
             font-weight:700;
         "
     >
+
         Select a customer
+
     </div>
 
 
-    <!-- CUSTOMER MESSAGES -->
+    <!-- MESSAGES -->
 
     <div
         id="adminChatMessages"
@@ -457,7 +464,7 @@ if (localStorage.getItem('jwt_token')) {
             style="
                 text-align:center;
                 color:#888;
-                margin-top:40px;
+                margin-top:35px;
                 font-size:13px;
             "
         >
@@ -471,43 +478,72 @@ if (localStorage.getItem('jwt_token')) {
                 "
             ></i>
 
-            Select a customer to view incoming messages.
+            Select a customer to view messages.
+
+        </div>
+
+    </div>
+
+
+    <!-- ADMIN REPLY -->
+
+    <div
+        id="adminChatReplyArea"
+        style="
+            display:none;
+            background:#fff;
+            border-top:1px solid #ddd;
+            padding:8px;
+        "
+    >
+
+        <div
+            style="
+                display:flex;
+                gap:7px;
+                align-items:center;
+            "
+        >
+
+            <input
+                type="text"
+                id="adminChatReplyInput"
+                class="form-control"
+                placeholder="Reply to customer..."
+                autocomplete="off"
+                style="
+                    font-size:12px;
+                    border-radius:20px;
+                "
+            >
+
+            <button
+                type="button"
+                id="adminChatReplyButton"
+                onclick="sendAdminWidgetReply()"
+                style="
+                    width:38px;
+                    height:38px;
+                    min-width:38px;
+                    border:none;
+                    border-radius:50%;
+                    background:#e62429;
+                    color:#fff;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                "
+            >
+
+                <i class="bi bi-send-fill"></i>
+
+            </button>
 
         </div>
 
     </div>
 
 </div>
-
-        <!-- ====================================================
-             MESSAGES
-        ===================================================== -->
-
-        <div
-            id="chatBody"
-            style="
-                height:300px;
-                padding:16px;
-                overflow-y:auto;
-                background:#f0f2f5;
-                display:flex;
-                flex-direction:column;
-                gap:8px;
-            "
-        >
-
-            <div class="ejr-bot-msg">
-
-                Hi! 👋 Welcome to
-                <strong>EJR Garage</strong>.
-                How can I help you today?
-
-            </div>
-
-        </div>
-
-
-
         <!-- ====================================================
              TYPING INDICATOR
         ===================================================== -->
@@ -1004,6 +1040,14 @@ if (localStorage.getItem('jwt_token')) {
 let lastChatSession = 'bot';
 
 let suppressNextPoll = false;
+
+
+/* ============================================================
+   ADMIN CHAT STATE
+============================================================ */
+
+let adminSelectedCustomerId = null;
+let adminSelectedCustomerName = '';
 
 
 /* ============================================================
@@ -1527,6 +1571,303 @@ function selectAdminWidgetCustomer(
     userName
 ) {
 
+    if (!isEJRAdmin()) {
+        return;
+    }
+
+
+    adminSelectedCustomerId =
+        Number(userId);
+
+    adminSelectedCustomerName =
+        userName || 'Customer';
+
+
+    const title =
+        document.getElementById(
+            'adminSelectedCustomer'
+        );
+
+
+    if (title) {
+
+        title.innerHTML = `
+
+            <i
+                class="bi bi-person-circle me-1"
+            ></i>
+
+            ${escapeAdminChatText(
+                adminSelectedCustomerName
+            )}
+
+        `;
+
+    }
+
+
+    /*
+     * Show the reply box.
+     */
+
+    const replyArea =
+        document.getElementById(
+            'adminChatReplyArea'
+        );
+
+
+    if (replyArea) {
+
+        replyArea.style.display =
+            'block';
+
+    }
+
+
+    /*
+     * Load the selected customer's messages.
+     */
+
+    loadAdminWidgetMessages(
+        adminSelectedCustomerId
+    );
+
+
+    /*
+     * Focus reply input.
+     */
+
+    const input =
+        document.getElementById(
+            'adminChatReplyInput'
+        );
+
+
+    if (input) {
+
+        setTimeout(() => {
+
+            input.focus();
+
+        }, 100);
+
+    }
+
+}
+
+/* ============================================================
+   ADMIN SEND REPLY FROM CHAT WIDGET
+============================================================ */
+
+function sendAdminWidgetReply() {
+
+    if (!isEJRAdmin()) {
+        return;
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            'adminChatReplyInput'
+        );
+
+
+    const button =
+        document.getElementById(
+            'adminChatReplyButton'
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    const message =
+        input.value.trim();
+
+
+    if (!message) {
+        return;
+    }
+
+
+    /*
+     * Prevent duplicate clicks.
+     */
+
+    input.disabled = true;
+
+
+    if (button) {
+        button.disabled = true;
+    }
+
+
+    fetch(
+        '/api/admin/send_message.php',
+        {
+            method: 'POST',
+
+            credentials: 'include',
+
+            headers: {
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+            },
+
+            body: JSON.stringify({
+
+                user_id:
+                    adminSelectedCustomerId,
+
+                message:
+                    message
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        return response.json()
+            .then(data => {
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.message ||
+                        'Unable to send reply.'
+                    );
+
+                }
+
+                return data;
+
+            });
+
+    })
+
+    .then(data => {
+
+        if (data.status !== 'success') {
+
+            throw new Error(
+                data.message ||
+                'Unable to send reply.'
+            );
+
+        }
+
+
+        /*
+         * Clear the input.
+         */
+
+        input.value = '';
+
+
+        /*
+         * Reload conversation.
+         */
+
+        loadAdminWidgetMessages(
+            adminSelectedCustomerId
+        );
+
+
+        /*
+         * Refresh customer list.
+         */
+
+        loadAdminWidgetCustomers();
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin reply error:',
+            error
+        );
+
+
+        alert(
+            error.message ||
+            'Unable to send reply.'
+        );
+
+    })
+
+    .finally(() => {
+
+        input.disabled = false;
+
+
+        if (button) {
+            button.disabled = false;
+        }
+
+
+        input.focus();
+
+    });
+
+}
+
+/* ============================================================
+   ADMIN REPLY ENTER KEY
+============================================================ */
+
+document.addEventListener(
+    'keydown',
+    function (event) {
+
+        if (
+            event.key !== 'Enter' ||
+            event.shiftKey
+        ) {
+
+            return;
+
+        }
+
+
+        const input =
+            document.getElementById(
+                'adminChatReplyInput'
+            );
+
+
+        if (
+            !input ||
+            document.activeElement !== input
+        ) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+
+        sendAdminWidgetReply();
+
+    }
+);
     const title =
         document.getElementById(
             'adminSelectedCustomer'
