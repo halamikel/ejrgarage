@@ -2,120 +2,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="/js/auth.js"></script>
 
-<script src="/js/auth.js"></script>
-
 <script>
 if (localStorage.getItem('jwt_token')) {
     if (typeof startSessionWatch === 'function') {
         startSessionWatch();
     }
 }
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN LIVE CHAT PROTECTION
-|--------------------------------------------------------------------------
-| role_id = 2 means ADMIN.
-|
-| Admin accounts should NOT see the customer-side Live Chat widget.
-| They will instead use the Live Chat section inside admin_dashboard.php.
-|--------------------------------------------------------------------------
-*/
-
-(function () {
-
-    function isAdminAccount() {
-
-        const token = localStorage.getItem('jwt_token');
-
-        if (!token) {
-            return false;
-        }
-
-        try {
-
-            const parts = token.split('.');
-
-            if (parts.length !== 3) {
-                return false;
-            }
-
-            const payload = JSON.parse(
-                atob(
-                    parts[1]
-                        .replace(/-/g, '+')
-                        .replace(/_/g, '/')
-                )
-            );
-
-            /*
-             * Support either:
-             * role_id = 2
-             * role = 2
-             */
-
-            return (
-                Number(payload.role_id) === 2 ||
-                Number(payload.role) === 2
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Unable to determine account role:',
-                error
-            );
-
-            return false;
-        }
-    }
-
-
-    function removeCustomerChatForAdmin() {
-
-        if (!isAdminAccount()) {
-            return;
-        }
-
-        /*
-         * Remove the entire customer chat widget.
-         */
-
-        const chatContainer =
-            document.getElementById('ejrChatContainer');
-
-        if (chatContainer) {
-            chatContainer.remove();
-        }
-
-        /*
-         * Prevent the customer chat functions
-         * from being used by an admin.
-         */
-
-        window.isEJRAdmin = true;
-
-    }
-
-
-    /*
-     * Run after the page has loaded.
-     */
-
-    if (document.readyState === 'loading') {
-
-        document.addEventListener(
-            'DOMContentLoaded',
-            removeCustomerChatForAdmin
-        );
-
-    } else {
-
-        removeCustomerChatForAdmin();
-
-    }
-
-})();
 </script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -392,25 +284,25 @@ if (localStorage.getItem('jwt_token')) {
 
                 <div>
 
-                    <div
-                        style="
-                            font-weight:700;
-                            font-size:15px;
-                        "
-                    >
-                        EJR Assistant
-                    </div>
+                   <div
+    id="chatTitle"
+    style="
+        font-weight:700;
+        font-size:15px;
+    "
+>
+    EJR Assistant
+</div>
 
-                    <div
-                        id="chatStatusLabel"
-                        style="
-                            font-size:11px;
-                            opacity:0.75;
-                        "
-                    >
-                        Bot Mode • Always here to help
-                    </div>
-
+<div
+    id="chatStatusLabel"
+    style="
+        font-size:11px;
+        opacity:0.75;
+    "
+>
+    Bot Mode • Always here to help
+</div>
                 </div>
 
             </div>
@@ -488,7 +380,104 @@ if (localStorage.getItem('jwt_token')) {
 
         </div>
 
+<!-- ====================================================
+     ADMIN CHAT PANEL
+     
+     This is shown ONLY when the logged-in account has
+     role_id = 2.
+     
+     Admins can RECEIVE customer messages here.
+     They do not get the customer bot interface.
+===================================================== -->
 
+<div
+    id="adminChatPanel"
+    style="
+        display:none;
+        height:390px;
+        background:#f0f2f5;
+        flex-direction:column;
+    "
+>
+
+    <!-- CUSTOMER LIST -->
+
+    <div
+        id="adminChatCustomerList"
+        style="
+            height:150px;
+            overflow-y:auto;
+            background:#fff;
+            border-bottom:1px solid #ddd;
+        "
+    >
+
+        <div
+            style="
+                padding:20px;
+                text-align:center;
+                color:#777;
+                font-size:13px;
+            "
+        >
+            Loading customer messages...
+        </div>
+
+    </div>
+
+
+    <!-- SELECTED CUSTOMER -->
+
+    <div
+        id="adminSelectedCustomer"
+        style="
+            padding:10px 14px;
+            background:#fff;
+            border-bottom:1px solid #ddd;
+            font-size:13px;
+            font-weight:700;
+        "
+    >
+        Select a customer
+    </div>
+
+
+    <!-- CUSTOMER MESSAGES -->
+
+    <div
+        id="adminChatMessages"
+        style="
+            flex:1;
+            padding:12px;
+            overflow-y:auto;
+        "
+    >
+
+        <div
+            style="
+                text-align:center;
+                color:#888;
+                margin-top:40px;
+                font-size:13px;
+            "
+        >
+
+            <i
+                class="bi bi-chat-left-text"
+                style="
+                    font-size:30px;
+                    display:block;
+                    margin-bottom:8px;
+                "
+            ></i>
+
+            Select a customer to view incoming messages.
+
+        </div>
+
+    </div>
+
+</div>
 
         <!-- ====================================================
              MESSAGES
@@ -1017,6 +1006,60 @@ let lastChatSession = 'bot';
 let suppressNextPoll = false;
 
 
+/* ============================================================
+   EJR CHAT ACCOUNT MODE
+============================================================ */
+
+/*
+ * Returns the currently logged-in user.
+ */
+function getEJRCurrentUser() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem('user') || '{}'
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Unable to read user information:',
+            error
+        );
+
+        return {};
+
+    }
+
+}
+
+
+/*
+ * Returns true ONLY for role_id = 2.
+ */
+function isEJRAdmin() {
+
+    const user =
+        getEJRCurrentUser();
+
+    return Number(user.role_id) === 2;
+
+}
+
+
+/*
+ * Get JWT token.
+ */
+function getEJRChatToken() {
+
+    return localStorage.getItem(
+        'jwt_token'
+    ) || '';
+
+}
+
+
 
 // ============================================================
 // TOGGLE CHAT
@@ -1027,6 +1070,10 @@ function toggleChat() {
     const box =
         document.getElementById('chatBox');
 
+    if (!box) {
+        return;
+    }
+
 
     const open =
         box.style.display === 'none';
@@ -1036,18 +1083,749 @@ function toggleChat() {
         open ? 'flex' : 'none';
 
 
-    if (open) {
+    if (!open) {
+        return;
+    }
 
-        loadMessages();
 
+    /*
+     * ADMIN MODE
+     *
+     * The same floating widget is used,
+     * but it becomes a customer-message inbox.
+     */
+
+    if (isEJRAdmin()) {
+
+        initializeAdminChatWidget();
+
+        return;
+    }
+
+
+    /*
+     * CUSTOMER MODE
+     */
+
+    loadMessages();
+
+
+    const notification =
         document.getElementById(
             'chatNotification'
-        ).style.display = 'none';
+        );
+
+    if (notification) {
+        notification.style.display = 'none';
+    }
+
+}
+
+/* ============================================================
+   ADMIN LIVE CHAT WIDGET
+============================================================ */
+
+
+/*
+ * Switch the floating widget into ADMIN mode.
+ */
+function initializeAdminChatWidget() {
+
+    const title =
+        document.getElementById(
+            'chatTitle'
+        );
+
+    const status =
+        document.getElementById(
+            'chatStatusLabel'
+        );
+
+    const chatBody =
+        document.getElementById(
+            'chatBody'
+        );
+
+    const chatOptions =
+        document.getElementById(
+            'chatOptions'
+        );
+
+    const endSession =
+        document.getElementById(
+            'userEndSessionBar'
+        );
+
+    const waiting =
+        document.getElementById(
+            'waitingIndicator'
+        );
+
+    const live =
+        document.getElementById(
+            'liveIndicator'
+        );
+
+    const input =
+        document.getElementById(
+            'chatInput'
+        );
+
+    const adminPanel =
+        document.getElementById(
+            'adminChatPanel'
+        );
+
+
+    /*
+     * Change title.
+     */
+
+    if (title) {
+
+        title.textContent =
+            'Customer Live Chat';
+
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            'Incoming customer messages';
+
+    }
+
+
+    /*
+     * Hide customer-only elements.
+     */
+
+    if (chatBody) {
+
+        chatBody.style.display =
+            'none';
+
+    }
+
+
+    if (chatOptions) {
+
+        chatOptions.style.display =
+            'none';
+
+    }
+
+
+    if (endSession) {
+
+        endSession.style.display =
+            'none';
+
+    }
+
+
+    if (waiting) {
+
+        waiting.style.display =
+            'none';
+
+    }
+
+
+    if (live) {
+
+        live.style.display =
+            'none';
+
+    }
+
+
+    /*
+     * Hide customer message input.
+     */
+
+    if (input) {
+
+        const inputContainer =
+            input.parentElement;
+
+        if (inputContainer) {
+
+            inputContainer.style.display =
+                'none';
+
+        }
+
+    }
+
+
+    /*
+     * Show admin panel.
+     */
+
+    if (adminPanel) {
+
+        adminPanel.style.display =
+            'flex';
+
+    }
+
+
+    /*
+     * Load customers immediately.
+     */
+
+    loadAdminWidgetCustomers();
+
+}
+
+
+
+/*
+ * Load customers who have chat messages.
+ */
+function loadAdminWidgetCustomers() {
+
+    if (!isEJRAdmin()) {
+        return;
+    }
+
+
+    fetch(
+        '/api/admin/get_chat_users.php?t=' +
+        Date.now(),
+        {
+            method: 'GET',
+
+            credentials: 'include',
+
+            headers: {
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+            }
+
+        }
+    )
+
+    .then(res => {
+
+        if (!res.ok) {
+
+            throw new Error(
+                'Unable to load customer messages.'
+            );
+
+        }
+
+        return res.json();
+
+    })
+
+    .then(data => {
+
+        if (data.status !== 'success') {
+
+            throw new Error(
+                data.message ||
+                'Unable to load customer messages.'
+            );
+
+        }
+
+
+        renderAdminWidgetCustomers(
+            data.users || []
+        );
+
+
+        /*
+         * Update notification badge.
+         */
+
+        updateAdminWidgetNotification(
+            data.total_unread || 0
+        );
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin chat widget error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/*
+ * Display customer list.
+ */
+function renderAdminWidgetCustomers(
+    users
+) {
+
+    const list =
+        document.getElementById(
+            'adminChatCustomerList'
+        );
+
+    if (!list) {
+        return;
+    }
+
+
+    if (!users.length) {
+
+        list.innerHTML = `
+
+            <div
+                style="
+                    padding:25px;
+                    text-align:center;
+                    color:#777;
+                    font-size:13px;
+                "
+            >
+
+                <i
+                    class="bi bi-chat-dots"
+                    style="
+                        font-size:28px;
+                        display:block;
+                        margin-bottom:8px;
+                    "
+                ></i>
+
+                No customer messages yet.
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    list.innerHTML =
+        users.map(user => {
+
+            const unread =
+                Number(
+                    user.unread_count || 0
+                );
+
+
+            const name =
+                escapeAdminChatText(
+                    user.full_name ||
+                    'Customer'
+                );
+
+
+            const message =
+                escapeAdminChatText(
+                    user.last_message ||
+                    'New message'
+                );
+
+
+            return `
+
+                <div
+                    onclick="
+                        selectAdminWidgetCustomer(
+                            ${Number(user.id)},
+                            '${name.replace(/'/g, "\\'")}'
+                        )
+                    "
+                    style="
+                        padding:10px 12px;
+                        border-bottom:1px solid #eee;
+                        cursor:pointer;
+                        background:#fff;
+                    "
+                    onmouseover="
+                        this.style.background='#f8f9fa'
+                    "
+                    onmouseout="
+                        this.style.background='#fff'
+                    "
+                >
+
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                        "
+                    >
+
+                        <strong
+                            style="
+                                font-size:13px;
+                            "
+                        >
+                            ${name}
+                        </strong>
+
+                        ${
+                            unread > 0
+                            ? `
+                                <span
+                                    style="
+                                        background:#e62429;
+                                        color:#fff;
+                                        border-radius:20px;
+                                        padding:2px 7px;
+                                        font-size:10px;
+                                        font-weight:700;
+                                    "
+                                >
+                                    ${unread}
+                                </span>
+                            `
+                            : ''
+                        }
+
+                    </div>
+
+
+                    <div
+                        style="
+                            font-size:11px;
+                            color:#777;
+                            margin-top:3px;
+                            white-space:nowrap;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                        "
+                    >
+                        ${message}
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join('');
+
+}
+
+
+
+/*
+ * Select a customer.
+ */
+function selectAdminWidgetCustomer(
+    userId,
+    userName
+) {
+
+    const title =
+        document.getElementById(
+            'adminSelectedCustomer'
+        );
+
+
+    if (title) {
+
+        title.innerHTML = `
+
+            <i
+                class="bi bi-person-circle me-1"
+            ></i>
+
+            ${escapeAdminChatText(userName)}
+
+        `;
+
+    }
+
+
+    loadAdminWidgetMessages(
+        userId
+    );
+
+}
+
+
+
+/*
+ * Load messages for selected customer.
+ */
+function loadAdminWidgetMessages(
+    userId
+) {
+
+    if (!isEJRAdmin()) {
+        return;
+    }
+
+
+    fetch(
+        '/api/admin/get_messages.php?user_id=' +
+        encodeURIComponent(userId) +
+        '&t=' +
+        Date.now(),
+        {
+            method: 'GET',
+
+            credentials: 'include',
+
+            headers: {
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+            }
+
+        }
+    )
+
+    .then(res => {
+
+        if (!res.ok) {
+
+            throw new Error(
+                'Unable to load messages.'
+            );
+
+        }
+
+        return res.json();
+
+    })
+
+    .then(data => {
+
+        if (data.status !== 'success') {
+
+            throw new Error(
+                data.message ||
+                'Unable to load messages.'
+            );
+
+        }
+
+
+        const body =
+            document.getElementById(
+                'adminChatMessages'
+            );
+
+
+        if (!body) {
+            return;
+        }
+
+
+        const messages =
+            data.messages || [];
+
+
+        if (!messages.length) {
+
+            body.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#888;
+                        margin-top:35px;
+                        font-size:12px;
+                    "
+                >
+                    No messages yet.
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        body.innerHTML =
+            messages.map(message => {
+
+                /*
+                 * Admin widget is receive-only.
+                 *
+                 * We display customer messages.
+                 * Admin messages are displayed only as history.
+                 */
+
+                const isCustomer =
+                    message.sender === 'user';
+
+
+                return `
+
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:
+                                ${
+                                    isCustomer
+                                    ? 'flex-start'
+                                    : 'flex-end'
+                                };
+                            margin-bottom:8px;
+                        "
+                    >
+
+                        <div
+                            style="
+                                max-width:85%;
+                                padding:8px 11px;
+                                border-radius:12px;
+                                font-size:12px;
+                                background:
+                                    ${
+                                        isCustomer
+                                        ? '#ffffff'
+                                        : '#e62429'
+                                    };
+                                color:
+                                    ${
+                                        isCustomer
+                                        ? '#222'
+                                        : '#ffffff'
+                                    };
+                                border:
+                                    ${
+                                        isCustomer
+                                        ? '1px solid #ddd'
+                                        : 'none'
+                                    };
+                            "
+                        >
+
+                            <div
+                                style="
+                                    font-size:9px;
+                                    font-weight:700;
+                                    margin-bottom:3px;
+                                    opacity:.75;
+                                "
+                            >
+                                ${
+                                    isCustomer
+                                    ? 'CUSTOMER'
+                                    : 'ADMIN'
+                                }
+                            </div>
+
+                            <div>
+                                ${
+                                    escapeAdminChatText(
+                                        message.message || ''
+                                    )
+                                }
+                            </div>
+
+                            <div
+                                style="
+                                    font-size:8px;
+                                    margin-top:3px;
+                                    opacity:.65;
+                                "
+                            >
+                                ${
+                                    escapeAdminChatText(
+                                        message.time || ''
+                                    )
+                                }
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join('');
+
+
+        body.scrollTop =
+            body.scrollHeight;
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin messages error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/*
+ * Update LIVE CHAT notification count.
+ */
+function updateAdminWidgetNotification(
+    count
+) {
+
+    const notification =
+        document.getElementById(
+            'chatNotification'
+        );
+
+
+    if (!notification) {
+        return;
+    }
+
+
+    count =
+        Number(count || 0);
+
+
+    if (count > 0) {
+
+        notification.textContent =
+            count;
+
+        notification.style.display =
+            'flex';
+
+    } else {
+
+        notification.style.display =
+            'none';
 
     }
 
 }
 
+
+
+/*
+ * Escape customer messages before inserting them
+ * into the widget.
+ */
+function escapeAdminChatText(
+    text
+) {
+
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+}
 
 
 // ============================================================
@@ -1449,6 +2227,12 @@ function startBookingFromChat() {
 
 function sendChatMessage() {
 
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
+
     const input =
         document.getElementById(
             'chatInput'
@@ -1608,8 +2392,23 @@ function sendChatMessage() {
 // ── Quick question buttons ───────────────────────────────────
 function askQuickQuestion(question) {
 
-    const token = localStorage.getItem('jwt_token');
+    /*
+     * Admins do not use the customer bot.
+     */
 
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    const token =
+        localStorage.getItem(
+            'jwt_token'
+        );
+
+    // existing code continues...
     // Not logged in → go to login
     if (!token) {
         window.location.href = '/login.php';
@@ -1628,6 +2427,12 @@ function askQuickQuestion(question) {
 // ============================================================
 
 function requestLiveChat() {
+
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
 
     const liveToken = localStorage.getItem('jwt_token') || '';
 
@@ -1845,6 +2650,53 @@ setInterval(
 
     4000
 
+);
+
+/* ============================================================
+   ADMIN CHAT POLLING
+============================================================ */
+
+setInterval(
+    () => {
+
+        /*
+         * Only run this for admins.
+         */
+
+        if (!isEJRAdmin()) {
+            return;
+        }
+
+
+        const chatBox =
+            document.getElementById(
+                'chatBox'
+            );
+
+
+        /*
+         * Only poll while the widget is open.
+         */
+
+        if (
+            !chatBox ||
+            chatBox.style.display !== 'flex'
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * Refresh customer list and unread count.
+         */
+
+        loadAdminWidgetCustomers();
+
+    },
+
+    4000
 );
 
 </script>
