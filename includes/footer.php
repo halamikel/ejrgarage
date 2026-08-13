@@ -65,7 +65,6 @@ if (localStorage.getItem('jwt_token')) {
 
                     </li>
 
-
                     <li class="mb-3 d-flex align-items-center">
 
                         <i
@@ -77,7 +76,6 @@ if (localStorage.getItem('jwt_token')) {
                         </span>
 
                     </li>
-
 
                     <li class="mb-3 d-flex align-items-center">
 
@@ -114,7 +112,6 @@ if (localStorage.getItem('jwt_token')) {
 
                 </div>
 
-
                 <p class="text-secondary small px-lg-5">
 
                     Reliable repairs.
@@ -122,7 +119,6 @@ if (localStorage.getItem('jwt_token')) {
                     Quality service.
 
                 </p>
-
 
                 <div class="d-flex gap-3 mt-2">
 
@@ -148,7 +144,6 @@ if (localStorage.getItem('jwt_token')) {
                     </a>
 
                 </div>
-
 
                 <a
                     href="/download-app.php"
@@ -185,7 +180,6 @@ if (localStorage.getItem('jwt_token')) {
                         Office Hours
                     </h6>
 
-
                     <ul class="list-unstyled m-0">
 
                         <li class="mb-2">
@@ -200,7 +194,6 @@ if (localStorage.getItem('jwt_token')) {
 
                         </li>
 
-
                         <li class="mb-2">
 
                             Saturday:
@@ -212,7 +205,6 @@ if (localStorage.getItem('jwt_token')) {
                             </span>
 
                         </li>
-
 
                         <li class="mb-0">
 
@@ -259,7 +251,6 @@ if (localStorage.getItem('jwt_token')) {
 </footer>
 
 
-
 <!-- ============================================================
      EJR ASSISTANT / CHAT WIDGET
 ============================================================ -->
@@ -275,10 +266,7 @@ if (localStorage.getItem('jwt_token')) {
     "
 >
 
-
-    <!-- ========================================================
-         CHAT TOGGLE
-    ========================================================= -->
+    <!-- CHAT TOGGLE -->
 
     <div
         id="chatPill"
@@ -320,7 +308,6 @@ if (localStorage.getItem('jwt_token')) {
 
         LIVE CHAT
 
-
         <span
             id="chatNotification"
             style="
@@ -343,10 +330,7 @@ if (localStorage.getItem('jwt_token')) {
     </div>
 
 
-
-    <!-- ========================================================
-         CHAT BOX
-    ========================================================= -->
+    <!-- CHAT BOX -->
 
     <div
         id="chatBox"
@@ -379,10 +363,7 @@ if (localStorage.getItem('jwt_token')) {
         "
     >
 
-
-        <!-- ====================================================
-             HEADER
-        ===================================================== -->
+        <!-- HEADER -->
 
         <div
             style="
@@ -429,7 +410,6 @@ if (localStorage.getItem('jwt_token')) {
 
                 </div>
 
-
                 <div>
 
                     <div
@@ -441,7 +421,6 @@ if (localStorage.getItem('jwt_token')) {
                     >
                         EJR Assistant
                     </div>
-
 
                     <div
                         id="chatStatusLabel"
@@ -456,7 +435,6 @@ if (localStorage.getItem('jwt_token')) {
                 </div>
 
             </div>
-
 
             <button
                 type="button"
@@ -476,10 +454,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             WAITING INDICATOR
-        ===================================================== -->
+        <!-- WAITING INDICATOR -->
 
         <div
             id="waitingIndicator"
@@ -508,10 +483,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             LIVE INDICATOR
-        ===================================================== -->
+        <!-- LIVE INDICATOR -->
 
         <div
             id="liveIndicator"
@@ -537,26 +509,17 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             CUSTOMER CHAT BODY
-        ===================================================== -->
+        <!-- CUSTOMER CHAT BODY -->
 
         <div
             id="chatBody"
             style="
                 height:300px;
-
                 padding:14px;
-
                 background:#f0f2f5;
-
                 overflow-y:auto;
-
                 display:flex;
-
                 flex-direction:column;
-
                 gap:8px;
             "
         >
@@ -572,7 +535,6 @@ if (localStorage.getItem('jwt_token')) {
             </div>
 
         </div>
-
 
 
         <!-- ====================================================
@@ -610,7 +572,9 @@ if (localStorage.getItem('jwt_token')) {
                         font-size:13px;
                     "
                 >
+
                     Loading customer messages...
+
                 </div>
 
             </div>
@@ -634,7 +598,7 @@ if (localStorage.getItem('jwt_token')) {
             </div>
 
 
-            <!-- MESSAGES -->
+            <!-- ADMIN MESSAGES -->
 
             <div
                 id="adminChatMessages"
@@ -671,6 +635,48 @@ if (localStorage.getItem('jwt_token')) {
             </div>
 
 
+            <!-- =================================================
+                 ADMIN END SESSION BAR
+            ================================================== -->
+
+            <div
+                id="adminEndSessionBar"
+                style="
+                    display:none;
+                    background:#fff8f8;
+                    border-top:1px solid #ffdede;
+                    padding:8px;
+                    text-align:center;
+                "
+            >
+
+                <button
+                    type="button"
+                    id="adminEndSessionButton"
+                    onclick="adminEndSelectedSession()"
+                    style="
+                        background:#fff;
+                        border:1px solid #e62429;
+                        color:#e62429;
+                        border-radius:20px;
+                        padding:5px 16px;
+                        font-size:12px;
+                        font-weight:600;
+                        cursor:pointer;
+                    "
+                >
+
+                    <i
+                        class="bi bi-x-circle me-1"
+                    ></i>
+
+                    End Customer Session
+
+                </button>
+
+            </div>
+
+
             <!-- ADMIN REPLY -->
 
             <div
@@ -703,7 +709,6 @@ if (localStorage.getItem('jwt_token')) {
                         "
                     >
 
-
                     <button
                         type="button"
                         id="adminChatReplyButton"
@@ -735,10 +740,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             TYPING INDICATOR
-        ===================================================== -->
+        <!-- TYPING INDICATOR -->
 
         <div
             id="typingIndicator"
@@ -770,10 +772,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             QUICK OPTIONS
-        ===================================================== -->
+        <!-- QUICK OPTIONS -->
 
         <div
             id="chatOptions"
@@ -896,10 +895,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             END SESSION
-        ===================================================== -->
+        <!-- CUSTOMER END SESSION -->
 
         <div
             id="userEndSessionBar"
@@ -938,10 +934,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-
-        <!-- ====================================================
-             INPUT
-        ===================================================== -->
+        <!-- CUSTOMER INPUT -->
 
         <div
             id="customerChatInputContainer"
@@ -976,7 +969,6 @@ if (localStorage.getItem('jwt_token')) {
                 "
             >
 
-
             <button
                 type="button"
                 onclick="sendChatMessage()"
@@ -1009,16 +1001,11 @@ if (localStorage.getItem('jwt_token')) {
 </div>
 
 
-
 <!-- ============================================================
      CHAT STYLES
 ============================================================ -->
 
 <style>
-
-/* ============================================================
-   QUICK BUTTONS
-============================================================ */
 
 .opt-btn {
 
@@ -1055,10 +1042,6 @@ if (localStorage.getItem('jwt_token')) {
 
 }
 
-
-/* ============================================================
-   GET STARTED
-============================================================ */
 
 .ejr-get-started-btn {
 
@@ -1108,17 +1091,6 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 
-.ejr-get-started-btn:active {
-
-    transform:translateY(0);
-
-}
-
-
-/* ============================================================
-   BOT MESSAGE
-============================================================ */
-
 .ejr-bot-msg {
 
     background:#fff;
@@ -1144,10 +1116,6 @@ if (localStorage.getItem('jwt_token')) {
 
 }
 
-
-/* ============================================================
-   USER MESSAGE
-============================================================ */
 
 .ejr-user-msg {
 
@@ -1180,10 +1148,6 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 
-/* ============================================================
-   TIME
-============================================================ */
-
 .ejr-time {
 
     font-size:10px;
@@ -1196,10 +1160,6 @@ if (localStorage.getItem('jwt_token')) {
 
 }
 
-
-/* ============================================================
-   TYPING DOTS
-============================================================ */
 
 .ejr-dot {
 
@@ -1253,26 +1213,7 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 
-/* ============================================================
-   CHAT SCROLLBAR
-============================================================ */
-
-#chatBody::-webkit-scrollbar {
-
-    width:5px;
-
-}
-
-
-#chatBody::-webkit-scrollbar-thumb {
-
-    background:#ccc;
-
-    border-radius:10px;
-
-}
-
-
+#chatBody::-webkit-scrollbar,
 #adminChatMessages::-webkit-scrollbar {
 
     width:5px;
@@ -1280,6 +1221,7 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 
+#chatBody::-webkit-scrollbar-thumb,
 #adminChatMessages::-webkit-scrollbar-thumb {
 
     background:#ccc;
@@ -1289,20 +1231,12 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 
-/* ============================================================
-   SWEETALERT
-============================================================ */
-
 .swal2-container {
 
     z-index:99999999 !important;
 
 }
 
-
-/* ============================================================
-   MOBILE CHAT
-============================================================ */
 
 @media (max-width:500px) {
 
@@ -1337,7 +1271,7 @@ if (localStorage.getItem('jwt_token')) {
 </style>
 
 <!-- ============================================================
-     CHAT JAVASCRIPT
+     PART 2 — CHAT JAVASCRIPT
 ============================================================ -->
 
 <script>
@@ -1409,9 +1343,7 @@ function isEJRAdmin() {
 function getEJRChatToken() {
 
     return (
-        localStorage.getItem(
-            'jwt_token'
-        ) || ''
+        localStorage.getItem('jwt_token') || ''
     );
 
 }
@@ -1424,16 +1356,8 @@ function getEJRChatToken() {
 
 function toggleChat() {
 
-    console.log(
-        'EJR Chat button clicked'
-    );
-
-
     const box =
-        document.getElementById(
-            'chatBox'
-        );
-
+        document.getElementById('chatBox');
 
     if (!box) {
 
@@ -1452,36 +1376,19 @@ function toggleChat() {
 
     if (isOpen) {
 
-        box.style.display =
-            'none';
-
-        console.log(
-            'EJR Chat closed'
-        );
+        box.style.display = 'none';
 
         return;
 
     }
 
 
-    /* OPEN */
-
-    box.style.display =
-        'flex';
-
-
-    console.log(
-        'EJR Chat opened'
-    );
+    box.style.display = 'flex';
 
 
     /* ADMIN */
 
     if (isEJRAdmin()) {
-
-        console.log(
-            'Opening ADMIN chat'
-        );
 
         initializeAdminChatWidget();
 
@@ -1491,11 +1398,6 @@ function toggleChat() {
 
 
     /* CUSTOMER */
-
-    console.log(
-        'Opening CUSTOMER chat'
-    );
-
 
     loadMessages();
 
@@ -1575,7 +1477,6 @@ function initializeAdminChatWidget() {
         document.getElementById(
             'adminChatPanel'
         );
-
 
 
     if (title) {
@@ -1746,9 +1647,7 @@ function loadAdminWidgetCustomers() {
    RENDER ADMIN CUSTOMER LIST
 ============================================================ */
 
-function renderAdminWidgetCustomers(
-    users
-) {
+function renderAdminWidgetCustomers(users) {
 
     const list =
         document.getElementById(
@@ -2246,9 +2145,7 @@ document.addEventListener(
    LOAD ADMIN MESSAGES
 ============================================================ */
 
-function loadAdminWidgetMessages(
-    userId
-) {
+function loadAdminWidgetMessages(userId) {
 
     if (!isEJRAdmin()) {
 
@@ -2376,7 +2273,6 @@ function loadAdminWidgetMessages(
                                 max-width:85%;
                                 padding:8px 11px;
                                 border-radius:12px;
-
                                 font-size:12px;
 
                                 background:
@@ -2475,12 +2371,366 @@ function loadAdminWidgetMessages(
 
 
 /* ============================================================
+   ADMIN END CUSTOMER SESSION
+   ============================================================
+
+   IMPORTANT:
+
+   This adds the ADMIN "END SESSION" feature.
+
+   The selected customer is ended using the same
+   /api/check_session.php endpoint.
+
+============================================================ */
+
+function adminEndCustomerSession() {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        alert(
+            'Please select a customer first.'
+        );
+
+        return;
+
+    }
+
+
+    const customerId =
+        adminSelectedCustomerId;
+
+
+    const customerName =
+        adminSelectedCustomerName ||
+        'this customer';
+
+
+    function executeAdminEndSession() {
+
+        const token =
+            getEJRChatToken();
+
+
+        fetch(
+            '/api/check_session.php',
+            {
+
+                method:'POST',
+
+                credentials:'include',
+
+                headers:{
+
+                    'Content-Type':
+                        'application/json',
+
+                    'Authorization':
+                        'Bearer ' +
+                        token
+
+                },
+
+                body:JSON.stringify({
+
+                    type:
+                        'admin_end_session',
+
+                    user_id:
+                        customerId
+
+                })
+
+            }
+        )
+
+        .then(response => {
+
+            return response.json()
+                .then(data => {
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.message ||
+                            'Unable to end session.'
+                        );
+
+                    }
+
+                    return data;
+
+                });
+
+        })
+
+        .then(data => {
+
+            if (
+                data.status !==
+                'success'
+            ) {
+
+                throw new Error(
+                    data.message ||
+                    'Unable to end customer session.'
+                );
+
+            }
+
+
+            /* CLEAR SELECTED CUSTOMER */
+
+            adminSelectedCustomerId =
+                null;
+
+            adminSelectedCustomerName =
+                '';
+
+
+            const selected =
+                document.getElementById(
+                    'adminSelectedCustomer'
+                );
+
+
+            if (selected) {
+
+                selected.innerHTML = `
+
+                    <i
+                        class="bi bi-check-circle me-1"
+                    ></i>
+
+                    Session ended for
+                    ${escapeAdminChatText(customerName)}
+
+                `;
+
+            }
+
+
+            const messages =
+                document.getElementById(
+                    'adminChatMessages'
+                );
+
+
+            if (messages) {
+
+                messages.innerHTML = `
+
+                    <div
+                        style="
+                            text-align:center;
+                            color:#198754;
+                            margin-top:35px;
+                            font-size:13px;
+                        "
+                    >
+
+                        <i
+                            class="bi bi-check-circle"
+                            style="
+                                font-size:35px;
+                                display:block;
+                                margin-bottom:10px;
+                            "
+                        ></i>
+
+                        Live session ended.
+
+                        <br>
+
+                        The customer has
+                        returned to bot mode.
+
+                    </div>
+
+                `;
+
+            }
+
+
+            const replyArea =
+                document.getElementById(
+                    'adminChatReplyArea'
+                );
+
+
+            if (replyArea) {
+
+                replyArea.style.display =
+                    'none';
+
+            }
+
+
+            /* REFRESH CUSTOMER LIST */
+
+            loadAdminWidgetCustomers();
+
+
+            /* SUCCESS MESSAGE */
+
+            if (
+                typeof Swal !==
+                'undefined'
+            ) {
+
+                Swal.fire({
+
+                    icon:'success',
+
+                    title:'Session Ended',
+
+                    text:
+                        'The live chat session with ' +
+                        customerName +
+                        ' has been ended.',
+
+                    confirmButtonColor:
+                        '#e62429',
+
+                    timer:2500,
+
+                    showConfirmButton:false
+
+                });
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error(
+                'Admin end session error:',
+                error
+            );
+
+
+            if (
+                typeof Swal !==
+                'undefined'
+            ) {
+
+                Swal.fire({
+
+                    icon:'error',
+
+                    title:'Unable to End Session',
+
+                    text:
+                        error.message ||
+                        'Something went wrong.',
+
+                    confirmButtonColor:
+                        '#e62429'
+
+                });
+
+            }
+
+            else {
+
+                alert(
+                    error.message ||
+                    'Unable to end session.'
+                );
+
+            }
+
+        });
+
+    }
+
+
+
+    /* CONFIRMATION */
+
+    if (
+        typeof Swal !==
+        'undefined'
+    ) {
+
+        Swal.fire({
+
+            title:
+                'End Live Session?',
+
+            html:
+                'End the live chat session with <strong>' +
+                escapeAdminChatText(
+                    customerName
+                ) +
+                '</strong>?',
+
+            icon:
+                'warning',
+
+            showCancelButton:
+                true,
+
+            confirmButtonColor:
+                '#e62429',
+
+            cancelButtonColor:
+                '#6c757d',
+
+            confirmButtonText:
+                'Yes, End Session',
+
+            cancelButtonText:
+                'Cancel'
+
+        })
+
+        .then(result => {
+
+            if (
+                result.isConfirmed
+            ) {
+
+                executeAdminEndSession();
+
+            }
+
+        });
+
+    }
+
+    else {
+
+        if (
+            confirm(
+                'End live session with ' +
+                customerName +
+                '?'
+            )
+        ) {
+
+            executeAdminEndSession();
+
+        }
+
+    }
+
+}
+
+
+
+/* ============================================================
    ADMIN NOTIFICATION
 ============================================================ */
 
-function updateAdminWidgetNotification(
-    count
-) {
+function updateAdminWidgetNotification(count) {
 
     const notification =
         document.getElementById(
@@ -2524,9 +2774,7 @@ function updateAdminWidgetNotification(
    ESCAPE HTML
 ============================================================ */
 
-function escapeAdminChatText(
-    text
-) {
+function escapeAdminChatText(text) {
 
     return String(text)
 
@@ -2563,9 +2811,7 @@ function escapeAdminChatText(
    SESSION UI
 ============================================================ */
 
-function applySessionUI(
-    session
-) {
+function applySessionUI(session) {
 
     currentChatMode =
         session;
@@ -2851,7 +3097,7 @@ function applySessionUI(
 
 
 /* ============================================================
-   RESET CHAT
+   RESET CUSTOMER CHAT
 ============================================================ */
 
 function resetChatUI() {
@@ -2868,8 +3114,7 @@ function resetChatUI() {
 
             <div class="ejr-bot-msg">
 
-                Your session with the admin
-                has ended.
+                Your live session has ended.
 
                 Bot mode is now re-enabled.
 
@@ -2930,10 +3175,6 @@ function loadMessages() {
 
     if (!body) {
 
-        console.error(
-            'EJR CHAT ERROR: #chatBody does not exist.'
-        );
-
         return;
 
     }
@@ -2943,6 +3184,13 @@ function loadMessages() {
         localStorage.getItem(
             'jwt_token'
         ) || '';
+
+
+    if (!pollToken) {
+
+        return;
+
+    }
 
 
     fetch(
@@ -2979,6 +3227,7 @@ function loadMessages() {
 
         applySessionUI(
             data.chat_session ??
+            data.mode ??
             'bot'
         );
 
@@ -3001,11 +3250,17 @@ function loadMessages() {
                         >
 
                             <div>
-                                ${m.message}
+                                ${escapeAdminChatText(
+                                    m.message || ''
+                                )}
                             </div>
 
                             <div class="ejr-time">
-                                ${m.time}
+
+                                ${escapeAdminChatText(
+                                    m.time || ''
+                                )}
+
                             </div>
 
                         </div>
@@ -3051,10 +3306,6 @@ function appendMessage(
 
 
     if (!body) {
-
-        console.error(
-            'Cannot append message: #chatBody missing.'
-        );
 
         return;
 
@@ -3112,7 +3363,7 @@ function appendMessage(
     div.innerHTML = `
 
         <div>
-            ${text}
+            ${escapeAdminChatText(text)}
         </div>
 
         ${buttonHTML}
@@ -3136,9 +3387,7 @@ function appendMessage(
    TYPING
 ============================================================ */
 
-function showTyping(
-    show
-) {
+function showTyping(show) {
 
     const typing =
         document.getElementById(
@@ -3238,9 +3487,7 @@ function sendChatMessage() {
         '';
 
 
-    showTyping(
-        true
-    );
+    showTyping(true);
 
 
     const lowerMessage =
@@ -3323,9 +3570,7 @@ function sendChatMessage() {
 
     .then(data => {
 
-        showTyping(
-            false
-        );
+        showTyping(false);
 
 
         if (data.reply) {
@@ -3346,6 +3591,7 @@ function sendChatMessage() {
 
         applySessionUI(
             data.mode ??
+            data.chat_session ??
             'bot'
         );
 
@@ -3353,9 +3599,7 @@ function sendChatMessage() {
 
     .catch(err => {
 
-        showTyping(
-            false
-        );
+        showTyping(false);
 
 
         console.error(
@@ -3379,9 +3623,7 @@ function sendChatMessage() {
    QUICK QUESTIONS
 ============================================================ */
 
-function askQuickQuestion(
-    question
-) {
+function askQuickQuestion(question) {
 
     if (isEJRAdmin()) {
 
@@ -3468,6 +3710,7 @@ function requestLiveChat() {
 
         button.disabled =
             true;
+
 
         button.innerHTML = `
 
@@ -3559,12 +3802,6 @@ function requestLiveChat() {
 
         else {
 
-            console.error(
-                'Live request error:',
-                data.message
-            );
-
-
             alert(
                 data.message ||
                 'Unable to connect to a live agent.'
@@ -3651,12 +3888,6 @@ function cancelLiveRequest() {
 
     .then(data => {
 
-        console.log(
-            'Cancel live response:',
-            data
-        );
-
-
         if (
             data.status ===
             'success'
@@ -3693,7 +3924,7 @@ function cancelLiveRequest() {
 
 
 /* ============================================================
-   END LIVE SESSION
+   CUSTOMER END LIVE SESSION
 ============================================================ */
 
 function userEndSession() {
@@ -3724,7 +3955,7 @@ function userEndSession() {
             'End Live Session?',
 
         text:
-            'You will be returned to the bot. Your chat history will be cleared.',
+            'You will be returned to the bot.',
 
         icon:
             'warning',
@@ -3763,7 +3994,7 @@ function userEndSession() {
 
 
 /* ============================================================
-   END SESSION REQUEST
+   END CUSTOMER SESSION REQUEST
 ============================================================ */
 
 function endLiveSessionRequest() {
