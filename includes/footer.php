@@ -1271,7 +1271,13 @@ if (localStorage.getItem('jwt_token')) {
 </style>
 
 <!-- ============================================================
-     PART 2 — CHAT JAVASCRIPT
+     CHAT JAVASCRIPT - PART 2
+     
+     CUSTOMER CHAT
+     ADMIN CHAT
+     ADMIN END SESSION
+     CUSTOMER END SESSION
+     POLLING
 ============================================================ -->
 
 <script>
@@ -1304,9 +1310,7 @@ function getEJRCurrentUser() {
             localStorage.getItem('user') || '{}'
         );
 
-    }
-
-    catch(error) {
+    } catch (error) {
 
         console.error(
             'Unable to read user information:',
@@ -1369,10 +1373,8 @@ function toggleChat() {
 
     }
 
-
     const isOpen =
         box.style.display === 'flex';
-
 
     if (isOpen) {
 
@@ -1382,11 +1384,12 @@ function toggleChat() {
 
     }
 
-
     box.style.display = 'flex';
 
 
-    /* ADMIN */
+    /* ========================================================
+       ADMIN
+    ======================================================== */
 
     if (isEJRAdmin()) {
 
@@ -1397,7 +1400,9 @@ function toggleChat() {
     }
 
 
-    /* CUSTOMER */
+    /* ========================================================
+       CUSTOMER
+    ======================================================== */
 
     loadMessages();
 
@@ -1407,11 +1412,9 @@ function toggleChat() {
             'chatNotification'
         );
 
-
     if (notification) {
 
-        notification.style.display =
-            'none';
+        notification.style.display = 'none';
 
     }
 
@@ -1430,48 +1433,40 @@ function initializeAdminChatWidget() {
             'chatTitle'
         );
 
-
     const status =
         document.getElementById(
             'chatStatusLabel'
         );
-
 
     const chatBody =
         document.getElementById(
             'chatBody'
         );
 
-
     const chatOptions =
         document.getElementById(
             'chatOptions'
         );
-
 
     const endSession =
         document.getElementById(
             'userEndSessionBar'
         );
 
-
     const waiting =
         document.getElementById(
             'waitingIndicator'
         );
-
 
     const live =
         document.getElementById(
             'liveIndicator'
         );
 
-
     const inputContainer =
         document.getElementById(
             'customerChatInputContainer'
         );
-
 
     const adminPanel =
         document.getElementById(
@@ -1575,11 +1570,11 @@ function loadAdminWidgetCustomers() {
         Date.now(),
         {
 
-            method:'GET',
+            method: 'GET',
 
-            credentials:'include',
+            credentials: 'include',
 
-            headers:{
+            headers: {
 
                 'Authorization':
                     'Bearer ' +
@@ -1590,9 +1585,9 @@ function loadAdminWidgetCustomers() {
         }
     )
 
-    .then(res => {
+    .then(response => {
 
-        if (!res.ok) {
+        if (!response.ok) {
 
             throw new Error(
                 'Unable to load customer messages.'
@@ -1600,15 +1595,14 @@ function loadAdminWidgetCustomers() {
 
         }
 
-        return res.json();
+        return response.json();
 
     })
 
     .then(data => {
 
         if (
-            data.status !==
-            'success'
+            data.status !== 'success'
         ) {
 
             throw new Error(
@@ -1653,7 +1647,6 @@ function renderAdminWidgetCustomers(users) {
         document.getElementById(
             'adminChatCustomerList'
         );
-
 
     if (!list) {
 
@@ -1865,15 +1858,58 @@ function selectAdminWidgetCustomer(
 
         title.innerHTML = `
 
-            <i
-                class="bi bi-person-circle me-1"
-            ></i>
+            <div
+                style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                "
+            >
 
-            ${
-                escapeAdminChatText(
-                    adminSelectedCustomerName
-                )
-            }
+                <div>
+
+                    <i
+                        class="bi bi-person-circle me-1"
+                    ></i>
+
+                    ${
+                        escapeAdminChatText(
+                            adminSelectedCustomerName
+                        )
+                    }
+
+                </div>
+
+
+                <!-- ADMIN END SESSION BUTTON -->
+
+                <button
+                    type="button"
+                    onclick="adminEndSelectedCustomerSession()"
+                    style="
+                        border:1px solid #e62429;
+                        background:#fff;
+                        color:#e62429;
+                        border-radius:16px;
+                        padding:4px 9px;
+                        font-size:10px;
+                        font-weight:700;
+                        cursor:pointer;
+                        white-space:nowrap;
+                    "
+                    title="End this customer's live session"
+                >
+
+                    <i
+                        class="bi bi-x-circle me-1"
+                    ></i>
+
+                    End Session
+
+                </button>
+
+            </div>
 
         `;
 
@@ -1919,7 +1955,7 @@ function selectAdminWidgetCustomer(
 
 
 /* ============================================================
-   SEND ADMIN REPLY
+   ADMIN SEND REPLY
 ============================================================ */
 
 function sendAdminWidgetReply() {
@@ -1984,11 +2020,11 @@ function sendAdminWidgetReply() {
         '/api/admin/send_message.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            credentials:'include',
+            credentials: 'include',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
@@ -1999,7 +2035,7 @@ function sendAdminWidgetReply() {
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
                 user_id:
                     adminSelectedCustomerId,
@@ -2035,8 +2071,7 @@ function sendAdminWidgetReply() {
     .then(data => {
 
         if (
-            data.status !==
-            'success'
+            data.status !== 'success'
         ) {
 
             throw new Error(
@@ -2047,8 +2082,7 @@ function sendAdminWidgetReply() {
         }
 
 
-        input.value =
-            '';
+        input.value = '';
 
 
         loadAdminWidgetMessages(
@@ -2142,6 +2176,402 @@ document.addEventListener(
 
 
 /* ============================================================
+   ADMIN END SELECTED CUSTOMER SESSION
+============================================================ */
+
+function adminEndSelectedCustomerSession() {
+
+    if (!isEJRAdmin()) {
+
+        alert(
+            'Only an admin can end a customer session.'
+        );
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        alert(
+            'Please select a customer first.'
+        );
+
+        return;
+
+    }
+
+
+    const customerName =
+        adminSelectedCustomerName ||
+        'this customer';
+
+
+    /* ========================================================
+       SWEETALERT
+    ======================================================== */
+
+    if (
+        typeof Swal !== 'undefined'
+    ) {
+
+        Swal.fire({
+
+            title:
+                'End Live Session?',
+
+            html:
+                `
+                End the live session with
+                <strong>
+                    ${escapeAdminChatText(customerName)}
+                </strong>?
+                `,
+
+            icon:
+                'warning',
+
+            showCancelButton:
+                true,
+
+            confirmButtonColor:
+                '#e62429',
+
+            cancelButtonColor:
+                '#6c757d',
+
+            confirmButtonText:
+                'Yes, End Session',
+
+            cancelButtonText:
+                'Cancel'
+
+        })
+
+        .then(result => {
+
+            if (
+                result.isConfirmed
+            ) {
+
+                sendAdminEndSession();
+
+            }
+
+        });
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       NORMAL CONFIRM
+    ======================================================== */
+
+    if (
+        confirm(
+            'End the live session with ' +
+            customerName +
+            '?'
+        )
+    ) {
+
+        sendAdminEndSession();
+
+    }
+
+}
+
+
+
+/* ============================================================
+   SEND ADMIN END SESSION REQUEST
+============================================================ */
+
+function sendAdminEndSession() {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        return;
+
+    }
+
+
+    const token =
+        getEJRChatToken();
+
+
+    if (!token) {
+
+        alert(
+            'Your admin session has expired. Please log in again.'
+        );
+
+        return;
+
+    }
+
+
+    const selectedUserId =
+        adminSelectedCustomerId;
+
+
+    fetch(
+        '/api/admin/end_session.php',
+        {
+
+            method: 'POST',
+
+            credentials: 'include',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    token
+
+            },
+
+            body: JSON.stringify({
+
+                user_id:
+                    selectedUserId
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        return response.json()
+            .then(data => {
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.message ||
+                        'Unable to end the session.'
+                    );
+
+                }
+
+                return data;
+
+            });
+
+    })
+
+    .then(data => {
+
+        console.log(
+            'Admin end session response:',
+            data
+        );
+
+
+        if (
+            data.status !== 'success'
+        ) {
+
+            throw new Error(
+                data.message ||
+                'Unable to end the session.'
+            );
+
+        }
+
+
+        /* ====================================================
+           CLEAR SELECTED CUSTOMER
+        ==================================================== */
+
+        adminSelectedCustomerId =
+            null;
+
+        adminSelectedCustomerName =
+            '';
+
+
+        const title =
+            document.getElementById(
+                'adminSelectedCustomer'
+            );
+
+
+        if (title) {
+
+            title.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#777;
+                        font-size:12px;
+                    "
+                >
+
+                    Customer session ended.
+
+                </div>
+
+            `;
+
+        }
+
+
+        const messages =
+            document.getElementById(
+                'adminChatMessages'
+            );
+
+
+        if (messages) {
+
+            messages.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#888;
+                        margin-top:35px;
+                        font-size:13px;
+                    "
+                >
+
+                    <i
+                        class="bi bi-check-circle"
+                        style="
+                            font-size:30px;
+                            display:block;
+                            margin-bottom:8px;
+                            color:#198754;
+                        "
+                    ></i>
+
+                    Live session ended.
+
+                </div>
+
+            `;
+
+        }
+
+
+        const replyArea =
+            document.getElementById(
+                'adminChatReplyArea'
+            );
+
+
+        if (replyArea) {
+
+            replyArea.style.display =
+                'none';
+
+        }
+
+
+        /* ====================================================
+           REFRESH CUSTOMER LIST
+        ==================================================== */
+
+        loadAdminWidgetCustomers();
+
+
+        /* ====================================================
+           SUCCESS MESSAGE
+        ==================================================== */
+
+        if (
+            typeof Swal !== 'undefined'
+        ) {
+
+            Swal.fire({
+
+                icon:
+                    'success',
+
+                title:
+                    'Session Ended',
+
+                text:
+                    'The customer has been returned to bot mode.',
+
+                confirmButtonColor:
+                    '#e62429',
+
+                timer:
+                    1800,
+
+                showConfirmButton:
+                    false
+
+            });
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin end session error:',
+            error
+        );
+
+
+        if (
+            typeof Swal !== 'undefined'
+        ) {
+
+            Swal.fire({
+
+                icon:
+                    'error',
+
+                title:
+                    'Unable to End Session',
+
+                text:
+                    error.message ||
+                    'Something went wrong.',
+
+                confirmButtonColor:
+                    '#e62429'
+
+            });
+
+        }
+
+        else {
+
+            alert(
+                error.message ||
+                'Unable to end the session.'
+            );
+
+        }
+
+    });
+
+}
+
+
+
+/* ============================================================
    LOAD ADMIN MESSAGES
 ============================================================ */
 
@@ -2161,11 +2591,11 @@ function loadAdminWidgetMessages(userId) {
         Date.now(),
         {
 
-            method:'GET',
+            method: 'GET',
 
-            credentials:'include',
+            credentials: 'include',
 
-            headers:{
+            headers: {
 
                 'Authorization':
                     'Bearer ' +
@@ -2176,9 +2606,9 @@ function loadAdminWidgetMessages(userId) {
         }
     )
 
-    .then(res => {
+    .then(response => {
 
-        if (!res.ok) {
+        if (!response.ok) {
 
             throw new Error(
                 'Unable to load messages.'
@@ -2186,15 +2616,14 @@ function loadAdminWidgetMessages(userId) {
 
         }
 
-        return res.json();
+        return response.json();
 
     })
 
     .then(data => {
 
         if (
-            data.status !==
-            'success'
+            data.status !== 'success'
         ) {
 
             throw new Error(
@@ -2371,362 +2800,6 @@ function loadAdminWidgetMessages(userId) {
 
 
 /* ============================================================
-   ADMIN END CUSTOMER SESSION
-   ============================================================
-
-   IMPORTANT:
-
-   This adds the ADMIN "END SESSION" feature.
-
-   The selected customer is ended using the same
-   /api/check_session.php endpoint.
-
-============================================================ */
-
-function adminEndCustomerSession() {
-
-    if (!isEJRAdmin()) {
-
-        return;
-
-    }
-
-
-    if (!adminSelectedCustomerId) {
-
-        alert(
-            'Please select a customer first.'
-        );
-
-        return;
-
-    }
-
-
-    const customerId =
-        adminSelectedCustomerId;
-
-
-    const customerName =
-        adminSelectedCustomerName ||
-        'this customer';
-
-
-    function executeAdminEndSession() {
-
-        const token =
-            getEJRChatToken();
-
-
-        fetch(
-            '/api/check_session.php',
-            {
-
-                method:'POST',
-
-                credentials:'include',
-
-                headers:{
-
-                    'Content-Type':
-                        'application/json',
-
-                    'Authorization':
-                        'Bearer ' +
-                        token
-
-                },
-
-                body:JSON.stringify({
-
-                    type:
-                        'admin_end_session',
-
-                    user_id:
-                        customerId
-
-                })
-
-            }
-        )
-
-        .then(response => {
-
-            return response.json()
-                .then(data => {
-
-                    if (!response.ok) {
-
-                        throw new Error(
-                            data.message ||
-                            'Unable to end session.'
-                        );
-
-                    }
-
-                    return data;
-
-                });
-
-        })
-
-        .then(data => {
-
-            if (
-                data.status !==
-                'success'
-            ) {
-
-                throw new Error(
-                    data.message ||
-                    'Unable to end customer session.'
-                );
-
-            }
-
-
-            /* CLEAR SELECTED CUSTOMER */
-
-            adminSelectedCustomerId =
-                null;
-
-            adminSelectedCustomerName =
-                '';
-
-
-            const selected =
-                document.getElementById(
-                    'adminSelectedCustomer'
-                );
-
-
-            if (selected) {
-
-                selected.innerHTML = `
-
-                    <i
-                        class="bi bi-check-circle me-1"
-                    ></i>
-
-                    Session ended for
-                    ${escapeAdminChatText(customerName)}
-
-                `;
-
-            }
-
-
-            const messages =
-                document.getElementById(
-                    'adminChatMessages'
-                );
-
-
-            if (messages) {
-
-                messages.innerHTML = `
-
-                    <div
-                        style="
-                            text-align:center;
-                            color:#198754;
-                            margin-top:35px;
-                            font-size:13px;
-                        "
-                    >
-
-                        <i
-                            class="bi bi-check-circle"
-                            style="
-                                font-size:35px;
-                                display:block;
-                                margin-bottom:10px;
-                            "
-                        ></i>
-
-                        Live session ended.
-
-                        <br>
-
-                        The customer has
-                        returned to bot mode.
-
-                    </div>
-
-                `;
-
-            }
-
-
-            const replyArea =
-                document.getElementById(
-                    'adminChatReplyArea'
-                );
-
-
-            if (replyArea) {
-
-                replyArea.style.display =
-                    'none';
-
-            }
-
-
-            /* REFRESH CUSTOMER LIST */
-
-            loadAdminWidgetCustomers();
-
-
-            /* SUCCESS MESSAGE */
-
-            if (
-                typeof Swal !==
-                'undefined'
-            ) {
-
-                Swal.fire({
-
-                    icon:'success',
-
-                    title:'Session Ended',
-
-                    text:
-                        'The live chat session with ' +
-                        customerName +
-                        ' has been ended.',
-
-                    confirmButtonColor:
-                        '#e62429',
-
-                    timer:2500,
-
-                    showConfirmButton:false
-
-                });
-
-            }
-
-        })
-
-        .catch(error => {
-
-            console.error(
-                'Admin end session error:',
-                error
-            );
-
-
-            if (
-                typeof Swal !==
-                'undefined'
-            ) {
-
-                Swal.fire({
-
-                    icon:'error',
-
-                    title:'Unable to End Session',
-
-                    text:
-                        error.message ||
-                        'Something went wrong.',
-
-                    confirmButtonColor:
-                        '#e62429'
-
-                });
-
-            }
-
-            else {
-
-                alert(
-                    error.message ||
-                    'Unable to end session.'
-                );
-
-            }
-
-        });
-
-    }
-
-
-
-    /* CONFIRMATION */
-
-    if (
-        typeof Swal !==
-        'undefined'
-    ) {
-
-        Swal.fire({
-
-            title:
-                'End Live Session?',
-
-            html:
-                'End the live chat session with <strong>' +
-                escapeAdminChatText(
-                    customerName
-                ) +
-                '</strong>?',
-
-            icon:
-                'warning',
-
-            showCancelButton:
-                true,
-
-            confirmButtonColor:
-                '#e62429',
-
-            cancelButtonColor:
-                '#6c757d',
-
-            confirmButtonText:
-                'Yes, End Session',
-
-            cancelButtonText:
-                'Cancel'
-
-        })
-
-        .then(result => {
-
-            if (
-                result.isConfirmed
-            ) {
-
-                executeAdminEndSession();
-
-            }
-
-        });
-
-    }
-
-    else {
-
-        if (
-            confirm(
-                'End live session with ' +
-                customerName +
-                '?'
-            )
-        ) {
-
-            executeAdminEndSession();
-
-        }
-
-    }
-
-}
-
-
-
-/* ============================================================
    ADMIN NOTIFICATION
 ============================================================ */
 
@@ -2822,36 +2895,30 @@ function applySessionUI(session) {
             'waitingIndicator'
         );
 
-
     const live =
         document.getElementById(
             'liveIndicator'
         );
-
 
     const statusLabel =
         document.getElementById(
             'chatStatusLabel'
         );
 
-
     const btnContainer =
         document.getElementById(
             'dynamicButtonContainer'
         );
-
 
     const chatOptions =
         document.getElementById(
             'chatOptions'
         );
 
-
     const endSessionBar =
         document.getElementById(
             'userEndSessionBar'
         );
-
 
 
     /* ========================================================
@@ -2915,7 +2982,6 @@ function applySessionUI(session) {
         return;
 
     }
-
 
 
     /* ========================================================
@@ -3008,7 +3074,6 @@ function applySessionUI(session) {
         return;
 
     }
-
 
 
     /* ========================================================
@@ -3114,7 +3179,8 @@ function resetChatUI() {
 
             <div class="ejr-bot-msg">
 
-                Your live session has ended.
+                Your session with the admin
+                has ended.
 
                 Bot mode is now re-enabled.
 
@@ -3197,9 +3263,9 @@ function loadMessages() {
         '/api/check_session.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
@@ -3210,9 +3276,10 @@ function loadMessages() {
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
-                type:'get_messages'
+                type:
+                    'get_messages'
 
             })
 
@@ -3220,14 +3287,14 @@ function loadMessages() {
     )
 
     .then(
-        res => res.json()
+        response =>
+            response.json()
     )
 
     .then(data => {
 
         applySessionUI(
             data.chat_session ??
-            data.mode ??
             'bot'
         );
 
@@ -3250,17 +3317,19 @@ function loadMessages() {
                         >
 
                             <div>
-                                ${escapeAdminChatText(
-                                    m.message || ''
-                                )}
+                                ${
+                                    escapeAdminChatText(
+                                        m.message || ''
+                                    )
+                                }
                             </div>
 
                             <div class="ejr-time">
-
-                                ${escapeAdminChatText(
-                                    m.time || ''
-                                )}
-
+                                ${
+                                    escapeAdminChatText(
+                                        m.time || ''
+                                    )
+                                }
                             </div>
 
                         </div>
@@ -3276,11 +3345,11 @@ function loadMessages() {
 
     })
 
-    .catch(err => {
+    .catch(error => {
 
         console.error(
             'Load messages error:',
-            err
+            error
         );
 
     });
@@ -3324,8 +3393,7 @@ function appendMessage(
         : 'ejr-bot-msg';
 
 
-    let buttonHTML =
-        '';
+    let buttonHTML = '';
 
 
     if (
@@ -3363,7 +3431,7 @@ function appendMessage(
     div.innerHTML = `
 
         <div>
-            ${escapeAdminChatText(text)}
+            ${text}
         </div>
 
         ${buttonHTML}
@@ -3371,9 +3439,7 @@ function appendMessage(
     `;
 
 
-    body.appendChild(
-        div
-    );
+    body.appendChild(div);
 
 
     body.scrollTop =
@@ -3384,7 +3450,7 @@ function appendMessage(
 
 
 /* ============================================================
-   TYPING
+   TYPING INDICATOR
 ============================================================ */
 
 function showTyping(show) {
@@ -3412,7 +3478,7 @@ function showTyping(show) {
 
 
 /* ============================================================
-   BOOKING BUTTON
+   BOOKING
 ============================================================ */
 
 function startBookingFromChat() {
@@ -3441,7 +3507,7 @@ function startBookingFromChat() {
 
 
 /* ============================================================
-   SEND CHAT MESSAGE
+   SEND CUSTOMER CHAT MESSAGE
 ============================================================ */
 
 function sendChatMessage() {
@@ -3483,8 +3549,7 @@ function sendChatMessage() {
     );
 
 
-    input.value =
-        '';
+    input.value = '';
 
 
     showTyping(true);
@@ -3528,9 +3593,9 @@ function sendChatMessage() {
         '/api/check_session.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
@@ -3541,22 +3606,25 @@ function sendChatMessage() {
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
-                type:'chat',
+                type:
+                    'chat',
 
-                action:'chat',
+                action:
+                    'chat',
 
-                message:msg
+                message:
+                    msg
 
             })
 
         }
     )
 
-    .then(res => {
+    .then(response => {
 
-        if (!res.ok) {
+        if (!response.ok) {
 
             throw new Error(
                 'Chat request failed.'
@@ -3564,7 +3632,7 @@ function sendChatMessage() {
 
         }
 
-        return res.json();
+        return response.json();
 
     })
 
@@ -3591,20 +3659,19 @@ function sendChatMessage() {
 
         applySessionUI(
             data.mode ??
-            data.chat_session ??
             'bot'
         );
 
     })
 
-    .catch(err => {
+    .catch(error => {
 
         showTyping(false);
 
 
         console.error(
             'Send error:',
-            err
+            error
         );
 
 
@@ -3711,7 +3778,6 @@ function requestLiveChat() {
         button.disabled =
             true;
 
-
         button.innerHTML = `
 
             <span
@@ -3729,9 +3795,9 @@ function requestLiveChat() {
         '/api/check_session.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
@@ -3742,20 +3808,22 @@ function requestLiveChat() {
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
-                type:'chat',
+                type:
+                    'chat',
 
-                action:'request_live'
+                action:
+                    'request_live'
 
             })
 
         }
     )
 
-    .then(res => {
+    .then(response => {
 
-        if (!res.ok) {
+        if (!response.ok) {
 
             throw new Error(
                 'Live chat request failed.'
@@ -3763,21 +3831,14 @@ function requestLiveChat() {
 
         }
 
-        return res.json();
+        return response.json();
 
     })
 
     .then(data => {
 
-        console.log(
-            'Live chat response:',
-            data
-        );
-
-
         if (
-            data.status ===
-            'success'
+            data.status === 'success'
         ) {
 
             applySessionUI(
@@ -3808,19 +3869,17 @@ function requestLiveChat() {
             );
 
 
-            applySessionUI(
-                'bot'
-            );
+            applySessionUI('bot');
 
         }
 
     })
 
-    .catch(err => {
+    .catch(error => {
 
         console.error(
             'Live request error:',
-            err
+            error
         );
 
 
@@ -3829,9 +3888,7 @@ function requestLiveChat() {
         );
 
 
-        applySessionUI(
-            'bot'
-        );
+        applySessionUI('bot');
 
     });
 
@@ -3862,9 +3919,9 @@ function cancelLiveRequest() {
         '/api/check_session.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
@@ -3875,27 +3932,27 @@ function cancelLiveRequest() {
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
-                type:'cancel_live'
+                type:
+                    'cancel_live'
 
             })
 
         }
     )
 
-    .then(res => res.json())
+    .then(response =>
+        response.json()
+    )
 
     .then(data => {
 
         if (
-            data.status ===
-            'success'
+            data.status === 'success'
         ) {
 
-            applySessionUI(
-                'bot'
-            );
+            applySessionUI('bot');
 
         }
 
@@ -3910,11 +3967,11 @@ function cancelLiveRequest() {
 
     })
 
-    .catch(err => {
+    .catch(error => {
 
         console.error(
             'Cancel live error:',
-            err
+            error
         );
 
     });
@@ -3930,8 +3987,7 @@ function cancelLiveRequest() {
 function userEndSession() {
 
     if (
-        typeof Swal ===
-        'undefined'
+        typeof Swal === 'undefined'
     ) {
 
         if (
@@ -3994,57 +4050,64 @@ function userEndSession() {
 
 
 /* ============================================================
-   END CUSTOMER SESSION REQUEST
+   CUSTOMER END SESSION REQUEST
 ============================================================ */
 
 function endLiveSessionRequest() {
 
-    const endToken =
+    const token =
         localStorage.getItem(
             'jwt_token'
         ) || '';
+
+
+    if (!token) {
+
+        return;
+
+    }
 
 
     fetch(
         '/api/check_session.php',
         {
 
-            method:'POST',
+            method: 'POST',
 
-            headers:{
+            headers: {
 
                 'Content-Type':
                     'application/json',
 
                 'Authorization':
                     'Bearer ' +
-                    endToken
+                    token
 
             },
 
-            body:JSON.stringify({
+            body: JSON.stringify({
 
-                type:'end_session'
+                type:
+                    'end_session'
 
             })
 
         }
     )
 
-    .then(res => res.json())
+    .then(response =>
+        response.json()
+    )
 
     .then(data => {
 
         if (
-            data.status ===
-            'success'
+            data.status === 'success'
         ) {
 
             resetChatUI();
 
-            applySessionUI(
-                'bot'
-            );
+            applySessionUI('bot');
 
         }
 
@@ -4059,11 +4122,11 @@ function endLiveSessionRequest() {
 
     })
 
-    .catch(err => {
+    .catch(error => {
 
         console.error(
             'End session error:',
-            err
+            error
         );
 
     });
@@ -4087,8 +4150,7 @@ setInterval(
 
         if (
             !chatBox ||
-            chatBox.style.display !==
-            'flex'
+            chatBox.style.display !== 'flex'
         ) {
 
             return;
@@ -4106,8 +4168,7 @@ setInterval(
 
 
         if (
-            currentChatMode !==
-            'live'
+            currentChatMode !== 'live'
         ) {
 
             return;
@@ -4160,8 +4221,7 @@ setInterval(
 
         if (
             !chatBox ||
-            chatBox.style.display !==
-            'flex'
+            chatBox.style.display !== 'flex'
         ) {
 
             return;
@@ -4190,7 +4250,7 @@ setInterval(
 
 
 /* ============================================================
-   DEBUG CHECK
+   DOM LOADED
 ============================================================ */
 
 document.addEventListener(
@@ -4235,125 +4295,6 @@ document.addEventListener(
         console.log(
             'Chat body:',
             body
-        );
-
-    }
-);
-
-</script>
-
-
-
-<!-- ============================================================
-     FLATPICKR
-============================================================ -->
-
-<script>
-
-fetch(
-    'api/get_busy_dates.php'
-)
-
-.then(
-    res => res.json()
-)
-
-.then(
-    data => {
-
-        const busyDates =
-            data.busy_dates ?? [];
-
-
-        const appointmentDate =
-            document.querySelector(
-                '#appointmentDate'
-            );
-
-
-        if (!appointmentDate) {
-
-            return;
-
-        }
-
-
-        flatpickr(
-            '#appointmentDate',
-            {
-
-                minDate:
-                    'today',
-
-                dateFormat:
-                    'Y-m-d',
-
-                disableMobile:
-                    true,
-
-
-                disable: [
-
-                    function(date) {
-
-                        return (
-                            date.getDay() ===
-                            0
-                        );
-
-                    }
-
-                ],
-
-
-                onDayCreate:
-                    function(
-                        dObj,
-                        dStr,
-                        fp,
-                        dayElem
-                    ) {
-
-                        const dateStr =
-                            dayElem.dateObj
-                                .toISOString()
-                                .split('T')[0];
-
-
-                        if (
-                            busyDates.includes(
-                                dateStr
-                            )
-                        ) {
-
-                            dayElem.style.background =
-                                '#e62429';
-
-                            dayElem.style.color =
-                                '#fff';
-
-                            dayElem.style.borderRadius =
-                                '50%';
-
-                            dayElem.title =
-                                'Fully booked';
-
-                        }
-
-                    }
-
-            }
-        );
-
-    }
-)
-
-.catch(
-    error => {
-
-        console.error(
-            'Flatpickr busy dates error:',
-            error
         );
 
     }
