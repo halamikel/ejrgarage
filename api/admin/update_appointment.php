@@ -33,7 +33,30 @@ $current_admin_id = $adminId;
 $is_admin         = true;
 
 $data = json_decode(file_get_contents("php://input"), true);
-if (!isset($data['appointment_id']) || !isset($data['status'])) {
+if (!isset($data['appointment_id'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing data']);
+    exit;
+}
+
+// ── DELETE (used by the mobile admin app's "Delete Appointment" action) ──
+// Kept in this file rather than a new endpoint: same JWT-admin gate above
+// already applies, and it's the only place appointment_id is authorized.
+if (($data['action'] ?? '') === 'delete') {
+    $del = $conn->prepare("DELETE FROM appointments WHERE id = ?");
+    $del->bind_param("i", $data['appointment_id']);
+    if (!$del->execute()) {
+        echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
+        exit;
+    }
+    if ($del->affected_rows <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Appointment not found']);
+        exit;
+    }
+    echo json_encode(['status' => 'success', 'message' => 'Appointment deleted.']);
+    exit;
+}
+
+if (!isset($data['status'])) {
     echo json_encode(['status' => 'error', 'message' => 'Missing data']);
     exit;
 }
