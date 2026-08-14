@@ -46,6 +46,10 @@ if ($usingRender) {
     // PayMongo
     define('PAYMONGO_SECRET_KEY', getenv('PAYMONGO_SECRET_KEY'));
 
+    // Semaphore (SMS)
+    define('SEMAPHORE_API_KEY', getenv('SEMAPHORE_API_KEY') ?: '');
+    define('SEMAPHORE_SENDER_NAME', getenv('SEMAPHORE_SENDER_NAME') ?: 'SEMAPHORE');
+
     // Cloudinary (avatar storage — Render's local disk is ephemeral and
     // wipes runtime uploads on every restart, see upload_avatar.php)
     define('CLOUDINARY_CLOUD_NAME', getenv('CLOUDINARY_CLOUD_NAME'));

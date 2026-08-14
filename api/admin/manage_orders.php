@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 require_once '../db_config.php';
 require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
 require_once __DIR__ . '/../../includes/php-jwt/Key.php';
+require_once __DIR__ . '/../mailer_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -73,8 +74,13 @@ if ($action === 'update_status') {
         exit;
     }
 
-    // 1. Get the current status and items before updating
-    $checkStmt = $conn->prepare("SELECT status, items FROM part_orders WHERE id = ?");
+    // 1. Get the current status, items, and contact/notification info before updating
+    $checkStmt = $conn->prepare("
+        SELECT o.status, o.items, o.contact, o.customer_name, o.total_price, o.created_at, u.notif_sms
+        FROM part_orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.id = ?
+    ");
     $checkStmt->bind_param("i", $order_id);
     $checkStmt->execute();
     $currentOrder = $checkStmt->get_result()->fetch_assoc();
@@ -88,6 +94,28 @@ if ($action === 'update_status') {
     $stmt = $conn->prepare("UPDATE part_orders SET status = ? WHERE id = ?");
     $stmt->bind_param("si", $new_status, $order_id);
     $stmt->execute();
+
+    // 2b. SMS notification — fires on any real status change, independent
+    // of the approved-only email/stock logic below.
+    if ($new_status !== $currentOrder['status'] && $currentOrder['notif_sms'] == 1 && !empty($currentOrder['contact'])) {
+        $orderNo   = 'EJR-ORD-' . date('Y', strtotime($currentOrder['created_at'])) . '-' . str_pad($order_id, 5, '0', STR_PAD_LEFT);
+        $firstName = explode(' ', trim($currentOrder['customer_name'] ?? 'there'))[0];
+        $total     = '₱' . number_format((float)$currentOrder['total_price'], 2);
+
+        $orderStatusMessages = [
+            'approved'  => "Hi {$firstName}, your order {$orderNo} ({$total}) has been APPROVED. We'll notify you when it's ready for pickup/delivery.",
+            'cancelled' => "Hi {$firstName}, your order {$orderNo} has been CANCELLED. Contact us if you have questions.",
+            'pending'   => "Hi {$firstName}, your order {$orderNo} is now PENDING review. We'll update you shortly.",
+        ];
+
+        $orderSmsText = "EJR Garage: " . ($orderStatusMessages[$new_status]
+            ?? "Hi {$firstName}, your order {$orderNo} status is now [{$new_status}].");
+
+        $orderSmsResult = sendSmsViaSemaphore($currentOrder['contact'], $orderSmsText);
+        if ($orderSmsResult['status'] !== 'success') {
+            error_log("EJR ORDER SMS: order_id={$order_id} to={$currentOrder['contact']} FAILED — " . $orderSmsResult['message']);
+        }
+    }
 
     // 3. Handle Stock and Email only if status is changing TO 'approved'
     if ($new_status === 'approved' && $currentOrder['status'] !== 'approved') {

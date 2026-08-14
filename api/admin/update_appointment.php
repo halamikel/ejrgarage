@@ -129,10 +129,9 @@ if ($user && $user['notif_email'] == 1) {
     error_log("EJR APPT MAIL: send to {$user['email']} result=" . ($emailSent ? 'success' : 'FAILED'));
 }
 
-// ── SEND SMS via CommPeak Streams API ─────────────────────────
+// ── SEND SMS via Semaphore ──────────────────────────────────────
 if ($user && $user['notif_sms'] == 1 && !empty($user['phone'])) {
 
-    // Matches exactly the templates created in CommPeak TextPeak dashboard
     $statusMessages = [
         'Confirmed'   => "Hi {$firstName}, your appointment is CONFIRMED. See you on your scheduled date! View: ejrgarage.onrender.com/my_appointments.php",
         'Pending'     => "Hi {$firstName}, your appointment is PENDING review. We will confirm it shortly. View: ejrgarage.onrender.com/my_appointments.php",
@@ -146,61 +145,9 @@ if ($user && $user['notif_sms'] == 1 && !empty($user['phone'])) {
         ? "EJR Garage: " . $statusMessages[$status]
         : "EJR Garage: Hi {$firstName}, your appointment on {$formattedDate} has been updated to [{$status}]. Vehicle: {$vehicle}.";
 
-    // Normalise PH number → E.164 (+63XXXXXXXXXX)
-    $phone = preg_replace('/\D/', '', $user['phone']);
-    if (str_starts_with($phone, '0')) {
-        $phone = '63' . substr($phone, 1);
-    } elseif (!str_starts_with($phone, '63')) {
-        $phone = '63' . $phone;
-    }
-    $phone = '+' . $phone;
-
-    // CommPeak Streams API — Transactional token
-    $nameParts = explode(' ', trim($user['full_name'] ?? 'Customer'));
-    $lastName  = count($nameParts) > 1 ? array_pop($nameParts) : '';
-    $firstNameFull = implode(' ', $nameParts);
-
-    // Map status to event key created in CommPeak TextPeak dashboard
-    $eventKeys = [
-        'Confirmed'   => 'appt_stat1',
-        'Pending'     => 'appt_stat2',
-        'Completed'   => 'appt_stat3',
-        'Cancelled'   => 'appt_stat4',
-        'In Progress' => 'appt_stat5',
-        'No Show'     => 'appt_stat6',
-    ];
-    $eventKey = $eventKeys[$status] ?? 'appt_stat1';
-
-    $smsPayload = json_encode([
-        'recipient_phone'    => $phone,
-        'template_variables' => [
-            'first_name' => $firstNameFull,
-            'last_name'  => $lastName,
-            'code'       => '',
-        ],
-        'sender' => 'GLOBAL',
-        'event'  => $eventKey,
-    ]);
-
-    $ch = curl_init('https://textpeak-streams.commpeak.com/otp/auth');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $smsPayload,
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json; charset=UTF-8',
-            'Authorization: ',
-        ],
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-    ]);
-    $smsResponse = curl_exec($ch);
-    $smsHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($smsHttpCode < 200 || $smsHttpCode >= 300) {
-        error_log("SMS ERROR (CommPeak): HTTP {$smsHttpCode} — {$smsResponse}");
+    $smsResult = sendSmsViaSemaphore($user['phone'], $smsText);
+    if ($smsResult['status'] !== 'success') {
+        error_log("EJR APPT SMS: appt_id={$data['appointment_id']} to={$user['phone']} FAILED — " . $smsResult['message']);
     }
 }
 ?>

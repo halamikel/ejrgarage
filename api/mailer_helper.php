@@ -96,24 +96,61 @@ function sendNotificationEmail(
     return sendEmailViaBrevo($toEmail, $toName, $subject, $html);
 }
 
-// ── SMS via Twilio ────────────────────────────────────────────
-function sendSmsViaBrevo(string $toPhone, string $message, string $senderName = 'EJRGarage'): bool {
-    if (!defined('TWILIO_ACCOUNT_SID')) require_once __DIR__ . '/env.php';
+// ── Phone normalization (PH mobile numbers) ────────────────────
+// Semaphore accepts local format: 09XXXXXXXXX (11 digits, leading 0).
+// Accepts input as 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX,
+// or with dashes/spaces (e.g. "09XX-XXX-XXXX") and normalizes it.
+// Returns '' if the number doesn't look like a valid PH mobile number.
+function ejrNormalizePhPhone(string $rawPhone): string {
+    $digits = preg_replace('/\D/', '', $rawPhone);
 
-    // Normalize to +639XXXXXXXXX
-    $phone = preg_replace('/\D/', '', $toPhone);
-    if (strlen($phone) === 11 && $phone[0] === '0') $phone = '63' . substr($phone, 1);
-    if (strlen($phone) === 10 && $phone[0] === '9')  $phone = '63' . $phone;
-    $phone = '+' . ltrim($phone, '+');
+    if (strlen($digits) === 12 && str_starts_with($digits, '63')) {
+        // 639XXXXXXXXX -> 09XXXXXXXXX
+        $digits = '0' . substr($digits, 2);
+    } elseif (strlen($digits) === 10 && $digits[0] === '9') {
+        // 9XXXXXXXXX -> 09XXXXXXXXX
+        $digits = '0' . $digits;
+    }
 
-    $url = "https://api.twilio.com/2010-04-01/Accounts/" . TWILIO_ACCOUNT_SID . "/Messages.json";
+    if (strlen($digits) === 11 && $digits[0] === '0' && $digits[1] === '9') {
+        return $digits;
+    }
 
-    $ch = curl_init($url);
+    return '';
+}
+
+// ── SMS via Semaphore (https://semaphore.co) ────────────────────
+// Docs: https://semaphore.co/docs — POST apikey, number, message,
+// sendername to https://api.semaphore.co/api/v4/messages
+// Returns ['status' => 'success'|'error'|'skipped', 'message' => string]
+// so callers (and the admin dashboard) can surface *why* a send failed,
+// instead of just a bool.
+function sendSmsViaSemaphore(string $toPhone, string $message, ?string $senderName = null): array {
+    if (!defined('SEMAPHORE_API_KEY')) require_once __DIR__ . '/env.php';
+
+    if (!SEMAPHORE_API_KEY) {
+        error_log("EJR SMS: SEMAPHORE_API_KEY is not configured.");
+        return ['status' => 'error', 'message' => 'SMS is not configured (missing Semaphore API key).'];
+    }
+
+    $phone = ejrNormalizePhPhone($toPhone);
+    if (!$phone) {
+        error_log("EJR SMS: invalid phone number '{$toPhone}', skipping send.");
+        return ['status' => 'error', 'message' => 'Invalid phone number.'];
+    }
+
+    $payload = [
+        'apikey'     => SEMAPHORE_API_KEY,
+        'number'     => $phone,
+        'message'    => $message,
+        'sendername' => $senderName ?: (defined('SEMAPHORE_SENDER_NAME') ? SEMAPHORE_SENDER_NAME : 'SEMAPHORE'),
+    ];
+
+    $ch = curl_init('https://api.semaphore.co/api/v4/messages');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
-        CURLOPT_USERPWD        => TWILIO_ACCOUNT_SID . ':' . TWILIO_AUTH_TOKEN,
-        CURLOPT_POSTFIELDS     => http_build_query(['To' => $phone, 'From' => TWILIO_FROM_NUMBER, 'Body' => $message]),
+        CURLOPT_POSTFIELDS     => http_build_query($payload),
         CURLOPT_TIMEOUT        => 20,
         CURLOPT_SSL_VERIFYPEER => true,
     ]);
@@ -123,7 +160,20 @@ function sendSmsViaBrevo(string $toPhone, string $message, string $senderName = 
     $curlError = curl_error($ch);
     curl_close($ch);
 
-    if ($curlError) { error_log("EJR SMS cURL: $curlError"); return false; }
-    if ($httpCode < 200 || $httpCode >= 300) { error_log("EJR SMS Twilio $httpCode: $response"); return false; }
-    return true;
+    if ($curlError) {
+        error_log("EJR SMS cURL error: $curlError");
+        return ['status' => 'error', 'message' => 'Connection error: ' . $curlError];
+    }
+
+    $decoded = json_decode($response, true);
+
+    if ($httpCode < 200 || $httpCode >= 300) {
+        error_log("EJR SMS Semaphore HTTP {$httpCode}: {$response}");
+        $apiMsg = $decoded['message'] ?? (is_array($decoded) ? json_encode($decoded) : $response);
+        return ['status' => 'error', 'message' => "Semaphore API error ({$httpCode}): {$apiMsg}"];
+    }
+
+    // Success responses are a JSON array (single number) or object; either
+    // way, a 2xx with no clear error means Semaphore queued the message.
+    return ['status' => 'success', 'message' => 'SMS queued to ' . $phone];
 }
