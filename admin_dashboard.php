@@ -1820,11 +1820,11 @@ include 'includes/header.php';
                             </option>
 
                             <option value="on_break">
-                                On Break Only
+                                On Leave Only
                             </option>
 
                             <option value="on_duty">
-                                On Duty Only
+                                Busy Only
                             </option>
 
                             <option value="unavailable">

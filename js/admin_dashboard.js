@@ -2293,21 +2293,21 @@ function filterAndRenderMechanics() {
 }
 
 // Mechanic status is one of: available, on_break, on_duty, unavailable.
-// - available / on_break: assignable (on_break just informs the admin
-//   the mechanic stepped away, but can still be handed a job).
-// - on_duty: mid-job on another vehicle — NOT assignable until cleared.
-// - unavailable: offline — NOT assignable.
+// In the app these show as "Available", "On Leave" (on_break), "Busy"
+// (on_duty), "Unavailable". Only plain 'available' is assignable — On
+// Leave and Busy both block the admin from assigning a job, same as
+// Unavailable.
 function mechanicStatusLabel(status) {
-    return { available: 'Available', on_break: 'On Break', on_duty: 'On Duty', unavailable: 'Unavailable' }[status] || status;
+    return { available: 'Available', on_break: 'On Leave', on_duty: 'Busy', unavailable: 'Unavailable' }[status] || status;
 }
 function mechanicStatusBadgeClass(status) {
     if (status === 'available') return 'bg-success';
-    if (status === 'on_break') return 'bg-info text-dark';
+    if (status === 'on_break') return 'bg-secondary';
     if (status === 'on_duty') return 'bg-warning text-dark';
     return 'bg-secondary'; // unavailable
 }
 function mechanicIsAssignable(status) {
-    return status === 'available' || status === 'on_break';
+    return status === 'available';
 }
 
 function renderMechanics(mechanics) {
@@ -2373,11 +2373,11 @@ function editMechanic(id) {
                         <label class="form-label fw-semibold">Availability</label>
                         <select id="mStatus" class="form-select">
                             <option value="available" ${m.status === 'available' ? 'selected' : ''}>Available</option>
-                            <option value="on_break" ${m.status === 'on_break' ? 'selected' : ''}>On Break</option>
-                            <option value="on_duty" ${m.status === 'on_duty' ? 'selected' : ''}>On Duty</option>
+                            <option value="on_break" ${m.status === 'on_break' ? 'selected' : ''}>On Leave</option>
+                            <option value="on_duty" ${m.status === 'on_duty' ? 'selected' : ''}>Busy</option>
                             <option value="unavailable" ${m.status === 'unavailable' ? 'selected' : ''}>Unavailable</option>
                         </select>
-                        <small class="text-muted d-block mt-1">On Break mechanics can still be assigned jobs. On Duty mechanics cannot be assigned until cleared.</small>
+                        <small class="text-muted d-block mt-1">On Leave and Busy mechanics cannot be assigned jobs until set back to Available.</small>
                     </div>`,
                 confirmButtonText: 'Save',
                 confirmButtonColor: '#e62429',
@@ -2439,7 +2439,7 @@ function assignMechanic(appointmentId) {
                             <option value="0">— Unassign —</option>
                             ${options}
                         </select>
-                        <small class="text-muted mt-1 d-block">Unavailable and On Duty mechanics are greyed out. On Break mechanics can still be assigned.</small>
+                        <small class="text-muted mt-1 d-block">Unavailable, On Leave, and Busy mechanics are greyed out.</small>
                     </div>`,
                 confirmButtonText: 'Assign',
                 confirmButtonColor: '#e62429',

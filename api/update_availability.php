@@ -14,13 +14,12 @@
  *
  * Body: {status: 'available' | 'unavailable' | 'on_break' | 'on_duty'}
  *
- * 'on_break' and 'on_duty' only make sense while the mechanic is
- * otherwise available (the app only shows those choices when the
- * "Available for jobs" switch is on) — see mechanic_main_screen.dart.
- *   - on_break: mechanic is still assignable; admin can hand them a job.
- *   - on_duty:  mechanic is mid-job on another vehicle; admin CANNOT
- *               assign them a new appointment until they clear this
- *               (see api/admin/manage_mechanics.php "assign" action).
+ * 'on_break' ("On Leave" in the app) and 'on_duty' ("Busy" in the app)
+ * are sub-states shown while the mechanic is otherwise available (the
+ * app only shows those choices when the "Available for jobs" switch is
+ * on) — see mechanic_main_screen.dart. Either one blocks the admin from
+ * assigning this mechanic a new appointment until they clear it back to
+ * plain 'available' (see api/admin/manage_mechanics.php "assign" action).
  *
  * Response: {status, message, mechanic_status}
  */

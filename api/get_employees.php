@@ -78,9 +78,9 @@ while ($row = $result->fetch_assoc()) {
         // Only meaningful for mechanics (role_id 3). Admins have no
         // mechanics roster row, so this defaults to available/hidden,
         // which matches the UI only rendering the badge for role_id 3.
-        // "On break" still counts as available/assignable here; "on
-        // duty" (mid-job on another vehicle) does not.
-        "is_available"     => in_array($row['mechanic_status'] ?? 'available', ['available', 'on_break'], true) ? 1 : 0,
+        // "On Leave" (on_break) and "Busy" (on_duty) both count as
+        // NOT assignable — only plain 'available' does.
+        "is_available"     => ($row['mechanic_status'] ?? 'available') === 'available' ? 1 : 0,
         // Raw sub-status so the UI can show "On Break" / "On Duty" badges
         // instead of just a binary available/unavailable indicator.
         "mechanic_status"  => $row['mechanic_status'] ?? 'available',

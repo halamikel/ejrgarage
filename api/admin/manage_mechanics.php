@@ -113,13 +113,14 @@ if ($method === 'POST') {
             $mStmt->execute();
             $mech = $mStmt->get_result()->fetch_assoc();
             if (!$mech) { echo json_encode(['status'=>'error','message'=>'Mechanic not found.']); exit; }
-            if ($mech['status'] === 'unavailable') {
-                echo json_encode(['status'=>'error','message'=>$mech['name'].' is currently unavailable. Please select another technician.']); exit;
+            if ($mech['status'] !== 'available') {
+                $reason = $mech['status'] === 'on_break'
+                    ? ' is currently ON LEAVE.'
+                    : ($mech['status'] === 'on_duty'
+                        ? ' is currently BUSY (working on another vehicle).'
+                        : ' is currently unavailable.');
+                echo json_encode(['status'=>'error','message'=>$mech['name'].$reason.' Please select another technician.']); exit;
             }
-            if ($mech['status'] === 'on_duty') {
-                echo json_encode(['status'=>'error','message'=>$mech['name'].' is currently ON DUTY (working on another vehicle). Please select another technician or wait until they clear their status.']); exit;
-            }
-            // 'on_break' falls through here — admin can still assign, per spec.
 
             $stmt = $conn->prepare("UPDATE appointments SET mechanic_id = ? WHERE id = ?");
             $stmt->bind_param("ii", $mechanicId, $apptId);
