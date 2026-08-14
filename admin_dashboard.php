@@ -1819,6 +1819,14 @@ include 'includes/header.php';
                                 Available Only
                             </option>
 
+                            <option value="on_break">
+                                On Break Only
+                            </option>
+
+                            <option value="on_duty">
+                                On Duty Only
+                            </option>
+
                             <option value="unavailable">
                                 Unavailable Only
                             </option>

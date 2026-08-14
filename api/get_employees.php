@@ -48,7 +48,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS mechanics (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
     specialty  VARCHAR(150) DEFAULT '',
-    status     ENUM('available','unavailable') DEFAULT 'available',
+    status     ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
@@ -78,7 +78,12 @@ while ($row = $result->fetch_assoc()) {
         // Only meaningful for mechanics (role_id 3). Admins have no
         // mechanics roster row, so this defaults to available/hidden,
         // which matches the UI only rendering the badge for role_id 3.
-        "is_available"     => ($row['mechanic_status'] ?? 'available') === 'available' ? 1 : 0,
+        // "On break" still counts as available/assignable here; "on
+        // duty" (mid-job on another vehicle) does not.
+        "is_available"     => in_array($row['mechanic_status'] ?? 'available', ['available', 'on_break'], true) ? 1 : 0,
+        // Raw sub-status so the UI can show "On Break" / "On Duty" badges
+        // instead of just a binary available/unavailable indicator.
+        "mechanic_status"  => $row['mechanic_status'] ?? 'available',
     ];
 }
 

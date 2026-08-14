@@ -2292,6 +2292,24 @@ function filterAndRenderMechanics() {
     renderMechanics(filtered);
 }
 
+// Mechanic status is one of: available, on_break, on_duty, unavailable.
+// - available / on_break: assignable (on_break just informs the admin
+//   the mechanic stepped away, but can still be handed a job).
+// - on_duty: mid-job on another vehicle — NOT assignable until cleared.
+// - unavailable: offline — NOT assignable.
+function mechanicStatusLabel(status) {
+    return { available: 'Available', on_break: 'On Break', on_duty: 'On Duty', unavailable: 'Unavailable' }[status] || status;
+}
+function mechanicStatusBadgeClass(status) {
+    if (status === 'available') return 'bg-success';
+    if (status === 'on_break') return 'bg-info text-dark';
+    if (status === 'on_duty') return 'bg-warning text-dark';
+    return 'bg-secondary'; // unavailable
+}
+function mechanicIsAssignable(status) {
+    return status === 'available' || status === 'on_break';
+}
+
 function renderMechanics(mechanics) {
     const tbody = document.getElementById('mechanicsTableBody');
     if (!tbody) return;
@@ -2303,7 +2321,7 @@ function renderMechanics(mechanics) {
         <tr>
             <td><strong>${m.name}</strong></td>
             <td>${m.specialty || '—'}</td>
-            <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
+            <td><span class="badge ${mechanicStatusBadgeClass(m.status)}">${mechanicStatusLabel(m.status)}</span></td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
@@ -2355,8 +2373,11 @@ function editMechanic(id) {
                         <label class="form-label fw-semibold">Availability</label>
                         <select id="mStatus" class="form-select">
                             <option value="available" ${m.status === 'available' ? 'selected' : ''}>Available</option>
+                            <option value="on_break" ${m.status === 'on_break' ? 'selected' : ''}>On Break</option>
+                            <option value="on_duty" ${m.status === 'on_duty' ? 'selected' : ''}>On Duty</option>
                             <option value="unavailable" ${m.status === 'unavailable' ? 'selected' : ''}>Unavailable</option>
                         </select>
+                        <small class="text-muted d-block mt-1">On Break mechanics can still be assigned jobs. On Duty mechanics cannot be assigned until cleared.</small>
                     </div>`,
                 confirmButtonText: 'Save',
                 confirmButtonColor: '#e62429',
@@ -2407,7 +2428,7 @@ function assignMechanic(appointmentId) {
                 return;
             }
             const options = data.mechanics
-                .map(m => `<option value="${m.id}" ${m.status === 'unavailable' ? 'disabled' : ''}>${m.name} (${m.specialty || 'General'}) — ${m.status}</option>`)
+                .map(m => `<option value="${m.id}" ${mechanicIsAssignable(m.status) ? '' : 'disabled'}>${m.name} (${m.specialty || 'General'}) — ${mechanicStatusLabel(m.status)}</option>`)
                 .join('');
             Swal.fire({
                 title: 'Assign Mechanic',
@@ -2418,7 +2439,7 @@ function assignMechanic(appointmentId) {
                             <option value="0">— Unassign —</option>
                             ${options}
                         </select>
-                        <small class="text-muted mt-1 d-block">Unavailable mechanics are greyed out.</small>
+                        <small class="text-muted mt-1 d-block">Unavailable and On Duty mechanics are greyed out. On Break mechanics can still be assigned.</small>
                     </div>`,
                 confirmButtonText: 'Assign',
                 confirmButtonColor: '#e62429',

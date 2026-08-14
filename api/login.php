@@ -88,16 +88,27 @@ if ($user) {
         // mechanics table/user_id column self-heals via
         // get_mechanic_jobs.php / update_availability.php, but login
         // must never break if that hasn't run yet on a fresh install.
-        $isAvailable = 0;
+        // is_available drives the on/off switch; mechanic_status is the
+        // raw roster value ('available' | 'on_break' | 'on_duty' |
+        // 'unavailable') so the app can also restore the On Break / On
+        // Duty sub-selection instead of just a binary toggle.
+        $isAvailable    = 0;
+        $mechanicStatus = 'unavailable';
         if ((int)$user['role_id'] === 3) {
             try {
                 $mStmt = $conn->prepare("SELECT status FROM mechanics WHERE user_id = ? LIMIT 1");
                 $mStmt->bind_param("i", $user['id']);
                 $mStmt->execute();
                 $mRow = $mStmt->get_result()->fetch_assoc();
-                if ($mRow && $mRow['status'] === 'available') {
-                    $isAvailable = 1;
+                if ($mRow) {
+                    $mechanicStatus = $mRow['status'];
+                    if ($mechanicStatus !== 'unavailable') {
+                        $isAvailable = 1;
+                    }
                 }
+                // else: no roster row yet — stays 'unavailable'/0, same
+                // as before this feature; self-heals to a real row on
+                // the mechanic's first toggle (update_availability.php).
             } catch (\Throwable $e) {
                 // mechanics table/user_id column not created yet — fine,
                 // it self-heals on first mechanic-app API call.
@@ -119,6 +130,7 @@ if ($user) {
                 "profile_picture"  => $user['profile_picture'],
                 "role_id"          => $user['role_id'],
                 "is_available"     => $isAvailable,
+                "mechanic_status"  => $mechanicStatus,
                 "is_phone_verified"=> $user['is_phone_verified'],
                 "created_at"       => $user['created_at'],
             ]

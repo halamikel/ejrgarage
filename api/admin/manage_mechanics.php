@@ -25,9 +25,15 @@ $conn->query("CREATE TABLE IF NOT EXISTS mechanics (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
     specialty  VARCHAR(150) DEFAULT '',
-    status     ENUM('available','unavailable') DEFAULT 'available',
+    status     ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// Widen the status ENUM for DBs created before on_break/on_duty existed.
+$statusCol = $conn->query("SHOW COLUMNS FROM mechanics LIKE 'status'")->fetch_assoc();
+if ($statusCol && strpos($statusCol['Type'], 'on_break') === false) {
+    $conn->query("ALTER TABLE mechanics MODIFY COLUMN status ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available'");
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -59,7 +65,7 @@ if ($method === 'POST') {
             $id        = (int)($input['id'] ?? 0);
             $name      = trim($input['name'] ?? '');
             $specialty = trim($input['specialty'] ?? '');
-            $status    = in_array($input['status'] ?? '', ['available','unavailable']) ? $input['status'] : 'available';
+            $status    = in_array($input['status'] ?? '', ['available','unavailable','on_break','on_duty'], true) ? $input['status'] : 'available';
             $stmt = $conn->prepare("UPDATE mechanics SET name=?, specialty=?, status=? WHERE id=?");
             $stmt->bind_param("sssi", $name, $specialty, $status, $id);
             $stmt->execute();
@@ -110,6 +116,10 @@ if ($method === 'POST') {
             if ($mech['status'] === 'unavailable') {
                 echo json_encode(['status'=>'error','message'=>$mech['name'].' is currently unavailable. Please select another technician.']); exit;
             }
+            if ($mech['status'] === 'on_duty') {
+                echo json_encode(['status'=>'error','message'=>$mech['name'].' is currently ON DUTY (working on another vehicle). Please select another technician or wait until they clear their status.']); exit;
+            }
+            // 'on_break' falls through here — admin can still assign, per spec.
 
             $stmt = $conn->prepare("UPDATE appointments SET mechanic_id = ? WHERE id = ?");
             $stmt->bind_param("ii", $mechanicId, $apptId);
