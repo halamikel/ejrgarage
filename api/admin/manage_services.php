@@ -96,7 +96,7 @@ if ($method === 'POST') {
             $price_from  = (float)($input['price_from'] ?? 0);
             $is_active   = (int)($input['is_active'] ?? 1);
             $stmt = $conn->prepare("UPDATE ejr_services SET name=?,category=?,description=?,price_from=?,is_active=? WHERE id=?");
-            $stmt->bind_param("sssdi i", $name, $category, $description, $price_from, $is_active, $id);
+            $stmt->bind_param("sssdii", $name, $category, $description, $price_from, $is_active, $id);
             $stmt->execute();
             echo json_encode(['status'=>'success']);
             break;
