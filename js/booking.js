@@ -5,10 +5,12 @@ document.addEventListener("DOMContentLoaded", function () {
     // ============================================================
 
     function isLoggedIn() {
+
         return (
             typeof userLoggedIn !== "undefined" &&
             userLoggedIn === true
         );
+
     }
 
 
@@ -16,25 +18,36 @@ document.addEventListener("DOMContentLoaded", function () {
     // SERVICE SELECTION
     // ============================================================
 
-    const nextBtn = document.querySelector(".btn-next");
-    const serviceError = document.getElementById("serviceError");
-    const serviceLimitError = document.getElementById("serviceLimitError");
+    const nextBtn =
+        document.querySelector(".btn-next");
+
+    const serviceError =
+        document.getElementById("serviceError");
+
+    const serviceLimitError =
+        document.getElementById("serviceLimitError");
 
     let selectedServices = [];
+
     let authModal = null;
+
     let step1Initialized = false;
 
 
     function initServiceSelection() {
 
-        const services = document.querySelectorAll(".service-item");
+        const services =
+            document.querySelectorAll(".service-item");
+
 
         if (
             services.length === 0 ||
             !nextBtn ||
             document.getElementById("vehicleForm")
         ) {
+
             return;
+
         }
 
 
@@ -44,8 +57,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!authModal) {
 
-            authModal = document.createElement("div");
-            authModal.id = "authModal";
+            authModal =
+                document.createElement("div");
+
+            authModal.id =
+                "authModal";
+
 
             authModal.style.cssText =
                 "display:none;" +
@@ -61,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             authModal.innerHTML = `
+
                 <div
                     style="
                         background:#ffffff;
@@ -94,6 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         &times;
                     </button>
 
+
                     <div
                         style="
                             width:70px;
@@ -111,6 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <i class="bi bi-shield-lock-fill"></i>
                     </div>
 
+
                     <h3
                         style="
                             font-family:'Rajdhani',sans-serif;
@@ -124,6 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         Login Required
                     </h3>
 
+
                     <p
                         style="
                             color:#5f6b7a;
@@ -135,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         You must be logged in to book an appointment
                         with EJR Garage.
                     </p>
+
 
                     <div
                         style="
@@ -161,6 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             Log In Here
                         </a>
 
+
                         <a
                             href="registration.php"
                             style="
@@ -181,18 +204,30 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
 
                 </div>
+
             `;
 
-            document.body.appendChild(authModal);
+
+            document.body.appendChild(
+                authModal
+            );
 
 
-            window.addEventListener("click", function (event) {
+            window.addEventListener(
+                "click",
+                function (event) {
 
-                if (event.target === authModal) {
-                    authModal.style.display = "none";
+                    if (
+                        event.target === authModal
+                    ) {
+
+                        authModal.style.display =
+                            "none";
+
+                    }
+
                 }
-
-            });
+            );
 
         }
 
@@ -201,96 +236,150 @@ document.addEventListener("DOMContentLoaded", function () {
         // SERVICE CLICK EVENTS
         // ========================================================
 
-        services.forEach(function (service) {
+        services.forEach(
+            function (service) {
 
-            service.addEventListener("click", function () {
+                service.addEventListener(
+                    "click",
+                    function () {
 
-                const serviceName = this.textContent.trim();
-
-
-                if (serviceError) {
-                    serviceError.style.display = "none";
-                }
-
-
-                if (serviceLimitError) {
-                    serviceLimitError.style.display = "none";
-                }
+                        const serviceName =
+                            this.textContent.trim();
 
 
-                if (this.classList.contains("selected")) {
+                        if (serviceError) {
 
-                    this.classList.remove("selected");
+                            serviceError.style.display =
+                                "none";
 
-                    selectedServices = selectedServices.filter(
-                        function (service) {
-                            return service !== serviceName;
                         }
-                    );
 
-                } else {
-
-                    if (selectedServices.length >= 5) {
 
                         if (serviceLimitError) {
-                            serviceLimitError.style.display = "block";
+
+                            serviceLimitError.style.display =
+                                "none";
+
                         }
 
-                        return;
+
+                        if (
+                            this.classList.contains(
+                                "selected"
+                            )
+                        ) {
+
+                            this.classList.remove(
+                                "selected"
+                            );
+
+
+                            selectedServices =
+                                selectedServices.filter(
+                                    function (service) {
+
+                                        return (
+                                            service !==
+                                            serviceName
+                                        );
+
+                                    }
+                                );
+
+                        }
+
+                        else {
+
+                            if (
+                                selectedServices.length >= 5
+                            ) {
+
+                                if (serviceLimitError) {
+
+                                    serviceLimitError.style.display =
+                                        "block";
+
+                                }
+
+                                return;
+
+                            }
+
+
+                            this.classList.add(
+                                "selected"
+                            );
+
+
+                            selectedServices.push(
+                                serviceName
+                            );
+
+                        }
+
                     }
+                );
 
-
-                    this.classList.add("selected");
-
-                    selectedServices.push(serviceName);
-
-                }
-
-            });
-
-        });
+            }
+        );
 
 
         // ========================================================
-        // NEXT BUTTON TO CONFIRMATION
+        // NEXT BUTTON
         // ========================================================
 
         if (!step1Initialized) {
 
-            nextBtn.addEventListener("click", function (event) {
+            nextBtn.addEventListener(
+                "click",
+                function (event) {
 
-                event.preventDefault();
+                    event.preventDefault();
 
 
-                if (selectedServices.length === 0) {
+                    if (
+                        selectedServices.length === 0
+                    ) {
 
-                    if (serviceError) {
-                        serviceError.style.display = "block";
+                        if (serviceError) {
+
+                            serviceError.style.display =
+                                "block";
+
+                        }
+
+                        return;
+
                     }
 
-                    return;
-                }
 
+                    if (!isLoggedIn()) {
 
-                if (!isLoggedIn()) {
+                        if (authModal) {
 
-                    if (authModal) {
-                        authModal.style.display = "flex";
+                            authModal.style.display =
+                                "flex";
+
+                        }
+
+                        return;
+
                     }
 
-                    return;
+
+                    localStorage.setItem(
+                        "selectedServices",
+                        JSON.stringify(
+                            selectedServices
+                        )
+                    );
+
+
+                    window.location.href =
+                        "booking-confirmation.php";
+
                 }
-
-
-                localStorage.setItem(
-                    "selectedServices",
-                    JSON.stringify(selectedServices)
-                );
-
-
-                window.location.href = "booking-confirmation.php";
-
-            });
+            );
 
 
             step1Initialized = true;
@@ -315,31 +404,57 @@ document.addEventListener("DOMContentLoaded", function () {
     // ============================================================
 
     const vehicleForm =
-        document.getElementById("vehicleForm");
+        document.getElementById(
+            "vehicleForm"
+        );
+
 
     const yearSelect =
-        document.getElementById("year");
+        document.getElementById(
+            "year"
+        );
+
 
     const savedSection =
-        document.getElementById("savedVehiclesSection");
+        document.getElementById(
+            "savedVehiclesSection"
+        );
+
 
     const manualForm =
-        document.getElementById("manualVehicleForm");
+        document.getElementById(
+            "manualVehicleForm"
+        );
+
 
     const savedSelect =
-        document.getElementById("savedVehicleSelect");
+        document.getElementById(
+            "savedVehicleSelect"
+        );
+
 
     const brandSelect =
-        document.getElementById("brand");
+        document.getElementById(
+            "brand"
+        );
+
 
     const modelSelect =
-        document.getElementById("model");
+        document.getElementById(
+            "model"
+        );
+
 
     const modelOtherInput =
-        document.getElementById("modelOther");
+        document.getElementById(
+            "modelOther"
+        );
+
 
     const modelHelpText =
-        document.getElementById("modelHelpText");
+        document.getElementById(
+            "modelHelpText"
+        );
 
 
 
@@ -350,6 +465,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const philippineCarModels = {
 
         Toyota: [
+
             "86 / GR86",
             "Alphard",
             "Avanza",
@@ -377,9 +493,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Yaris",
             "Yaris Cross",
             "Zenix"
+
         ],
 
+
         Honda: [
+
             "Accord",
             "Brio",
             "BR-V",
@@ -391,9 +510,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Jazz",
             "Mobilio",
             "Odyssey"
+
         ],
 
+
         Mitsubishi: [
+
             "Adventure",
             "ASX",
             "Eclipse Cross",
@@ -410,9 +532,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Triton",
             "Xpander",
             "Xpander Cross"
+
         ],
 
+
         Nissan: [
+
             "Almera",
             "Juke",
             "Kicks",
@@ -424,9 +549,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Terra",
             "Urvan",
             "X-Trail"
+
         ],
 
+
         Ford: [
+
             "EcoSport",
             "Everest",
             "Explorer",
@@ -437,9 +565,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Ranger",
             "Territory",
             "Transit"
+
         ],
 
+
         Suzuki: [
+
             "APV",
             "Alto",
             "Celerio",
@@ -452,18 +583,24 @@ document.addEventListener("DOMContentLoaded", function () {
             "Vitara",
             "XL7",
             "Carry"
+
         ],
 
+
         Isuzu: [
+
             "Crosswind",
             "D-Max",
             "mu-X",
             "Traviz",
             "Alterra",
             "Trooper"
+
         ],
 
+
         Hyundai: [
+
             "Accent",
             "Avante",
             "Creta",
@@ -482,9 +619,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Staria",
             "Tucson",
             "Veloster"
+
         ],
 
+
         Kia: [
+
             "Carens",
             "Carnival",
             "EV6",
@@ -498,9 +638,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Sorento",
             "Sportage",
             "Stonic"
+
         ],
 
+
         Mazda: [
+
             "2",
             "3",
             "6",
@@ -513,6 +656,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "CX-60",
             "CX-90",
             "MX-5"
+
         ]
 
     };
@@ -520,13 +664,125 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // ============================================================
+    // SHOW CUSTOM MODEL INPUT
+    // ============================================================
+
+    function showCustomModelInput() {
+
+        if (!modelSelect) {
+            return;
+        }
+
+
+        // Hide dropdown
+
+        modelSelect.style.display =
+            "none";
+
+        modelSelect.disabled =
+            true;
+
+
+        // Show textbox
+
+        if (modelOtherInput) {
+
+            modelOtherInput.style.display =
+                "block";
+
+            modelOtherInput.disabled =
+                false;
+
+            modelOtherInput.value = "";
+
+            modelOtherInput.focus();
+
+        }
+
+
+        // Update help text
+
+        if (modelHelpText) {
+
+            modelHelpText.textContent =
+                "Please enter your vehicle's model.";
+
+        }
+
+    }
+
+
+
+    // ============================================================
+    // SHOW NORMAL MODEL DROPDOWN
+    // ============================================================
+
+    function showNormalModelDropdown() {
+
+        if (!modelSelect) {
+            return;
+        }
+
+
+        modelSelect.style.display =
+            "block";
+
+        modelSelect.disabled =
+            false;
+
+
+        if (modelOtherInput) {
+
+            modelOtherInput.style.display =
+                "none";
+
+            modelOtherInput.disabled =
+                true;
+
+            modelOtherInput.value = "";
+
+        }
+
+
+        if (modelHelpText) {
+
+            modelHelpText.textContent =
+                "Can't find your model? Select Other and enter it manually.";
+
+        }
+
+    }
+
+
+
+    // ============================================================
     // UPDATE CAR MODEL FIELD
+    //
+    // IMPORTANT:
+    //
+    // Every brand gets an "Other" option.
+    //
+    // Example:
+    //
+    // Toyota
+    //   ↓
+    // Vios
+    // Fortuner
+    // Wigo
+    // Other
+    //
+    // Selecting Other changes the dropdown into a textbox.
     // ============================================================
 
     function updateModelDropdown() {
 
-        if (!brandSelect || !modelSelect) {
+        if (
+            !brandSelect ||
+            !modelSelect
+        ) {
+
             return;
+
         }
 
 
@@ -535,22 +791,54 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         // ========================================================
-        // OTHER BRAND
+        // RESET
         // ========================================================
 
-        if (selectedBrand === "Other") {
-
-            modelSelect.style.display = "none";
-            modelSelect.disabled = true;
+        showNormalModelDropdown();
 
 
-            if (modelOtherInput) {
+        modelSelect.innerHTML = "";
 
-                modelOtherInput.style.display = "block";
-                modelOtherInput.disabled = false;
-                modelOtherInput.value = "";
+
+        // ========================================================
+        // NO BRAND SELECTED
+        // ========================================================
+
+        if (!selectedBrand) {
+
+            modelSelect.disabled =
+                true;
+
+
+            modelSelect.innerHTML =
+                '<option value="">Select a brand first</option>';
+
+
+            if (modelHelpText) {
+
+                modelHelpText.textContent =
+                    "Models are based on vehicles commonly sold/registered in the Philippines.";
 
             }
+
+
+            return;
+
+        }
+
+
+        // ========================================================
+        // BRAND = OTHER
+        //
+        // If brand itself is Other, there is no model dropdown.
+        // The user enters the model manually.
+        // ========================================================
+
+        if (
+            selectedBrand === "Other"
+        ) {
+
+            showCustomModelInput();
 
 
             if (modelHelpText) {
@@ -562,53 +850,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             return;
-        }
 
+        }
 
 
         // ========================================================
         // NORMAL BRAND
         // ========================================================
 
-        modelSelect.style.display = "block";
-
-        modelSelect.innerHTML = "";
-
+        modelSelect.disabled =
+            false;
 
 
-        if (modelOtherInput) {
+        // Placeholder
 
-            modelOtherInput.style.display = "none";
-            modelOtherInput.disabled = true;
-            modelOtherInput.value = "";
-
-        }
-
+        const placeholder =
+            document.createElement(
+                "option"
+            );
 
 
-        // ========================================================
-        // NO BRAND SELECTED
-        // ========================================================
-
-        if (!selectedBrand) {
-
-            modelSelect.disabled = true;
-
-            modelSelect.innerHTML =
-                '<option value="">Select a brand first</option>';
+        placeholder.value =
+            "";
 
 
-            if (modelHelpText) {
-
-                modelHelpText.textContent =
-                    "Models are based on vehicles commonly sold in the Philippines.";
-
-            }
+        placeholder.textContent =
+            "Select model";
 
 
-            return;
-        }
-
+        modelSelect.appendChild(
+            placeholder
+        );
 
 
         // ========================================================
@@ -616,41 +888,73 @@ document.addEventListener("DOMContentLoaded", function () {
         // ========================================================
 
         const models =
-            philippineCarModels[selectedBrand] || [];
+            philippineCarModels[
+                selectedBrand
+            ] || [];
 
 
-        modelSelect.disabled = false;
+        // ========================================================
+        // ADD MODELS
+        // ========================================================
+
+        models.forEach(
+            function (model) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
 
 
-
-        const placeholder =
-            document.createElement("option");
-
-        placeholder.value = "";
-        placeholder.textContent = "Select model";
-
-        modelSelect.appendChild(placeholder);
+                option.value =
+                    model;
 
 
-
-        models.forEach(function (model) {
-
-            const option =
-                document.createElement("option");
-
-            option.value = model;
-            option.textContent = model;
-
-            modelSelect.appendChild(option);
-
-        });
+                option.textContent =
+                    model;
 
 
+                modelSelect.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        // ========================================================
+        // ADD "OTHER"
+        //
+        // THIS IS THE IMPORTANT NEW PART.
+        // ========================================================
+
+        const otherOption =
+            document.createElement(
+                "option"
+            );
+
+
+        otherOption.value =
+            "Other";
+
+
+        otherOption.textContent =
+            "Other";
+
+
+        modelSelect.appendChild(
+            otherOption
+        );
+
+
+        // ========================================================
+        // HELP TEXT
+        // ========================================================
 
         if (modelHelpText) {
 
             modelHelpText.textContent =
-                "Models are based on vehicles commonly sold in the Philippines.";
+                "Can't find your model? Select Other and enter it manually.";
 
         }
 
@@ -669,7 +973,70 @@ document.addEventListener("DOMContentLoaded", function () {
             updateModelDropdown
         );
 
+
+        // Initialize model dropdown
+
         updateModelDropdown();
+
+    }
+
+
+
+    // ============================================================
+    // MODEL CHANGE EVENT
+    //
+    // Detects:
+    //
+    // Model = Other
+    //
+    // and changes the dropdown into a textbox.
+    // ============================================================
+
+    if (modelSelect) {
+
+        modelSelect.addEventListener(
+            "change",
+            function () {
+
+                const selectedModel =
+                    modelSelect.value;
+
+
+                // ==================================================
+                // OTHER MODEL
+                // ==================================================
+
+                if (
+                    selectedModel === "Other"
+                ) {
+
+                    showCustomModelInput();
+
+                }
+
+
+                // ==================================================
+                // NORMAL MODEL
+                // ==================================================
+
+                else {
+
+                    showNormalModelDropdown();
+
+
+                    // Keep the selected normal model
+
+                    if (selectedModel) {
+
+                        modelSelect.value =
+                            selectedModel;
+
+                    }
+
+                }
+
+            }
+        );
 
     }
 
@@ -692,12 +1059,22 @@ document.addEventListener("DOMContentLoaded", function () {
         ) {
 
             const option =
-                document.createElement("option");
+                document.createElement(
+                    "option"
+                );
 
-            option.value = year;
-            option.textContent = year;
 
-            yearSelect.appendChild(option);
+            option.value =
+                year;
+
+
+            option.textContent =
+                year;
+
+
+            yearSelect.appendChild(
+                option
+            );
 
         }
 
@@ -712,12 +1089,16 @@ document.addEventListener("DOMContentLoaded", function () {
     async function loadUserGarage() {
 
         if (!savedSelect) {
+
             return;
+
         }
 
 
         const token =
-            localStorage.getItem("jwt_token");
+            localStorage.getItem(
+                "jwt_token"
+            );
 
 
         try {
@@ -727,7 +1108,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     "api/get_vehicles.php",
                     {
                         headers: {
-                            "Authorization": "Bearer " + token
+                            "Authorization":
+                                "Bearer " + token
                         }
                     }
                 );
@@ -743,9 +1125,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 data.vehicles.length > 0
             ) {
 
-                savedSection.style.display = "block";
+                savedSection.style.display =
+                    "block";
 
-                manualForm.style.display = "none";
+
+                manualForm.style.display =
+                    "none";
 
 
                 const backToSavedContainer =
@@ -754,7 +1139,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     );
 
 
-                if (backToSavedContainer) {
+                if (
+                    backToSavedContainer
+                ) {
 
                     backToSavedContainer.style.display =
                         "block";
@@ -766,32 +1153,42 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<option value="">-- Select Saved Vehicle --</option>';
 
 
-                data.vehicles.forEach(function (vehicle) {
+                data.vehicles.forEach(
+                    function (vehicle) {
 
-                    const option =
-                        document.createElement("option");
-
-
-                    option.value =
-                        JSON.stringify(vehicle);
-
-
-                    option.textContent =
-                        vehicle.brand +
-                        " " +
-                        vehicle.model +
-                        " (" +
-                        vehicle.plate_number +
-                        ")";
+                        const option =
+                            document.createElement(
+                                "option"
+                            );
 
 
-                    savedSelect.appendChild(option);
+                        option.value =
+                            JSON.stringify(
+                                vehicle
+                            );
 
-                });
+
+                        option.textContent =
+                            vehicle.brand +
+                            " " +
+                            vehicle.model +
+                            " (" +
+                            vehicle.plate_number +
+                            ")";
+
+
+                        savedSelect.appendChild(
+                            option
+                        );
+
+                    }
+                );
 
             }
 
-        } catch (error) {
+        }
+
+        catch (error) {
 
             console.error(
                 "Garage load failed:",
@@ -825,14 +1222,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 await response.json();
 
 
-            if (data.status === "success") {
+            if (
+                data.status === "success"
+            ) {
 
                 busyDates =
                     data.busy_dates || [];
 
             }
 
-        } catch (error) {
+        }
+
+        catch (error) {
 
             console.error(
                 "Failed to load busy dates:",
@@ -842,9 +1243,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-
         if (
-            typeof flatpickr === "undefined"
+            typeof flatpickr ===
+            "undefined"
         ) {
 
             console.error(
@@ -856,32 +1257,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-
         const disableDates =
-            busyDates.map(function (dateString) {
+            busyDates.map(
+                function (dateString) {
 
-                const parts =
-                    dateString.split("-");
-
-
-                const year =
-                    Number(parts[0]);
-
-                const month =
-                    Number(parts[1]);
-
-                const day =
-                    Number(parts[2]);
+                    const parts =
+                        dateString.split("-");
 
 
-                return new Date(
-                    year,
-                    month - 1,
-                    day
-                );
+                    const year =
+                        Number(parts[0]);
 
-            });
 
+                    const month =
+                        Number(parts[1]);
+
+
+                    const day =
+                        Number(parts[2]);
+
+
+                    return new Date(
+                        year,
+                        month - 1,
+                        day
+                    );
+
+                }
+            );
 
 
         const appointmentDate =
@@ -891,9 +1294,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         if (!appointmentDate) {
-            return;
-        }
 
+            return;
+
+        }
 
 
         flatpickr(
@@ -928,13 +1332,19 @@ document.addEventListener("DOMContentLoaded", function () {
                         const month =
                             String(
                                 date.getMonth() + 1
-                            ).padStart(2, "0");
+                            ).padStart(
+                                2,
+                                "0"
+                            );
 
 
                         const day =
                             String(
                                 date.getDate()
-                            ).padStart(2, "0");
+                            ).padStart(
+                                2,
+                                "0"
+                            );
 
 
                         const formattedDate =
@@ -954,20 +1364,26 @@ document.addEventListener("DOMContentLoaded", function () {
                             dayElement.style.backgroundColor =
                                 "#e62429";
 
+
                             dayElement.style.color =
                                 "#ffffff";
+
 
                             dayElement.style.borderRadius =
                                 "50%";
 
+
                             dayElement.style.opacity =
                                 "1";
+
 
                             dayElement.style.pointerEvents =
                                 "none";
 
+
                             dayElement.style.cursor =
                                 "not-allowed";
+
 
                             dayElement.title =
                                 "Fully booked";
@@ -994,7 +1410,6 @@ document.addEventListener("DOMContentLoaded", function () {
         initCalendar();
 
 
-
         // ========================================================
         // USE DIFFERENT VEHICLE
         // ========================================================
@@ -1005,24 +1420,33 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-        if (addNewManualButton) {
+        if (
+            addNewManualButton
+        ) {
 
             addNewManualButton.addEventListener(
                 "click",
                 function () {
 
-                    manualForm.style.display = "block";
-                    savedSection.style.display = "none";
+                    manualForm.style.display =
+                        "block";
+
+
+                    savedSection.style.display =
+                        "none";
+
 
                     if (savedSelect) {
-                        savedSelect.value = "";
+
+                        savedSelect.value =
+                            "";
+
                     }
 
                 }
             );
 
         }
-
 
 
         // ========================================================
@@ -1035,20 +1459,25 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-        if (backToSavedButton) {
+        if (
+            backToSavedButton
+        ) {
 
             backToSavedButton.addEventListener(
                 "click",
                 function () {
 
-                    manualForm.style.display = "none";
-                    savedSection.style.display = "block";
+                    manualForm.style.display =
+                        "none";
+
+
+                    savedSection.style.display =
+                        "block";
 
                 }
             );
 
         }
-
 
 
         // ========================================================
@@ -1065,24 +1494,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 let vehicleDetails = {};
 
 
-
                 // ==================================================
                 // CHECK SAVED VEHICLE
                 // ==================================================
 
                 const isUsingSavedVehicle =
                     savedSection &&
-                    savedSection.style.display !== "none" &&
+                    savedSection.style.display !==
+                        "none" &&
                     savedSelect &&
                     savedSelect.value !== "";
-
 
 
                 // ==================================================
                 // SAVED VEHICLE
                 // ==================================================
 
-                if (isUsingSavedVehicle) {
+                if (
+                    isUsingSavedVehicle
+                ) {
 
                     const vehicle =
                         JSON.parse(
@@ -1093,30 +1523,36 @@ document.addEventListener("DOMContentLoaded", function () {
                     vehicleDetails = {
 
                         brand:
-                            vehicle.brand || "",
+                            vehicle.brand ||
+                            "",
 
                         model:
-                            vehicle.model || "",
+                            vehicle.model ||
+                            "",
 
                         year:
-                            vehicle.year_model || "",
+                            vehicle.year_model ||
+                            "",
 
                         plate:
-                            vehicle.plate_number || "",
+                            vehicle.plate_number ||
+                            "",
 
                         transmission:
-                            vehicle.transmission || "",
+                            vehicle.transmission ||
+                            "",
 
                         fuel:
-                            vehicle.fuel_type || "",
+                            vehicle.fuel_type ||
+                            "",
 
                         vehicle_id:
-                            vehicle.id || ""
+                            vehicle.id ||
+                            ""
 
                     };
 
                 }
-
 
 
                 // ==================================================
@@ -1127,49 +1563,80 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     const selectedBrand =
                         document
-                            .getElementById("brand")
+                            .getElementById(
+                                "brand"
+                            )
                             .value;
 
 
-                    let selectedModel = "";
+                    let selectedModel =
+                        "";
 
+
+                    const modelDropdown =
+                        document.getElementById(
+                            "model"
+                        );
+
+
+                    const customModelInput =
+                        document.getElementById(
+                            "modelOther"
+                        );
 
 
                     // ==============================================
-                    // OTHER BRAND
+                    // BRAND = OTHER
                     // ==============================================
 
                     if (
-                        selectedBrand === "Other"
+                        selectedBrand ===
+                        "Other"
                     ) {
 
                         selectedModel =
-                            document
-                                .getElementById(
-                                    "modelOther"
-                                )
-                                .value
-                                .trim();
+                            customModelInput
+                                ? customModelInput.value.trim()
+                                : "";
 
                     }
 
 
                     // ==============================================
-                    // NORMAL BRAND
+                    // MODEL = OTHER
+                    // ==============================================
+
+                    else if (
+                        modelDropdown &&
+                        modelDropdown.value ===
+                            "Other"
+                    ) {
+
+                        selectedModel =
+                            customModelInput
+                                ? customModelInput.value.trim()
+                                : "";
+
+                    }
+
+
+                    // ==============================================
+                    // NORMAL MODEL
                     // ==============================================
 
                     else {
 
                         selectedModel =
-                            document
-                                .getElementById(
-                                    "model"
-                                )
-                                .value;
+                            modelDropdown
+                                ? modelDropdown.value
+                                : "";
 
                     }
 
 
+                    // =================================================
+                    // BUILD VEHICLE DETAILS
+                    // =================================================
 
                     vehicleDetails = {
 
@@ -1211,10 +1678,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     };
 
 
-
-                    // ==============================================
+                    // =================================================
                     // VALIDATION
-                    // ==============================================
+                    // =================================================
 
                     if (
                         !vehicleDetails.brand ||
@@ -1231,10 +1697,40 @@ document.addEventListener("DOMContentLoaded", function () {
                             );
 
 
-                        if (errorMessage) {
+                        if (
+                            errorMessage
+                        ) {
 
                             errorMessage.style.display =
                                 "block";
+
+                        }
+
+
+                        // If the custom model textbox
+                        // is being used, focus it.
+
+                        if (
+                            (
+                                selectedBrand ===
+                                "Other"
+                            ||
+                                (
+                                    modelDropdown &&
+                                    modelDropdown.value ===
+                                        "Other"
+                                )
+                            ) &&
+                            !selectedModel
+                        ) {
+
+                            if (
+                                customModelInput
+                            ) {
+
+                                customModelInput.focus();
+
+                            }
 
                         }
 
@@ -1244,6 +1740,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
 
+                    // =================================================
+                    // HIDE ERROR
+                    // =================================================
 
                     const errorMessage =
                         document.getElementById(
@@ -1251,7 +1750,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         );
 
 
-                    if (errorMessage) {
+                    if (
+                        errorMessage
+                    ) {
 
                         errorMessage.style.display =
                             "none";
@@ -1259,7 +1760,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                 }
-
 
 
                 // ==================================================
@@ -1278,7 +1778,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         : "";
 
 
-
                 // ==================================================
                 // NOTES
                 // ==================================================
@@ -1293,7 +1792,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     notes
                         ? notes.value.trim()
                         : "";
-
 
 
                 // ==================================================
@@ -1313,7 +1811,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
 
-
                 // ==================================================
                 // SAVE VEHICLE DETAILS
                 // ==================================================
@@ -1326,9 +1823,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
-
                 // ==================================================
-                // GO TO SERVICE
+                // GO TO SERVICE SELECTION
                 // ==================================================
 
                 window.location.href =
