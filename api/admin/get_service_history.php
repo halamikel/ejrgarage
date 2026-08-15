@@ -60,10 +60,12 @@ if ($method === 'POST') {
 $stmt = $conn->prepare("
     SELECT a.id, a.service_type, a.appointment_date AS service_date,
            u.full_name,
-           v.brand, v.model, v.year_model, v.plate_number
+           v.brand, v.model, v.year_model, v.plate_number,
+           m.name AS mechanic_name
     FROM appointments a
     JOIN users u ON u.id = a.user_id
     LEFT JOIN vehicles v ON v.id = a.vehicle_id
+    LEFT JOIN mechanics m ON m.id = a.mechanic_id
     WHERE a.status = 'Completed'
     ORDER BY a.appointment_date DESC
 ");
