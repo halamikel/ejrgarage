@@ -4302,3 +4302,10 @@ document.addEventListener(
 
 </script>
 
+</script>
+
+<!-- ============================================================
+     EJR GARAGE GOOGLE MAP LOCATION
+============================================================ -->
+
+<script src="/js/chat-location.js"></script>
