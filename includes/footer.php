@@ -42,7 +42,6 @@ if (localStorage.getItem('jwt_token')) {
         <div class="row g-4 justify-content-between">
 
             <!-- CONTACT -->
-
             <div class="col-md-4 text-start">
 
                 <h6
@@ -66,7 +65,6 @@ if (localStorage.getItem('jwt_token')) {
 
                     </li>
 
-
                     <li class="mb-3 d-flex align-items-center">
 
                         <i
@@ -78,7 +76,6 @@ if (localStorage.getItem('jwt_token')) {
                         </span>
 
                     </li>
-
 
                     <li class="mb-3 d-flex align-items-center">
 
@@ -98,7 +95,6 @@ if (localStorage.getItem('jwt_token')) {
 
 
             <!-- BRAND -->
-
             <div
                 class="col-md-4 text-center d-flex flex-column align-items-center"
             >
@@ -116,7 +112,6 @@ if (localStorage.getItem('jwt_token')) {
 
                 </div>
 
-
                 <p class="text-secondary small px-lg-5">
 
                     Reliable repairs.
@@ -124,7 +119,6 @@ if (localStorage.getItem('jwt_token')) {
                     Quality service.
 
                 </p>
-
 
                 <div class="d-flex gap-3 mt-2">
 
@@ -135,14 +129,12 @@ if (localStorage.getItem('jwt_token')) {
                         <i class="bi bi-facebook fs-5"></i>
                     </a>
 
-
                     <a
                         href="#"
                         class="text-white opacity-75"
                     >
                         <i class="bi bi-instagram fs-5"></i>
                     </a>
-
 
                     <a
                         href="#"
@@ -152,7 +144,6 @@ if (localStorage.getItem('jwt_token')) {
                     </a>
 
                 </div>
-
 
                 <a
                     href="/download-app.php"
@@ -176,7 +167,6 @@ if (localStorage.getItem('jwt_token')) {
 
 
             <!-- OFFICE HOURS -->
-
             <div
                 class="col-md-4 text-start text-md-end"
             >
@@ -189,7 +179,6 @@ if (localStorage.getItem('jwt_token')) {
                     >
                         Office Hours
                     </h6>
-
 
                     <ul class="list-unstyled m-0">
 
@@ -205,7 +194,6 @@ if (localStorage.getItem('jwt_token')) {
 
                         </li>
 
-
                         <li class="mb-2">
 
                             Saturday:
@@ -217,7 +205,6 @@ if (localStorage.getItem('jwt_token')) {
                             </span>
 
                         </li>
-
 
                         <li class="mb-0">
 
@@ -248,14 +235,11 @@ if (localStorage.getItem('jwt_token')) {
                     class="border-secondary opacity-25 mb-4"
                 >
 
-
                 <p
                     class="small text-secondary m-0"
                 >
-
                     © 2026 EJR Garage.
                     All rights reserved.
-
                 </p>
 
             </div>
@@ -282,9 +266,7 @@ if (localStorage.getItem('jwt_token')) {
     "
 >
 
-    <!-- ========================================================
-         CHAT TOGGLE
-    ========================================================= -->
+    <!-- CHAT TOGGLE -->
 
     <div
         id="chatPill"
@@ -326,7 +308,6 @@ if (localStorage.getItem('jwt_token')) {
 
         LIVE CHAT
 
-
         <span
             id="chatNotification"
             style="
@@ -349,9 +330,7 @@ if (localStorage.getItem('jwt_token')) {
     </div>
 
 
-    <!-- ========================================================
-         CHAT BOX
-    ========================================================= -->
+    <!-- CHAT BOX -->
 
     <div
         id="chatBox"
@@ -384,12 +363,9 @@ if (localStorage.getItem('jwt_token')) {
         "
     >
 
-        <!-- ====================================================
-             HEADER
-        ===================================================== -->
+        <!-- HEADER -->
 
         <div
-            id="chatHeader"
             style="
                 background:
                     linear-gradient(
@@ -434,7 +410,6 @@ if (localStorage.getItem('jwt_token')) {
 
                 </div>
 
-
                 <div>
 
                     <div
@@ -446,7 +421,6 @@ if (localStorage.getItem('jwt_token')) {
                     >
                         EJR Assistant
                     </div>
-
 
                     <div
                         id="chatStatusLabel"
@@ -462,84 +436,25 @@ if (localStorage.getItem('jwt_token')) {
 
             </div>
 
-
-            <!-- =================================================
-                 HEADER CONTROLS
-            ================================================== -->
-
-            <div
+            <button
+                type="button"
+                onclick="toggleChat()"
                 style="
-                    display:flex;
-                    align-items:center;
-                    gap:4px;
+                    background:none;
+                    border:none;
+                    color:#fff;
+                    cursor:pointer;
+                    font-size:22px;
+                    opacity:0.8;
                 "
             >
-
-                <!-- FULL SCREEN -->
-
-                <button
-                    type="button"
-                    id="chatFullscreenButton"
-                    onclick="toggleChatFullscreen()"
-                    title="Full Screen"
-                    aria-label="Full Screen"
-                    style="
-                        background:none;
-                        border:none;
-                        color:#fff;
-                        cursor:pointer;
-                        width:32px;
-                        height:32px;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        border-radius:8px;
-                        opacity:0.9;
-                    "
-                >
-
-                    <i
-                        class="bi bi-arrows-fullscreen"
-                    ></i>
-
-                </button>
-
-
-                <!-- CLOSE -->
-
-                <button
-                    type="button"
-                    onclick="toggleChat()"
-                    title="Close Chat"
-                    aria-label="Close Chat"
-                    style="
-                        background:none;
-                        border:none;
-                        color:#fff;
-                        cursor:pointer;
-                        width:32px;
-                        height:32px;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        border-radius:8px;
-                        font-size:22px;
-                        opacity:0.8;
-                    "
-                >
-
-                    &times;
-
-                </button>
-
-            </div>
+                &times;
+            </button>
 
         </div>
 
 
-        <!-- ====================================================
-             WAITING INDICATOR
-        ===================================================== -->
+        <!-- WAITING INDICATOR -->
 
         <div
             id="waitingIndicator"
@@ -568,9 +483,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-        <!-- ====================================================
-             LIVE INDICATOR
-        ===================================================== -->
+        <!-- LIVE INDICATOR -->
 
         <div
             id="liveIndicator"
@@ -596,9 +509,7 @@ if (localStorage.getItem('jwt_token')) {
         </div>
 
 
-        <!-- ====================================================
-             CUSTOMER CHAT BODY
-        ===================================================== -->
+        <!-- CUSTOMER CHAT BODY -->
 
         <div
             id="chatBody"
@@ -766,9 +677,7 @@ if (localStorage.getItem('jwt_token')) {
             </div>
 
 
-            <!-- =================================================
-                 ADMIN REPLY
-            ================================================== -->
+            <!-- ADMIN REPLY -->
 
             <div
                 id="adminChatReplyArea"
@@ -800,7 +709,6 @@ if (localStorage.getItem('jwt_token')) {
                         "
                     >
 
-
                     <button
                         type="button"
                         id="adminChatReplyButton"
@@ -831,280 +739,262 @@ if (localStorage.getItem('jwt_token')) {
 
         </div>
 
-                <!-- ====================================================
-             CUSTOMER TYPING INDICATOR
-        ===================================================== -->
+
+        <!-- TYPING INDICATOR -->
 
         <div
             id="typingIndicator"
             style="
                 display:none;
-                padding:0 14px 8px;
+                padding:6px 16px;
                 background:#f0f2f5;
+                border-top:1px solid #e9ecef;
             "
         >
 
             <div
                 style="
+                    background:#e9ecef;
+                    padding:8px 12px;
+                    border-radius:12px 12px 12px 0;
                     display:inline-flex;
-                    align-items:center;
                     gap:4px;
-                    background:#fff;
-                    padding:7px 11px;
-                    border-radius:14px;
-                    color:#777;
-                    font-size:11px;
+                    align-items:center;
                 "
             >
 
-                <span
-                    style="
-                        width:5px;
-                        height:5px;
-                        background:#999;
-                        border-radius:50%;
-                        display:inline-block;
-                    "
-                ></span>
-
-                <span
-                    style="
-                        width:5px;
-                        height:5px;
-                        background:#999;
-                        border-radius:50%;
-                        display:inline-block;
-                    "
-                ></span>
-
-                <span
-                    style="
-                        width:5px;
-                        height:5px;
-                        background:#999;
-                        border-radius:50%;
-                        display:inline-block;
-                    "
-                ></span>
-
-                <span>
-                    Admin is typing...
-                </span>
+                <span class="ejr-dot"></span>
+                <span class="ejr-dot"></span>
+                <span class="ejr-dot"></span>
 
             </div>
 
         </div>
 
 
-        <!-- ====================================================
-             CHAT OPTIONS / QUICK ACTIONS
-        ===================================================== -->
+        <!-- QUICK OPTIONS -->
 
         <div
             id="chatOptions"
             style="
+                padding:10px 14px;
+                background:#fff;
                 display:flex;
                 flex-wrap:wrap;
                 gap:6px;
-                padding:10px 12px;
-                background:#fff;
                 border-top:1px solid #eee;
             "
         >
 
             <button
                 type="button"
-                onclick="askQuickQuestion('services')"
-                class="chat-option-btn"
+                onclick="askQuickQuestion('Services Offered')"
+                class="opt-btn"
             >
-                <i class="bi bi-tools"></i>
+
+                <i
+                    class="bi bi-tools me-1"
+                ></i>
+
                 Services
+
             </button>
 
 
             <button
                 type="button"
-                onclick="askQuickQuestion('booking')"
-                class="chat-option-btn"
+                onclick="askQuickQuestion('Booking Help')"
+                class="opt-btn"
             >
-                <i class="bi bi-calendar-check"></i>
+
+                <i
+                    class="bi bi-calendar me-1"
+                ></i>
+
                 Booking
+
             </button>
 
 
             <button
                 type="button"
-                onclick="askQuickQuestion('hours')"
-                class="chat-option-btn"
+                onclick="askQuickQuestion('Operating Hours')"
+                class="opt-btn"
             >
-                <i class="bi bi-clock"></i>
+
+                <i
+                    class="bi bi-clock me-1"
+                ></i>
+
                 Hours
+
             </button>
 
 
             <button
                 type="button"
-                onclick="askQuickQuestion('location')"
-                class="chat-option-btn"
+                onclick="askQuickQuestion('Location')"
+                class="opt-btn"
             >
-                <i class="bi bi-geo-alt-fill"></i>
+
+                <i
+                    class="bi bi-geo-alt me-1"
+                ></i>
+
                 Location
+
             </button>
 
 
             <button
                 type="button"
-                onclick="askQuickQuestion('contact')"
-                class="chat-option-btn"
+                onclick="askQuickQuestion('Contact')"
+                class="opt-btn"
             >
-                <i class="bi bi-telephone-fill"></i>
+
+                <i
+                    class="bi bi-telephone me-1"
+                ></i>
+
                 Contact
+
             </button>
+
+
+            <div
+                id="dynamicButtonContainer"
+                style="
+                    width:100%;
+                    margin-top:4px;
+                "
+            >
+
+                <button
+                    type="button"
+                    id="btnRequestLive"
+                    onclick="requestLiveChat()"
+                    class="opt-btn"
+                    style="
+                        border-color:#1e2a36;
+                        color:#1e2a36;
+                        width:100%;
+                        justify-content:center;
+                    "
+                >
+
+                    <i
+                        class="bi bi-headset me-1"
+                    ></i>
+
+                    Talk to a Live Agent
+
+                </button>
+
+            </div>
 
         </div>
 
 
-        <!-- ====================================================
-             TALK TO AGENT BUTTON
-        ===================================================== -->
+        <!-- CUSTOMER END SESSION -->
 
         <div
-            id="talkAgentArea"
+            id="userEndSessionBar"
             style="
                 display:none;
-                padding:8px 12px;
-                background:#fff;
-                border-top:1px solid #eee;
+                padding:8px 14px;
+                background:#fff8f8;
+                border-top:1px solid #ffdede;
+                text-align:center;
             "
         >
 
             <button
                 type="button"
-                id="talkAgentButton"
-                onclick="requestLiveAgent()"
+                onclick="userEndSession()"
                 style="
-                    width:100%;
-                    border:none;
-                    border-radius:10px;
-                    background:#e62429;
-                    color:#fff;
-                    padding:10px;
-                    font-size:13px;
-                    font-weight:700;
+                    background:none;
+                    border:1px solid #e62429;
+                    color:#e62429;
+                    border-radius:20px;
+                    padding:4px 16px;
+                    font-size:12px;
+                    font-weight:600;
                     cursor:pointer;
                 "
             >
 
                 <i
-                    class="bi bi-person-headset me-1"
+                    class="bi bi-x-circle me-1"
                 ></i>
 
-                Talk to a Live Agent
+                End Live Session
 
             </button>
 
         </div>
 
 
-        <!-- ====================================================
-             CUSTOMER LIVE CHAT INPUT
-        ===================================================== -->
+        <!-- CUSTOMER INPUT -->
 
         <div
             id="customerChatInputContainer"
             style="
-                display:none;
+                padding:12px 14px;
                 background:#fff;
-                border-top:1px solid #ddd;
-                padding:9px;
+                border-top:1px solid #eee;
+                display:flex;
+                gap:8px;
+                align-items:center;
             "
         >
 
-            <div
+            <input
+                type="text"
+                id="chatInput"
+                placeholder="Type a message..."
+                autocomplete="off"
                 style="
+                    flex:1;
+                    border:1px solid #ddd;
+                    padding:9px 14px;
+                    border-radius:24px;
+                    outline:none;
+                    font-size:14px;
+                    background:#f8f9fa;
+                "
+                onkeydown="
+                    if(event.key === 'Enter') {
+                        sendChatMessage();
+                    }
+                "
+            >
+
+            <button
+                type="button"
+                onclick="sendChatMessage()"
+                style="
+                    background:#e62429;
+                    color:white;
+                    border:none;
+                    width:38px;
+                    height:38px;
+                    border-radius:50%;
+                    cursor:pointer;
                     display:flex;
                     align-items:center;
-                    gap:7px;
+                    justify-content:center;
+                    flex-shrink:0;
                 "
             >
 
-                <input
-                    type="text"
-                    id="chatInput"
-                    class="form-control"
-                    placeholder="Type your message..."
-                    autocomplete="off"
-                    style="
-                        border-radius:22px;
-                        font-size:13px;
-                        padding-left:15px;
-                        padding-right:15px;
-                    "
-                >
+                <i
+                    class="bi bi-send-fill"
+                    style="font-size:14px;"
+                ></i>
 
-
-                <button
-                    type="button"
-                    id="chatSendButton"
-                    onclick="sendChatMessage()"
-                    style="
-                        width:40px;
-                        height:40px;
-                        min-width:40px;
-                        border:none;
-                        border-radius:50%;
-                        background:#e62429;
-                        color:#fff;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        cursor:pointer;
-                    "
-                >
-
-                    <i
-                        class="bi bi-send-fill"
-                    ></i>
-
-                </button>
-
-            </div>
-
-
-            <!-- END SESSION -->
-
-            <div
-                style="
-                    text-align:center;
-                    margin-top:6px;
-                "
-            >
-
-                <button
-                    type="button"
-                    onclick="userEndSession()"
-                    style="
-                        border:none;
-                        background:none;
-                        color:#e62429;
-                        font-size:11px;
-                        cursor:pointer;
-                        padding:3px 8px;
-                    "
-                >
-
-                    <i
-                        class="bi bi-x-circle me-1"
-                    ></i>
-
-                    End Live Session
-
-                </button>
-
-            </div>
+            </button>
 
         </div>
-
 
     </div>
 
@@ -1117,535 +1007,244 @@ if (localStorage.getItem('jwt_token')) {
 
 <style>
 
-/* ============================================================
-   CHAT OPTIONS
-============================================================ */
-
-.chat-option-btn {
-
-    border:1px solid #e1e5ea;
+.opt-btn {
 
     background:#fff;
 
-    color:#333;
+    border:1px solid #e62429;
+
+    color:#e62429;
 
     border-radius:20px;
 
-    padding:6px 10px;
+    padding:5px 12px;
 
     font-size:11px;
 
     cursor:pointer;
 
-    transition:
-        all .2s ease;
+    font-weight:600;
 
-}
-
-
-.chat-option-btn:hover {
-
-    background:#f8f9fa;
-
-    border-color:#e62429;
-
-    color:#e62429;
-
-}
-
-
-/* ============================================================
-   CUSTOMER BOT MESSAGE
-============================================================ */
-
-.ejr-bot-msg {
-
-    align-self:flex-start;
-
-    max-width:85%;
-
-    background:#fff;
-
-    color:#263238;
-
-    padding:10px 12px;
-
-    border-radius:
-        14px
-        14px
-        14px
-        4px;
-
-    font-size:13px;
-
-    line-height:1.45;
-
-    box-shadow:
-        0 1px 3px
-        rgba(0,0,0,.08);
-
-}
-
-
-/* ============================================================
-   CUSTOMER MESSAGE
-============================================================ */
-
-.ejr-user-msg {
-
-    align-self:flex-end;
-
-    max-width:85%;
-
-    background:#e62429;
-
-    color:#fff;
-
-    padding:10px 12px;
-
-    border-radius:
-        14px
-        14px
-        4px
-        14px;
-
-    font-size:13px;
-
-    line-height:1.45;
-
-    box-shadow:
-        0 1px 3px
-        rgba(0,0,0,.08);
-
-}
-
-
-/* ============================================================
-   LIVE ADMIN MESSAGE
-============================================================ */
-
-.ejr-admin-msg {
-
-    align-self:flex-start;
-
-    max-width:85%;
-
-    background:#fff;
-
-    color:#263238;
-
-    padding:10px 12px;
-
-    border-radius:
-        14px
-        14px
-        14px
-        4px;
-
-    font-size:13px;
-
-    line-height:1.45;
-
-    box-shadow:
-        0 1px 3px
-        rgba(0,0,0,.08);
-
-}
-
-
-/* ============================================================
-   ADMIN CUSTOMER ITEM
-============================================================ */
-
-.admin-chat-customer-item {
+    transition:0.2s;
 
     display:flex;
 
     align-items:center;
 
-    justify-content:space-between;
+}
 
-    gap:8px;
 
-    padding:10px 12px;
+.opt-btn:hover {
 
-    border-bottom:1px solid #eee;
+    background:#e62429;
 
-    cursor:pointer;
-
-    background:#fff;
-
-    transition:
-        background .2s ease;
+    color:#fff;
 
 }
 
 
-.admin-chat-customer-item:hover {
+.ejr-get-started-btn {
 
-    background:#f8f9fa;
-
-}
-
-
-.admin-chat-customer-item.active {
-
-    background:#fff1f1;
-
-    border-left:
-        3px solid #e62429;
-
-}
-
-
-/* ============================================================
-   ADMIN CUSTOMER NAME
-============================================================ */
-
-.admin-chat-customer-name {
-
-    font-weight:700;
-
-    font-size:12px;
-
-    color:#263238;
-
-}
-
-
-/* ============================================================
-   ADMIN CUSTOMER STATUS
-============================================================ */
-
-.admin-chat-customer-status {
-
-    font-size:10px;
-
-    color:#777;
-
-}
-
-
-/* ============================================================
-   UNREAD BADGE
-============================================================ */
-
-.admin-chat-unread {
-
-    min-width:19px;
-
-    height:19px;
-
-    padding:0 5px;
-
-    border-radius:50%;
-
-    display:flex;
+    display:inline-flex;
 
     align-items:center;
 
     justify-content:center;
 
+    gap:5px;
+
+    margin-top:12px;
+
+    padding:9px 18px;
+
+    border:none;
+
+    border-radius:20px;
+
     background:#e62429;
 
     color:#fff;
 
-    font-size:9px;
+    font-size:12px;
 
     font-weight:700;
 
-}
+    cursor:pointer;
 
-
-/* ============================================================
-   FULL SCREEN BUTTON
-============================================================ */
-
-#chatFullscreenButton {
-
-    flex-shrink:0;
-
-    transition:
-        background .2s ease,
-        transform .2s ease;
+    transition:all 0.2s ease;
 
 }
 
 
-#chatFullscreenButton:hover {
+.ejr-get-started-btn:hover {
+
+    background:#c91f24;
+
+    color:#fff;
+
+    transform:translateY(-1px);
+
+    box-shadow:
+        0 4px 10px
+        rgba(230,36,41,0.25);
+
+}
+
+
+.ejr-bot-msg {
+
+    background:#fff;
+
+    color:#333;
+
+    padding:10px 14px;
+
+    border-radius:
+        16px 16px 16px 4px;
+
+    font-size:13px;
+
+    align-self:flex-start;
+
+    max-width:85%;
+
+    box-shadow:
+        0 1px 3px
+        rgba(0,0,0,0.08);
+
+    line-height:1.5;
+
+}
+
+
+.ejr-user-msg {
 
     background:
-        rgba(
-            255,
-            255,
-            255,
-            .12
-        ) !important;
+        linear-gradient(
+            135deg,
+            #e62429,
+            #ff4444
+        );
 
-    transform:
-        scale(1.05);
+    color:white;
+
+    padding:10px 14px;
+
+    border-radius:
+        16px 16px 4px 16px;
+
+    font-size:13px;
+
+    align-self:flex-end;
+
+    max-width:85%;
+
+    box-shadow:
+        0 1px 3px
+        rgba(0,0,0,0.15);
+
+    line-height:1.5;
 
 }
 
 
-#chatFullscreenButton i {
+.ejr-time {
 
-    font-size:15px;
+    font-size:10px;
+
+    opacity:0.65;
+
+    margin-top:3px;
+
+    text-align:right;
 
 }
 
 
-/* ============================================================
-   FULL SCREEN CHAT BOX
-============================================================ */
+.ejr-dot {
 
-#chatBox.chat-fullscreen {
+    width:7px;
 
-    position:fixed !important;
+    height:7px;
 
-    top:0 !important;
+    background:#999;
 
-    left:0 !important;
+    border-radius:50%;
 
-    right:0 !important;
+    animation:
+        ejrBounce
+        1.2s
+        infinite
+        ease-in-out;
 
-    bottom:0 !important;
+}
 
-    width:100vw !important;
 
-    height:100vh !important;
+.ejr-dot:nth-child(2) {
 
-    max-width:none !important;
+    animation-delay:0.2s;
 
-    max-height:none !important;
+}
 
-    margin:0 !important;
 
-    border-radius:0 !important;
+.ejr-dot:nth-child(3) {
+
+    animation-delay:0.4s;
+
+}
+
+
+@keyframes ejrBounce {
+
+    0%,
+    60%,
+    100% {
+
+        transform:translateY(0);
+
+    }
+
+    30% {
+
+        transform:translateY(-6px);
+
+    }
+
+}
+
+
+#chatBody::-webkit-scrollbar,
+#adminChatMessages::-webkit-scrollbar {
+
+    width:5px;
+
+}
+
+
+#chatBody::-webkit-scrollbar-thumb,
+#adminChatMessages::-webkit-scrollbar-thumb {
+
+    background:#ccc;
+
+    border-radius:10px;
+
+}
+
+
+.swal2-container {
 
     z-index:99999999 !important;
 
-    display:flex !important;
-
-    flex-direction:column !important;
-
 }
 
 
-/* ============================================================
-   FULL SCREEN HEADER
-============================================================ */
-
-#chatBox.chat-fullscreen #chatHeader {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   FULL SCREEN CUSTOMER BODY
-============================================================ */
-
-#chatBox.chat-fullscreen #chatBody {
-
-    flex:
-        1 1 auto !important;
-
-    height:auto !important;
-
-    max-height:none !important;
-
-    overflow-y:auto !important;
-
-}
-
-
-/* ============================================================
-   FULL SCREEN ADMIN PANEL
-============================================================ */
-
-#chatBox.chat-fullscreen #adminChatPanel {
-
-    flex:
-        1 1 auto !important;
-
-    height:auto !important;
-
-    min-height:0 !important;
-
-}
-
-
-/* ============================================================
-   ADMIN CUSTOMER LIST
-============================================================ */
-
-#chatBox.chat-fullscreen
-#adminChatCustomerList {
-
-    height:150px;
-
-    max-height:150px;
-
-    overflow-y:auto;
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   ADMIN MESSAGES
-============================================================ */
-
-#chatBox.chat-fullscreen
-#adminChatMessages {
-
-    flex:
-        1 1 auto !important;
-
-    height:auto !important;
-
-    max-height:none !important;
-
-    overflow-y:auto !important;
-
-}
-
-
-/* ============================================================
-   ADMIN REPLY
-============================================================ */
-
-#chatBox.chat-fullscreen
-#adminChatReplyArea {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   ADMIN END SESSION
-============================================================ */
-
-#chatBox.chat-fullscreen
-#adminEndSessionBar {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   CUSTOMER OPTIONS
-============================================================ */
-
-#chatBox.chat-fullscreen
-#chatOptions {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   CUSTOMER LIVE INPUT
-============================================================ */
-
-#chatBox.chat-fullscreen
-#customerChatInputContainer {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   TALK TO AGENT
-============================================================ */
-
-#chatBox.chat-fullscreen
-#talkAgentArea {
-
-    flex-shrink:0;
-
-}
-
-
-/* ============================================================
-   BODY SCROLL LOCK
-============================================================ */
-
-body.ejr-chat-fullscreen-active {
-
-    overflow:hidden !important;
-
-}
-
-
-/* ============================================================
-   MAP CONTAINER
-============================================================ */
-
-.ejr-map-container {
-
-    width:100%;
-
-    height:250px;
-
-    overflow:hidden;
-
-    border-radius:12px;
-
-}
-
-
-.ejr-map-container iframe {
-
-    width:100%;
-
-    height:250px;
-
-    border:0;
-
-}
-
-
-/* ============================================================
-   FULL SCREEN MAP
-============================================================ */
-
-#chatBox.chat-fullscreen
-.ejr-map-container {
-
-    height:400px !important;
-
-}
-
-
-#chatBox.chat-fullscreen
-.ejr-map-container iframe {
-
-    height:400px !important;
-
-}
-
-
-/* ============================================================
-   MOBILE CHAT
-============================================================ */
-
-@media (
-    max-width:576px
-) {
+@media (max-width:500px) {
 
     #ejrChatContainer {
 
-        right:12px !important;
+        right:15px !important;
 
-        bottom:12px !important;
+        bottom:15px !important;
 
     }
 
@@ -1653,73 +1252,3058 @@ body.ejr-chat-fullscreen-active {
     #chatBox {
 
         width:
-            calc(
-                100vw - 24px
-            ) !important;
-
-        right:0;
-
-    }
-
-
-    #chatBox.chat-fullscreen {
-
-        width:100vw !important;
-
-        height:100dvh !important;
-
-        min-height:100dvh !important;
+            calc(100vw - 30px) !important;
 
         right:0 !important;
 
-        bottom:0 !important;
-
     }
 
 
-    #chatBox.chat-fullscreen
-    #adminChatCustomerList {
+    #chatPill {
 
-        height:130px;
-
-        max-height:130px;
+        padding:
+            11px 17px !important;
 
     }
-
-
-    #chatBox.chat-fullscreen
-    .ejr-map-container {
-
-        height:300px !important;
-
-    }
-
-
-    #chatBox.chat-fullscreen
-    .ejr-map-container iframe {
-
-        height:300px !important;
-
-    }
-
-}
-
-
-/* ============================================================
-   CHAT FULL SCREEN TRANSITION
-============================================================ */
-
-#chatBox {
-
-    transition:
-        width .25s ease,
-        height .25s ease,
-        top .25s ease,
-        left .25s ease,
-        right .25s ease,
-        bottom .25s ease,
-        border-radius .25s ease;
 
 }
 
 </style>
+
+<!-- ============================================================
+     CHAT JAVASCRIPT - PART 2
+     
+     CUSTOMER CHAT
+     ADMIN CHAT
+     ADMIN END SESSION
+     CUSTOMER END SESSION
+     POLLING
+============================================================ -->
+
+<script>
+
+/* ============================================================
+   GLOBAL CHAT STATE
+============================================================ */
+
+let lastChatSession = 'bot';
+
+let currentChatMode = 'bot';
+
+let suppressNextPoll = false;
+
+let adminSelectedCustomerId = null;
+
+let adminSelectedCustomerName = '';
+
+
+
+/* ============================================================
+   GET CURRENT USER
+============================================================ */
+
+function getEJRCurrentUser() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem('user') || '{}'
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Unable to read user information:',
+            error
+        );
+
+        return {};
+
+    }
+
+}
+
+
+
+/* ============================================================
+   CHECK ADMIN
+============================================================ */
+
+function isEJRAdmin() {
+
+    const user =
+        getEJRCurrentUser();
+
+    return Number(user.role_id) === 2;
+
+}
+
+
+
+/* ============================================================
+   GET JWT TOKEN
+============================================================ */
+
+function getEJRChatToken() {
+
+    return (
+        localStorage.getItem('jwt_token') || ''
+    );
+
+}
+
+
+
+/* ============================================================
+   TOGGLE CHAT
+============================================================ */
+
+function toggleChat() {
+
+    const box =
+        document.getElementById('chatBox');
+
+    if (!box) {
+
+        console.error(
+            'EJR CHAT ERROR: #chatBox not found.'
+        );
+
+        return;
+
+    }
+
+    const isOpen =
+        box.style.display === 'flex';
+
+    if (isOpen) {
+
+        box.style.display = 'none';
+
+        return;
+
+    }
+
+    box.style.display = 'flex';
+
+
+    /* ========================================================
+       ADMIN
+    ======================================================== */
+
+    if (isEJRAdmin()) {
+
+        initializeAdminChatWidget();
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       CUSTOMER
+    ======================================================== */
+
+    loadMessages();
+
+
+    const notification =
+        document.getElementById(
+            'chatNotification'
+        );
+
+    if (notification) {
+
+        notification.style.display = 'none';
+
+    }
+
+}
+
+
+
+/* ============================================================
+   INITIALIZE ADMIN CHAT
+============================================================ */
+
+function initializeAdminChatWidget() {
+
+    const title =
+        document.getElementById(
+            'chatTitle'
+        );
+
+    const status =
+        document.getElementById(
+            'chatStatusLabel'
+        );
+
+    const chatBody =
+        document.getElementById(
+            'chatBody'
+        );
+
+    const chatOptions =
+        document.getElementById(
+            'chatOptions'
+        );
+
+    const endSession =
+        document.getElementById(
+            'userEndSessionBar'
+        );
+
+    const waiting =
+        document.getElementById(
+            'waitingIndicator'
+        );
+
+    const live =
+        document.getElementById(
+            'liveIndicator'
+        );
+
+    const inputContainer =
+        document.getElementById(
+            'customerChatInputContainer'
+        );
+
+    const adminPanel =
+        document.getElementById(
+            'adminChatPanel'
+        );
+
+
+    if (title) {
+
+        title.textContent =
+            'Customer Live Chat';
+
+    }
+
+
+    if (status) {
+
+        status.textContent =
+            'Incoming customer messages';
+
+    }
+
+
+    if (chatBody) {
+
+        chatBody.style.display =
+            'none';
+
+    }
+
+
+    if (chatOptions) {
+
+        chatOptions.style.display =
+            'none';
+
+    }
+
+
+    if (endSession) {
+
+        endSession.style.display =
+            'none';
+
+    }
+
+
+    if (waiting) {
+
+        waiting.style.display =
+            'none';
+
+    }
+
+
+    if (live) {
+
+        live.style.display =
+            'none';
+
+    }
+
+
+    if (inputContainer) {
+
+        inputContainer.style.display =
+            'none';
+
+    }
+
+
+    if (adminPanel) {
+
+        adminPanel.style.display =
+            'flex';
+
+    }
+
+
+    loadAdminWidgetCustomers();
+
+}
+
+
+
+/* ============================================================
+   LOAD ADMIN CUSTOMERS
+============================================================ */
+
+function loadAdminWidgetCustomers() {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    fetch(
+        '/api/admin/get_chat_users.php?t=' +
+        Date.now(),
+        {
+
+            method: 'GET',
+
+            credentials: 'include',
+
+            headers: {
+
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+
+            }
+
+        }
+    )
+
+    .then(response => {
+
+        if (!response.ok) {
+
+            throw new Error(
+                'Unable to load customer messages.'
+            );
+
+        }
+
+        return response.json();
+
+    })
+
+    .then(data => {
+
+        if (
+            data.status !== 'success'
+        ) {
+
+            throw new Error(
+                data.message ||
+                'Unable to load customer messages.'
+            );
+
+        }
+
+
+        renderAdminWidgetCustomers(
+            data.users || []
+        );
+
+
+        updateAdminWidgetNotification(
+            data.total_unread || 0
+        );
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin chat widget error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   RENDER ADMIN CUSTOMER LIST
+============================================================ */
+
+function renderAdminWidgetCustomers(users) {
+
+    const list =
+        document.getElementById(
+            'adminChatCustomerList'
+        );
+
+    if (!list) {
+
+        return;
+
+    }
+
+
+    if (!users.length) {
+
+        list.innerHTML = `
+
+            <div
+                style="
+                    padding:25px;
+                    text-align:center;
+                    color:#777;
+                    font-size:13px;
+                "
+            >
+
+                <i
+                    class="bi bi-chat-dots"
+                    style="
+                        font-size:28px;
+                        display:block;
+                        margin-bottom:8px;
+                    "
+                ></i>
+
+                No customer messages yet.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    list.innerHTML =
+        users.map(user => {
+
+            const unread =
+                Number(
+                    user.unread_count || 0
+                );
+
+
+            const name =
+                escapeAdminChatText(
+                    user.full_name ||
+                    'Customer'
+                );
+
+
+            const message =
+                escapeAdminChatText(
+                    user.last_message ||
+                    'New message'
+                );
+
+
+            const safeName =
+                String(
+                    user.full_name ||
+                    'Customer'
+                )
+                .replace(
+                    /\\/g,
+                    '\\\\'
+                )
+                .replace(
+                    /'/g,
+                    "\\'"
+                );
+
+
+            return `
+
+                <div
+
+                    onclick="
+                        selectAdminWidgetCustomer(
+                            ${Number(user.id)},
+                            '${safeName}'
+                        )
+                    "
+
+                    style="
+                        padding:10px 12px;
+                        border-bottom:1px solid #eee;
+                        cursor:pointer;
+                        background:#fff;
+                    "
+
+                    onmouseover="
+                        this.style.background='#f8f9fa'
+                    "
+
+                    onmouseout="
+                        this.style.background='#fff'
+                    "
+                >
+
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                        "
+                    >
+
+                        <strong
+                            style="
+                                font-size:13px;
+                            "
+                        >
+
+                            ${name}
+
+                        </strong>
+
+
+                        ${
+                            unread > 0
+                            ? `
+
+                                <span
+                                    style="
+                                        background:#e62429;
+                                        color:#fff;
+                                        border-radius:20px;
+                                        padding:2px 7px;
+                                        font-size:10px;
+                                        font-weight:700;
+                                    "
+                                >
+
+                                    ${unread}
+
+                                </span>
+
+                            `
+                            : ''
+                        }
+
+                    </div>
+
+
+                    <div
+                        style="
+                            font-size:11px;
+                            color:#777;
+                            margin-top:3px;
+                            white-space:nowrap;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                        "
+                    >
+
+                        ${message}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join('');
+
+}
+
+
+
+/* ============================================================
+   SELECT ADMIN CUSTOMER
+============================================================ */
+
+function selectAdminWidgetCustomer(
+    userId,
+    userName
+) {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    adminSelectedCustomerId =
+        Number(userId);
+
+
+    adminSelectedCustomerName =
+        userName ||
+        'Customer';
+
+
+    const title =
+        document.getElementById(
+            'adminSelectedCustomer'
+        );
+
+
+    if (title) {
+
+        title.innerHTML = `
+
+            <div
+                style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                "
+            >
+
+                <div>
+
+                    <i
+                        class="bi bi-person-circle me-1"
+                    ></i>
+
+                    ${
+                        escapeAdminChatText(
+                            adminSelectedCustomerName
+                        )
+                    }
+
+                </div>
+
+
+                <!-- ADMIN END SESSION BUTTON -->
+
+                <button
+                    type="button"
+                    onclick="adminEndSelectedCustomerSession()"
+                    style="
+                        border:1px solid #e62429;
+                        background:#fff;
+                        color:#e62429;
+                        border-radius:16px;
+                        padding:4px 9px;
+                        font-size:10px;
+                        font-weight:700;
+                        cursor:pointer;
+                        white-space:nowrap;
+                    "
+                    title="End this customer's live session"
+                >
+
+                    <i
+                        class="bi bi-x-circle me-1"
+                    ></i>
+
+                    End Session
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    const replyArea =
+        document.getElementById(
+            'adminChatReplyArea'
+        );
+
+
+    if (replyArea) {
+
+        replyArea.style.display =
+            'block';
+
+    }
+
+
+    loadAdminWidgetMessages(
+        adminSelectedCustomerId
+    );
+
+
+    const input =
+        document.getElementById(
+            'adminChatReplyInput'
+        );
+
+
+    if (input) {
+
+        setTimeout(
+            () => input.focus(),
+            100
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   ADMIN SEND REPLY
+============================================================ */
+
+function sendAdminWidgetReply() {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            'adminChatReplyInput'
+        );
+
+
+    const button =
+        document.getElementById(
+            'adminChatReplyButton'
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
+
+    const message =
+        input.value.trim();
+
+
+    if (!message) {
+
+        return;
+
+    }
+
+
+    input.disabled =
+        true;
+
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+    }
+
+
+    fetch(
+        '/api/admin/send_message.php',
+        {
+
+            method: 'POST',
+
+            credentials: 'include',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+
+            },
+
+            body: JSON.stringify({
+
+                user_id:
+                    adminSelectedCustomerId,
+
+                message:
+                    message
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        return response.json()
+            .then(data => {
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.message ||
+                        'Unable to send reply.'
+                    );
+
+                }
+
+                return data;
+
+            });
+
+    })
+
+    .then(data => {
+
+        if (
+            data.status !== 'success'
+        ) {
+
+            throw new Error(
+                data.message ||
+                'Unable to send reply.'
+            );
+
+        }
+
+
+        input.value = '';
+
+
+        loadAdminWidgetMessages(
+            adminSelectedCustomerId
+        );
+
+
+        loadAdminWidgetCustomers();
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin reply error:',
+            error
+        );
+
+
+        alert(
+            error.message ||
+            'Unable to send reply.'
+        );
+
+    })
+
+    .finally(() => {
+
+        input.disabled =
+            false;
+
+
+        if (button) {
+
+            button.disabled =
+                false;
+
+        }
+
+
+        input.focus();
+
+    });
+
+}
+
+
+
+/* ============================================================
+   ADMIN ENTER KEY
+============================================================ */
+
+document.addEventListener(
+    'keydown',
+    function(event) {
+
+        if (
+            event.key !== 'Enter' ||
+            event.shiftKey
+        ) {
+
+            return;
+
+        }
+
+
+        const input =
+            document.getElementById(
+                'adminChatReplyInput'
+            );
+
+
+        if (
+            !input ||
+            document.activeElement !== input
+        ) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+
+        sendAdminWidgetReply();
+
+    }
+);
+
+
+
+/* ============================================================
+   ADMIN END SELECTED CUSTOMER SESSION
+============================================================ */
+
+function adminEndSelectedCustomerSession() {
+
+    if (!isEJRAdmin()) {
+
+        alert(
+            'Only an admin can end a customer session.'
+        );
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        alert(
+            'Please select a customer first.'
+        );
+
+        return;
+
+    }
+
+
+    const customerName =
+        adminSelectedCustomerName ||
+        'this customer';
+
+
+    /* ========================================================
+       SWEETALERT
+    ======================================================== */
+
+    if (
+        typeof Swal !== 'undefined'
+    ) {
+
+        Swal.fire({
+
+            title:
+                'End Live Session?',
+
+            html:
+                `
+                End the live session with
+                <strong>
+                    ${escapeAdminChatText(customerName)}
+                </strong>?
+                `,
+
+            icon:
+                'warning',
+
+            showCancelButton:
+                true,
+
+            confirmButtonColor:
+                '#e62429',
+
+            cancelButtonColor:
+                '#6c757d',
+
+            confirmButtonText:
+                'Yes, End Session',
+
+            cancelButtonText:
+                'Cancel'
+
+        })
+
+        .then(result => {
+
+            if (
+                result.isConfirmed
+            ) {
+
+                sendAdminEndSession();
+
+            }
+
+        });
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       NORMAL CONFIRM
+    ======================================================== */
+
+    if (
+        confirm(
+            'End the live session with ' +
+            customerName +
+            '?'
+        )
+    ) {
+
+        sendAdminEndSession();
+
+    }
+
+}
+
+
+
+/* ============================================================
+   SEND ADMIN END SESSION REQUEST
+============================================================ */
+
+function sendAdminEndSession() {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    if (!adminSelectedCustomerId) {
+
+        return;
+
+    }
+
+
+    const token =
+        getEJRChatToken();
+
+
+    if (!token) {
+
+        alert(
+            'Your admin session has expired. Please log in again.'
+        );
+
+        return;
+
+    }
+
+
+    const selectedUserId =
+        adminSelectedCustomerId;
+
+
+    fetch(
+        '/api/admin/end_session.php',
+        {
+
+            method: 'POST',
+
+            credentials: 'include',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    token
+
+            },
+
+            body: JSON.stringify({
+
+                user_id:
+                    selectedUserId
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        return response.json()
+            .then(data => {
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.message ||
+                        'Unable to end the session.'
+                    );
+
+                }
+
+                return data;
+
+            });
+
+    })
+
+    .then(data => {
+
+        console.log(
+            'Admin end session response:',
+            data
+        );
+
+
+        if (
+            data.status !== 'success'
+        ) {
+
+            throw new Error(
+                data.message ||
+                'Unable to end the session.'
+            );
+
+        }
+
+
+        /* ====================================================
+           CLEAR SELECTED CUSTOMER
+        ==================================================== */
+
+        adminSelectedCustomerId =
+            null;
+
+        adminSelectedCustomerName =
+            '';
+
+
+        const title =
+            document.getElementById(
+                'adminSelectedCustomer'
+            );
+
+
+        if (title) {
+
+            title.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#777;
+                        font-size:12px;
+                    "
+                >
+
+                    Customer session ended.
+
+                </div>
+
+            `;
+
+        }
+
+
+        const messages =
+            document.getElementById(
+                'adminChatMessages'
+            );
+
+
+        if (messages) {
+
+            messages.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#888;
+                        margin-top:35px;
+                        font-size:13px;
+                    "
+                >
+
+                    <i
+                        class="bi bi-check-circle"
+                        style="
+                            font-size:30px;
+                            display:block;
+                            margin-bottom:8px;
+                            color:#198754;
+                        "
+                    ></i>
+
+                    Live session ended.
+
+                </div>
+
+            `;
+
+        }
+
+
+        const replyArea =
+            document.getElementById(
+                'adminChatReplyArea'
+            );
+
+
+        if (replyArea) {
+
+            replyArea.style.display =
+                'none';
+
+        }
+
+
+        /* ====================================================
+           REFRESH CUSTOMER LIST
+        ==================================================== */
+
+        loadAdminWidgetCustomers();
+
+
+        /* ====================================================
+           SUCCESS MESSAGE
+        ==================================================== */
+
+        if (
+            typeof Swal !== 'undefined'
+        ) {
+
+            Swal.fire({
+
+                icon:
+                    'success',
+
+                title:
+                    'Session Ended',
+
+                text:
+                    'The customer has been returned to bot mode.',
+
+                confirmButtonColor:
+                    '#e62429',
+
+                timer:
+                    1800,
+
+                showConfirmButton:
+                    false
+
+            });
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin end session error:',
+            error
+        );
+
+
+        if (
+            typeof Swal !== 'undefined'
+        ) {
+
+            Swal.fire({
+
+                icon:
+                    'error',
+
+                title:
+                    'Unable to End Session',
+
+                text:
+                    error.message ||
+                    'Something went wrong.',
+
+                confirmButtonColor:
+                    '#e62429'
+
+            });
+
+        }
+
+        else {
+
+            alert(
+                error.message ||
+                'Unable to end the session.'
+            );
+
+        }
+
+    });
+
+}
+
+
+
+/* ============================================================
+   LOAD ADMIN MESSAGES
+============================================================ */
+
+function loadAdminWidgetMessages(userId) {
+
+    if (!isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    fetch(
+        '/api/admin/get_messages.php?user_id=' +
+        encodeURIComponent(userId) +
+        '&t=' +
+        Date.now(),
+        {
+
+            method: 'GET',
+
+            credentials: 'include',
+
+            headers: {
+
+                'Authorization':
+                    'Bearer ' +
+                    getEJRChatToken()
+
+            }
+
+        }
+    )
+
+    .then(response => {
+
+        if (!response.ok) {
+
+            throw new Error(
+                'Unable to load messages.'
+            );
+
+        }
+
+        return response.json();
+
+    })
+
+    .then(data => {
+
+        if (
+            data.status !== 'success'
+        ) {
+
+            throw new Error(
+                data.message ||
+                'Unable to load messages.'
+            );
+
+        }
+
+
+        const body =
+            document.getElementById(
+                'adminChatMessages'
+            );
+
+
+        if (!body) {
+
+            return;
+
+        }
+
+
+        const messages =
+            data.messages || [];
+
+
+        if (!messages.length) {
+
+            body.innerHTML = `
+
+                <div
+                    style="
+                        text-align:center;
+                        color:#888;
+                        margin-top:35px;
+                        font-size:12px;
+                    "
+                >
+
+                    No messages yet.
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        body.innerHTML =
+            messages.map(message => {
+
+                const isCustomer =
+                    message.sender === 'user';
+
+
+                return `
+
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:
+                                ${
+                                    isCustomer
+                                    ? 'flex-start'
+                                    : 'flex-end'
+                                };
+                            margin-bottom:8px;
+                        "
+                    >
+
+                        <div
+                            style="
+                                max-width:85%;
+                                padding:8px 11px;
+                                border-radius:12px;
+                                font-size:12px;
+
+                                background:
+                                    ${
+                                        isCustomer
+                                        ? '#ffffff'
+                                        : '#e62429'
+                                    };
+
+                                color:
+                                    ${
+                                        isCustomer
+                                        ? '#222'
+                                        : '#ffffff'
+                                    };
+
+                                border:
+                                    ${
+                                        isCustomer
+                                        ? '1px solid #ddd'
+                                        : 'none'
+                                    };
+                            "
+                        >
+
+                            <div
+                                style="
+                                    font-size:9px;
+                                    font-weight:700;
+                                    margin-bottom:3px;
+                                    opacity:.75;
+                                "
+                            >
+
+                                ${
+                                    isCustomer
+                                    ? 'CUSTOMER'
+                                    : 'ADMIN'
+                                }
+
+                            </div>
+
+
+                            <div>
+
+                                ${
+                                    escapeAdminChatText(
+                                        message.message || ''
+                                    )
+                                }
+
+                            </div>
+
+
+                            <div
+                                style="
+                                    font-size:8px;
+                                    margin-top:3px;
+                                    opacity:.65;
+                                "
+                            >
+
+                                ${
+                                    escapeAdminChatText(
+                                        message.time || ''
+                                    )
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join('');
+
+
+        body.scrollTop =
+            body.scrollHeight;
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Admin messages error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   ADMIN NOTIFICATION
+============================================================ */
+
+function updateAdminWidgetNotification(count) {
+
+    const notification =
+        document.getElementById(
+            'chatNotification'
+        );
+
+
+    if (!notification) {
+
+        return;
+
+    }
+
+
+    count =
+        Number(count || 0);
+
+
+    if (count > 0) {
+
+        notification.textContent =
+            count;
+
+        notification.style.display =
+            'flex';
+
+    }
+
+    else {
+
+        notification.style.display =
+            'none';
+
+    }
+
+}
+
+
+
+/* ============================================================
+   ESCAPE HTML
+============================================================ */
+
+function escapeAdminChatText(text) {
+
+    return String(text)
+
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+
+        .replace(
+            /</g,
+            '&lt;'
+        )
+
+        .replace(
+            />/g,
+            '&gt;'
+        )
+
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+
+        .replace(
+            /'/g,
+            '&#039;'
+        );
+
+}
+
+
+
+/* ============================================================
+   SESSION UI
+============================================================ */
+
+function applySessionUI(session) {
+
+    currentChatMode =
+        session;
+
+
+    const waiting =
+        document.getElementById(
+            'waitingIndicator'
+        );
+
+    const live =
+        document.getElementById(
+            'liveIndicator'
+        );
+
+    const statusLabel =
+        document.getElementById(
+            'chatStatusLabel'
+        );
+
+    const btnContainer =
+        document.getElementById(
+            'dynamicButtonContainer'
+        );
+
+    const chatOptions =
+        document.getElementById(
+            'chatOptions'
+        );
+
+    const endSessionBar =
+        document.getElementById(
+            'userEndSessionBar'
+        );
+
+
+    /* ========================================================
+       LIVE
+    ======================================================== */
+
+    if (session === 'live') {
+
+        lastChatSession =
+            'live';
+
+
+        if (chatOptions) {
+
+            chatOptions.style.display =
+                'none';
+
+        }
+
+
+        if (waiting) {
+
+            waiting.style.display =
+                'none';
+
+        }
+
+
+        if (live) {
+
+            live.style.display =
+                'block';
+
+        }
+
+
+        if (statusLabel) {
+
+            statusLabel.textContent =
+                'Live with Admin';
+
+        }
+
+
+        if (endSessionBar) {
+
+            endSessionBar.style.display =
+                'block';
+
+        }
+
+
+        if (btnContainer) {
+
+            btnContainer.style.display =
+                'none';
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       WAITING
+    ======================================================== */
+
+    if (session === 'waiting') {
+
+        lastChatSession =
+            'waiting';
+
+
+        if (chatOptions) {
+
+            chatOptions.style.display =
+                'flex';
+
+        }
+
+
+        if (waiting) {
+
+            waiting.style.display =
+                'block';
+
+        }
+
+
+        if (live) {
+
+            live.style.display =
+                'none';
+
+        }
+
+
+        if (statusLabel) {
+
+            statusLabel.textContent =
+                'Connecting to Live Agent...';
+
+        }
+
+
+        if (endSessionBar) {
+
+            endSessionBar.style.display =
+                'none';
+
+        }
+
+
+        if (btnContainer) {
+
+            btnContainer.style.display =
+                'block';
+
+
+            btnContainer.innerHTML = `
+
+                <button
+
+                    type="button"
+
+                    onclick="cancelLiveRequest()"
+
+                    class="opt-btn"
+
+                    style="
+                        border-color:#6c757d;
+                        color:#6c757d;
+                        width:100%;
+                        justify-content:center;
+                    "
+                >
+
+                    <i
+                        class="bi bi-x-circle me-1"
+                    ></i>
+
+                    Cancel Request
+
+                </button>
+
+            `;
+
+        }
+
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       BOT
+    ======================================================== */
+
+    lastChatSession =
+        'bot';
+
+
+    if (chatOptions) {
+
+        chatOptions.style.display =
+            'flex';
+
+    }
+
+
+    if (waiting) {
+
+        waiting.style.display =
+            'none';
+
+    }
+
+
+    if (live) {
+
+        live.style.display =
+            'none';
+
+    }
+
+
+    if (statusLabel) {
+
+        statusLabel.textContent =
+            'Bot Mode • Always here to help';
+
+    }
+
+
+    if (endSessionBar) {
+
+        endSessionBar.style.display =
+            'none';
+
+    }
+
+
+    if (btnContainer) {
+
+        btnContainer.style.display =
+            'block';
+
+
+        btnContainer.innerHTML = `
+
+            <button
+                type="button"
+                id="btnRequestLive"
+                onclick="requestLiveChat()"
+                class="opt-btn"
+                style="
+                    border-color:#1e2a36;
+                    color:#1e2a36;
+                    width:100%;
+                    justify-content:center;
+                "
+            >
+
+                <i
+                    class="bi bi-headset me-1"
+                ></i>
+
+                Talk to a Live Agent
+
+            </button>
+
+        `;
+
+    }
+
+}
+
+
+
+/* ============================================================
+   RESET CUSTOMER CHAT
+============================================================ */
+
+function resetChatUI() {
+
+    const body =
+        document.getElementById(
+            'chatBody'
+        );
+
+
+    if (body) {
+
+        body.innerHTML = `
+
+            <div class="ejr-bot-msg">
+
+                Your session with the admin
+                has ended.
+
+                Bot mode is now re-enabled.
+
+                How else can I help you? 😊
+
+            </div>
+
+        `;
+
+        body.scrollTop =
+            0;
+
+    }
+
+
+    const chatOptions =
+        document.getElementById(
+            'chatOptions'
+        );
+
+
+    if (chatOptions) {
+
+        chatOptions.style.display =
+            'flex';
+
+    }
+
+
+    const endSessionBar =
+        document.getElementById(
+            'userEndSessionBar'
+        );
+
+
+    if (endSessionBar) {
+
+        endSessionBar.style.display =
+            'none';
+
+    }
+
+}
+
+
+
+/* ============================================================
+   LOAD CUSTOMER MESSAGES
+============================================================ */
+
+function loadMessages() {
+
+    const body =
+        document.getElementById(
+            'chatBody'
+        );
+
+
+    if (!body) {
+
+        return;
+
+    }
+
+
+    const pollToken =
+        localStorage.getItem(
+            'jwt_token'
+        ) || '';
+
+
+    if (!pollToken) {
+
+        return;
+
+    }
+
+
+    fetch(
+        '/api/check_session.php',
+        {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    pollToken
+
+            },
+
+            body: JSON.stringify({
+
+                type:
+                    'get_messages'
+
+            })
+
+        }
+    )
+
+    .then(
+        response =>
+            response.json()
+    )
+
+    .then(data => {
+
+        applySessionUI(
+            data.chat_session ??
+            'bot'
+        );
+
+
+        if (
+            data.messages &&
+            data.messages.length
+        ) {
+
+            body.innerHTML =
+                data.messages
+                    .map(m => `
+
+                        <div
+                            class="${
+                                m.sender === 'user'
+                                ? 'ejr-user-msg'
+                                : 'ejr-bot-msg'
+                            }"
+                        >
+
+                            <div>
+                                ${
+                                    escapeAdminChatText(
+                                        m.message || ''
+                                    )
+                                }
+                            </div>
+
+                            <div class="ejr-time">
+                                ${
+                                    escapeAdminChatText(
+                                        m.time || ''
+                                    )
+                                }
+                            </div>
+
+                        </div>
+
+                    `)
+                    .join('');
+
+
+            body.scrollTop =
+                body.scrollHeight;
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Load messages error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   APPEND MESSAGE
+============================================================ */
+
+function appendMessage(
+    text,
+    sender,
+    showBookingButton = false
+) {
+
+    const body =
+        document.getElementById(
+            'chatBody'
+        );
+
+
+    if (!body) {
+
+        return;
+
+    }
+
+
+    const div =
+        document.createElement(
+            'div'
+        );
+
+
+    div.className =
+        sender === 'user'
+        ? 'ejr-user-msg'
+        : 'ejr-bot-msg';
+
+
+    let buttonHTML = '';
+
+
+    if (
+        sender !== 'user' &&
+        showBookingButton
+    ) {
+
+        buttonHTML = `
+
+            <div
+                style="margin-top:12px;"
+            >
+
+                <button
+                    type="button"
+                    class="ejr-get-started-btn"
+                    onclick="startBookingFromChat()"
+                >
+
+                    <i
+                        class="bi bi-calendar-check me-1"
+                    ></i>
+
+                    Get Started
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    div.innerHTML = `
+
+        <div>
+            ${text}
+        </div>
+
+        ${buttonHTML}
+
+    `;
+
+
+    body.appendChild(div);
+
+
+    body.scrollTop =
+        body.scrollHeight;
+
+}
+
+
+
+/* ============================================================
+   TYPING INDICATOR
+============================================================ */
+
+function showTyping(show) {
+
+    const typing =
+        document.getElementById(
+            'typingIndicator'
+        );
+
+
+    if (!typing) {
+
+        return;
+
+    }
+
+
+    typing.style.display =
+        show
+        ? 'block'
+        : 'none';
+
+}
+
+
+
+/* ============================================================
+   BOOKING
+============================================================ */
+
+function startBookingFromChat() {
+
+    const token =
+        localStorage.getItem(
+            'jwt_token'
+        );
+
+
+    if (!token) {
+
+        window.location.href =
+            '/login.php';
+
+        return;
+
+    }
+
+
+    window.location.href =
+        '/booking-details.php';
+
+}
+
+
+
+/* ============================================================
+   SEND CUSTOMER CHAT MESSAGE
+============================================================ */
+
+function sendChatMessage() {
+
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            'chatInput'
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
+
+    const msg =
+        input.value.trim();
+
+
+    if (!msg) {
+
+        return;
+
+    }
+
+
+    appendMessage(
+        msg,
+        'user'
+    );
+
+
+    input.value = '';
+
+
+    showTyping(true);
+
+
+    const lowerMessage =
+        msg.toLowerCase();
+
+
+    const isBookingRequest =
+
+        lowerMessage.includes(
+            'booking'
+        )
+
+        ||
+
+        lowerMessage.includes(
+            'appointment'
+        )
+
+        ||
+
+        lowerMessage.includes(
+            'appointments'
+        )
+
+        ||
+
+        lowerMessage ===
+            'book';
+
+
+    const chatToken =
+        localStorage.getItem(
+            'jwt_token'
+        ) || '';
+
+
+    fetch(
+        '/api/check_session.php',
+        {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    chatToken
+
+            },
+
+            body: JSON.stringify({
+
+                type:
+                    'chat',
+
+                action:
+                    'chat',
+
+                message:
+                    msg
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        if (!response.ok) {
+
+            throw new Error(
+                'Chat request failed.'
+            );
+
+        }
+
+        return response.json();
+
+    })
+
+    .then(data => {
+
+        showTyping(false);
+
+
+        if (data.reply) {
+
+            appendMessage(
+
+                data.reply,
+
+                'admin',
+
+                isBookingRequest &&
+                data.mode !== 'live'
+
+            );
+
+        }
+
+
+        applySessionUI(
+            data.mode ??
+            'bot'
+        );
+
+    })
+
+    .catch(error => {
+
+        showTyping(false);
+
+
+        console.error(
+            'Send error:',
+            error
+        );
+
+
+        appendMessage(
+            'Sorry, I was unable to process your message. Please try again.',
+            'admin'
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   QUICK QUESTIONS
+============================================================ */
+
+function askQuickQuestion(question) {
+
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    const token =
+        localStorage.getItem(
+            'jwt_token'
+        );
+
+
+    if (!token) {
+
+        window.location.href =
+            '/login.php';
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            'chatInput'
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
+
+    input.value =
+        question;
+
+
+    sendChatMessage();
+
+}
+
+
+
+/* ============================================================
+   REQUEST LIVE CHAT
+============================================================ */
+
+function requestLiveChat() {
+
+    if (isEJRAdmin()) {
+
+        return;
+
+    }
+
+
+    const liveToken =
+        localStorage.getItem(
+            'jwt_token'
+        ) || '';
+
+
+    if (!liveToken) {
+
+        window.location.href =
+            '/login.php';
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            'btnRequestLive'
+        );
+
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+        button.innerHTML = `
+
+            <span
+                class="spinner-border spinner-border-sm me-1"
+            ></span>
+
+            Connecting...
+
+        `;
+
+    }
+
+
+    fetch(
+        '/api/check_session.php',
+        {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    liveToken
+
+            },
+
+            body: JSON.stringify({
+
+                type:
+                    'chat',
+
+                action:
+                    'request_live'
+
+            })
+
+        }
+    )
+
+    .then(response => {
+
+        if (!response.ok) {
+
+            throw new Error(
+                'Live chat request failed.'
+            );
+
+        }
+
+        return response.json();
+
+    })
+
+    .then(data => {
+
+        if (
+            data.status === 'success'
+        ) {
+
+            applySessionUI(
+                data.mode ||
+                'live'
+            );
+
+
+            appendMessage(
+
+                data.reply ||
+                'You are now connected to a live agent. How can we help you?',
+
+                'admin'
+
+            );
+
+
+            loadMessages();
+
+        }
+
+        else {
+
+            alert(
+                data.message ||
+                'Unable to connect to a live agent.'
+            );
+
+
+            applySessionUI('bot');
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Live request error:',
+            error
+        );
+
+
+        alert(
+            'Unable to connect to live chat. Please try again.'
+        );
+
+
+        applySessionUI('bot');
+
+    });
+
+}
+
+
+
+/* ============================================================
+   CANCEL LIVE REQUEST
+============================================================ */
+
+function cancelLiveRequest() {
+
+    const token =
+        localStorage.getItem(
+            'jwt_token'
+        ) || '';
+
+
+    if (!token) {
+
+        return;
+
+    }
+
+
+    fetch(
+        '/api/check_session.php',
+        {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    token
+
+            },
+
+            body: JSON.stringify({
+
+                type:
+                    'cancel_live'
+
+            })
+
+        }
+    )
+
+    .then(response =>
+        response.json()
+    )
+
+    .then(data => {
+
+        if (
+            data.status === 'success'
+        ) {
+
+            applySessionUI('bot');
+
+        }
+
+        else {
+
+            console.error(
+                'Cancel error:',
+                data.message
+            );
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'Cancel live error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   CUSTOMER END LIVE SESSION
+============================================================ */
+
+function userEndSession() {
+
+    if (
+        typeof Swal === 'undefined'
+    ) {
+
+        if (
+            confirm(
+                'End Live Session?'
+            )
+        ) {
+
+            endLiveSessionRequest();
+
+        }
+
+        return;
+
+    }
+
+
+    Swal.fire({
+
+        title:
+            'End Live Session?',
+
+        text:
+            'You will be returned to the bot.',
+
+        icon:
+            'warning',
+
+        showCancelButton:
+            true,
+
+        confirmButtonColor:
+            '#e62429',
+
+        cancelButtonColor:
+            '#6c757d',
+
+        confirmButtonText:
+            'Yes, End Session',
+
+        cancelButtonText:
+            'Stay in Session'
+
+    })
+
+    .then(result => {
+
+        if (
+            result.isConfirmed
+        ) {
+
+            endLiveSessionRequest();
+
+        }
+
+    });
+
+}
+
+
+
+/* ============================================================
+   CUSTOMER END SESSION REQUEST
+============================================================ */
+
+function endLiveSessionRequest() {
+
+    const token =
+        localStorage.getItem(
+            'jwt_token'
+        ) || '';
+
+
+    if (!token) {
+
+        return;
+
+    }
+
+
+    fetch(
+        '/api/check_session.php',
+        {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type':
+                    'application/json',
+
+                'Authorization':
+                    'Bearer ' +
+                    token
+
+            },
+
+            body: JSON.stringify({
+
+                type:
+                    'end_session'
+
+            })
+
+        }
+    )
+
+    .then(response =>
+        response.json()
+    )
+
+    .then(data => {
+
+        if (
+            data.status === 'success'
+        ) {
+
+            resetChatUI();
+
+            applySessionUI('bot');
+
+        }
+
+        else {
+
+            console.error(
+                'Server error:',
+                data.message
+            );
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(
+            'End session error:',
+            error
+        );
+
+    });
+
+}
+
+
+
+/* ============================================================
+   CUSTOMER CHAT POLLING
+============================================================ */
+
+setInterval(
+    () => {
+
+        const chatBox =
+            document.getElementById(
+                'chatBox'
+            );
+
+
+        if (
+            !chatBox ||
+            chatBox.style.display !== 'flex'
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            isEJRAdmin()
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            currentChatMode !== 'live'
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            suppressNextPoll
+        ) {
+
+            suppressNextPoll =
+                false;
+
+            return;
+
+        }
+
+
+        loadMessages();
+
+    },
+
+    4000
+);
+
+
+
+/* ============================================================
+   ADMIN CHAT POLLING
+============================================================ */
+
+setInterval(
+    () => {
+
+        if (
+            !isEJRAdmin()
+        ) {
+
+            return;
+
+        }
+
+
+        const chatBox =
+            document.getElementById(
+                'chatBox'
+            );
+
+
+        if (
+            !chatBox ||
+            chatBox.style.display !== 'flex'
+        ) {
+
+            return;
+
+        }
+
+
+        loadAdminWidgetCustomers();
+
+
+        if (
+            adminSelectedCustomerId
+        ) {
+
+            loadAdminWidgetMessages(
+                adminSelectedCustomerId
+            );
+
+        }
+
+    },
+
+    4000
+);
+
+
+
+/* ============================================================
+   DOM LOADED
+============================================================ */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        console.log(
+            'EJR Chat JavaScript loaded.'
+        );
+
+
+        const pill =
+            document.getElementById(
+                'chatPill'
+            );
+
+
+        const box =
+            document.getElementById(
+                'chatBox'
+            );
+
+
+        const body =
+            document.getElementById(
+                'chatBody'
+            );
+
+
+        console.log(
+            'Chat pill:',
+            pill
+        );
+
+
+        console.log(
+            'Chat box:',
+            box
+        );
+
+
+        console.log(
+            'Chat body:',
+            body
+        );
+
+    }
+);
+
+</script>
+
+<!-- ============================================================
+     EJR GARAGE GOOGLE MAP LOCATION
+============================================================ -->
+
+<script src="/js/chat-location.js"></script>
