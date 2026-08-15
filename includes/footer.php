@@ -436,6 +436,38 @@ if (localStorage.getItem('jwt_token')) {
 
             </div>
 
+            <!-- ====================================================
+                 FULL SCREEN CHAT BUTTON
+            ===================================================== -->
+
+            <button
+                type="button"
+                id="chatFullscreenButton"
+                onclick="toggleChatFullscreen()"
+                title="Full Screen"
+                aria-label="Full Screen"
+                style="
+                    background:none;
+                    border:none;
+                    color:#fff;
+                    cursor:pointer;
+                    font-size:18px;
+                    opacity:0.8;
+                    margin-right:8px;
+                    width:32px;
+                    height:32px;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
+                    border-radius:8px;
+                "
+            >
+                <i
+                    class="bi bi-arrows-fullscreen"
+                ></i>
+            </button>
+
+
             <button
                 type="button"
                 onclick="toggleChat()"
@@ -4307,3 +4339,9 @@ document.addEventListener(
 ============================================================ -->
 
 <script src="/js/chat-location.js"></script>
+
+<!-- ============================================================
+     EJR GARAGE CHAT FULL SCREEN
+============================================================ -->
+
+<script src="/js/chat-fullscreen.js"></script>
