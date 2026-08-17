@@ -1,289 +1,1008 @@
-<?php
-session_start();
-header('Content-Type: application/json');
-require_once 'db_config.php';
+// ============================================================
+// EJR GARAGE - AUTHENTICATION HELPER
+// File: js/auth.js
+//
+// Handles:
+//  - JWT authentication
+//  - Logged-in user information
+//  - Admin protection
+//  - Session checking
+//  - Logout
+//  - Authenticated API requests
+//  - Session monitoring
+// ============================================================
 
-$root    = dirname(__DIR__);
-$libPath = $root . '/includes/php-jwt/';
-require_once $libPath . 'Key.php';
-require_once $libPath . 'JWT.php';
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+// ============================================================
+// GET JWT TOKEN
+// ============================================================
 
-date_default_timezone_set('Asia/Manila');
+function getAuthToken() {
 
-if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
-$secret_key = JWT_SECRET;
+    try {
 
-function ejr_get_bearer_token(): string {
-    $checks = [
-        getallheaders()['Authorization'] ?? '',
-        getallheaders()['authorization'] ?? '',
-        $_SERVER['HTTP_AUTHORIZATION'] ?? '',
-        $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '',
-    ];
-    foreach ($checks as $h) {
-        if (preg_match('/bearer\s(\S+)/i', $h, $m)) return $m[1];
+        return localStorage.getItem(
+            'jwt_token'
+        );
+
     }
-    return '';
+    catch (error) {
+
+        console.error(
+            'Unable to read JWT token:',
+            error
+        );
+
+        return null;
+    }
 }
 
-function resolveAdminId(string $secret): int {
-    $tok = ejr_get_bearer_token();
-    if ($tok) {
-        try {
-            $d = \Firebase\JWT\JWT::decode($tok, new \Firebase\JWT\Key($secret, 'HS256'));
-            $role = (int)($d->role ?? 0);
-            $uid  = (int)($d->uid  ?? 0);
-            if ($role === 2 || $uid === 21) return $uid;
-        } catch (\Exception $e) {}
-    }
-    if (isset($_SESSION['user_id'])) {
-        $role = (int)($_SESSION['role_id'] ?? 0);
-        $uid  = (int)$_SESSION['user_id'];
-        if ($role === 2 || $uid === 21) return $uid;
-    }
-    return 0;
-}
-$input      = json_decode(file_get_contents('php://input'), true) ?? [];
-$type       = $input['type'] ?? '';
 
-// ── ADMIN CHAT HANDLERS (session-based) ───────────────────────────
-if ($type === 'admin_get_chat_users') {
-    $admin_id = resolveAdminId($secret_key);
-    if (!$admin_id) {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']); exit;
+// ============================================================
+// GET AUTHORIZATION HEADERS
+// ============================================================
+
+function getAuthHeaders() {
+
+    const headers = {
+
+        'Accept':
+            'application/json',
+
+        'Content-Type':
+            'application/json'
+
+    };
+
+
+    const token =
+        getAuthToken();
+
+
+    if (token) {
+
+        headers[
+            'Authorization'
+        ] =
+            `Bearer ${token}`;
     }
-    $admin_id = (int)$_SESSION['user_id'];
-    $sql = "SELECT u.id, u.full_name, u.chat_session, c.message AS last_message,
-                (SELECT COUNT(*) FROM ejr_chat WHERE user_id = u.id AND is_read = 0 AND sender = 'user') AS unread_count
-            FROM users u
-            INNER JOIN ejr_chat c ON u.id = c.user_id
-            WHERE c.id IN (SELECT MAX(id) FROM ejr_chat GROUP BY user_id)
-            AND u.chat_session = 'live'
-            AND u.id != ?
-            ORDER BY c.created_at DESC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $admin_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $users = []; $total_unread = 0;
-    while ($row = $result->fetch_assoc()) {
-        $users[] = $row;
-        $total_unread += (int)$row['unread_count'];
-    }
-    echo json_encode(['status' => 'success', 'users' => $users, 'total_unread' => $total_unread]);
-    exit;
+
+
+    return headers;
 }
 
-if ($type === 'admin_get_messages') {
-    $admin_id = resolveAdminId($secret_key);
-    if (!$admin_id) {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']); exit;
-    }
-    $target_uid = (int)($input['user_id'] ?? 0);
-    $sessStmt = $conn->prepare("SELECT chat_session FROM users WHERE id = ?");
-    $sessStmt->bind_param("i", $target_uid); $sessStmt->execute();
-    $sessRow = $sessStmt->get_result()->fetch_assoc();
-    $currentMode = $sessRow['chat_session'] ?? 'bot';
-    $stmt = $conn->prepare("SELECT sender, message, created_at as time FROM ejr_chat WHERE user_id = ? ORDER BY created_at ASC");
-    $stmt->bind_param("i", $target_uid); $stmt->execute();
-    $result = $stmt->get_result(); $messages = [];
-    while ($row = $result->fetch_assoc()) {
-        $messages[] = ['sender' => $row['sender'], 'message' => $row['message'], 'time' => date('h:i A', strtotime($row['time']))];
-    }
-    $markRead = $conn->prepare("UPDATE ejr_chat SET is_read = 1 WHERE user_id = ? AND sender = 'user'");
-    $markRead->bind_param("i", $target_uid); $markRead->execute();
-    echo json_encode(['status' => 'success', 'messages' => $messages, 'chat_session' => $currentMode, 'count' => count($messages)]);
-    exit;
-}
 
-if ($type === 'admin_send') {
-    $admin_id = resolveAdminId($secret_key);
-    if (!$admin_id) {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']); exit;
-    }
-    $target_uid   = (int)($input['user_id'] ?? 0);
-    $admin_msg = trim($input['message'] ?? '');
-    // Live-agent requests are already live. There is no accept/decline step.
-    if (!empty($admin_msg)) {
-        $stmt = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'admin', ?)");
-        $stmt->bind_param("is", $target_uid, $admin_msg); $stmt->execute();
-    }
-    echo json_encode(['status' => 'success']); exit;
-}
+// ============================================================
+// GET SAVED USER
+// ============================================================
 
-if ($type === 'admin_end_session') {
-    $admin_id = resolveAdminId($secret_key);
-    if (!$admin_id) {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']); exit;
-    }
-    $target_uid = (int)($input['user_id'] ?? 0);
-    $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
-    $stmt->bind_param("i", $target_uid); $stmt->execute();
-    $del = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
-    $del->bind_param("i", $target_uid); $del->execute();
-    echo json_encode(['status' => 'success']); exit;
-}
+function getCurrentUser() {
 
-// ── CUSTOMER CHAT HANDLERS (JWT-based) ────────────────────────────
-if (in_array($type, ['chat', 'get_messages', 'end_session'])) {
-    $headers    = array_change_key_case(getallheaders(), CASE_LOWER);
-    $authHeader = $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-    $userId = 0;
-    if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
-        try {
-            $decoded = JWT::decode($matches[1], new Key($secret_key, 'HS256'));
-            $userId  = (int)($decoded->uid ?? 0);
-        } catch (Exception $e) {}
-    }
-    if (!$userId) {
-        echo json_encode(['status' => 'error', 'reply' => 'Please log in.', 'mode' => 'error']); exit;
-    }
+    try {
 
-    if ($type === 'get_messages') {
-        $sessStmt = $conn->prepare("SELECT chat_session FROM users WHERE id = ?");
-        $sessStmt->bind_param("i", $userId); $sessStmt->execute();
-        $sessRow = $sessStmt->get_result()->fetch_assoc();
-        $currentMode = $sessRow['chat_session'] ?? 'bot';
-        $stmt = $conn->prepare("SELECT sender, message, created_at as time FROM ejr_chat WHERE user_id = ? ORDER BY created_at ASC");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        $result = $stmt->get_result(); $messages = [];
-        while ($row = $result->fetch_assoc()) {
-            $messages[] = ['sender' => $row['sender'], 'message' => $row['message'], 'time' => date('h:i A', strtotime($row['time']))];
+        const savedUser =
+            localStorage.getItem(
+                'user'
+            );
+
+
+        if (!savedUser) {
+
+            return null;
         }
-        echo json_encode(['status' => 'success', 'messages' => $messages, 'chat_session' => $currentMode, 'count' => count($messages)]);
-        exit;
+
+
+        return JSON.parse(
+            savedUser
+        );
+
     }
+    catch (error) {
 
-    if ($type === 'end_session') {
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        $del = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ?");
-        $del->bind_param("i", $userId); $del->execute();
-        echo json_encode(['status' => 'success']); exit;
+        console.error(
+            'Unable to read saved user:',
+            error
+        );
+
+        return null;
     }
-
-    // type === 'chat'
-    $action   = $input['action']  ?? 'chat';
-    $user_msg = trim($input['message'] ?? '');
-
-    if ($action === 'request_live') {
-
-    // Start live chat immediately.
-    // No admin acceptance or decline is required.
-
-    // Clear previous chat history so every new live session starts clean.
-    $clear = $conn->prepare(
-        "DELETE FROM ejr_chat WHERE user_id = ?"
-    );
-    $clear->bind_param("i", $userId);
-    $clear->execute();
-
-    // Immediately put the customer into LIVE mode.
-    $stmt = $conn->prepare(
-        "UPDATE users SET chat_session = 'live' WHERE id = ?"
-    );
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-
-    // Add a system message so the admin knows a live chat started.
-    $sysMsg = "A customer has started a live chat.";
-
-    $stmt = $conn->prepare(
-        "INSERT INTO ejr_chat (user_id, sender, message)
-         VALUES (?, 'admin', ?)"
-    );
-
-    $stmt->bind_param("is", $userId, $sysMsg);
-    $stmt->execute();
-
-    echo json_encode([
-        "status" => "success",
-        "reply" => "You are now connected to EJR Garage support. How can we help you?",
-        "mode" => "live"
-    ]);
-
-    exit;
 }
 
-    if ($action === 'cancel_live_request') {
-        $stmt = $conn->prepare("UPDATE users SET chat_session = 'bot' WHERE id = ?");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        $stmt = $conn->prepare("DELETE FROM ejr_chat WHERE user_id = ? AND sender = 'admin' AND message = 'A user has requested live assistance.'");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        echo json_encode(['status' => 'success']); exit;
+
+// ============================================================
+// CHECK IF LOGGED IN
+// ============================================================
+
+function isLoggedIn() {
+
+    const token =
+        getAuthToken();
+
+
+    return !!token;
+}
+
+
+// ============================================================
+// CHECK IF ADMIN
+// ============================================================
+
+function isAdmin() {
+
+    const user =
+        getCurrentUser();
+
+
+    if (!user) {
+
+        return false;
     }
 
-    if (empty($user_msg)) {
-        echo json_encode(["status" => "error", "reply" => "No message received.", "mode" => "bot"]); exit;
+
+    return (
+
+        Number(
+            user.role_id
+        ) === 2
+
+        ||
+
+        Number(
+            user.id
+        ) === 21
+
+    );
+}
+
+
+// ============================================================
+// REDIRECT TO LOGIN
+// ============================================================
+
+function redirectToLogin() {
+
+    window.location.href =
+        'account.php';
+}
+
+
+// ============================================================
+// REDIRECT NON-ADMIN USERS
+// ============================================================
+
+function requireAdmin() {
+
+    if (!isLoggedIn()) {
+
+        redirectToLogin();
+
+        return false;
     }
 
-    $sessCheck = $conn->prepare("SELECT chat_session FROM users WHERE id = ?");
-    $sessCheck->bind_param("i", $userId); $sessCheck->execute();
-    $sessResult = $sessCheck->get_result()->fetch_assoc();
-    $isLive = ($sessResult['chat_session'] ?? 'bot') === 'live';
 
-    if ($isLive) {
-        $stmtUser = $conn->prepare("INSERT INTO ejr_chat (user_id, sender, message) VALUES (?, 'user', ?)");
-        $stmtUser->bind_param("is", $userId, $user_msg); $stmtUser->execute();
-        echo json_encode(["status" => "success", "reply" => "", "mode" => "live"]); exit;
+    if (!isAdmin()) {
+
+        window.location.href =
+            'account.php';
+
+        return false;
     }
 
-    $botReply = null;
-    $allKeywords = $conn->query("SELECT keyword, response FROM ejr_bot");
-    if ($allKeywords) {
-        $lowerMsg = strtolower($user_msg);
-        while ($kw = $allKeywords->fetch_assoc()) {
-            $keyword = strtolower(trim($kw['keyword']));
-            if (!empty($keyword) && strpos($lowerMsg, $keyword) !== false) {
-                $botReply = $kw['response']; break;
+
+    return true;
+}
+
+
+// ============================================================
+// CHECK SESSION WITH SERVER
+//
+// IMPORTANT:
+// api/check_session.php may return:
+//
+//     { "valid": true }
+//
+// or:
+//
+//     { "status": "success" }
+//
+// or:
+//
+//     { "authenticated": true }
+//
+// We accept all three.
+//
+// A temporary server/network failure does NOT immediately
+// destroy the user's JWT.
+// ============================================================
+
+async function checkAuthSession() {
+
+    const token =
+        getAuthToken();
+
+
+    /*
+     * No JWT means the user is definitely not logged in.
+     */
+
+    if (!token) {
+
+        return false;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                'api/check_session.php',
+                {
+
+                    method:
+                        'GET',
+
+                    credentials:
+                        'include',
+
+                    headers:
+                        getAuthHeaders(),
+
+                    cache:
+                        'no-store'
+
+                }
+            );
+
+
+        /*
+         * ----------------------------------------------------
+         * SERVER RESPONSE ERROR
+         * ----------------------------------------------------
+         *
+         * A real 401/403 means authentication was rejected.
+         *
+         * Other server errors should not immediately destroy
+         * the JWT because the server may simply be temporarily
+         * unavailable.
+         */
+
+        if (!response.ok) {
+
+            console.warn(
+                'Session check returned HTTP status:',
+                response.status
+            );
+
+
+            if (
+                response.status === 401 ||
+                response.status === 403
+            ) {
+
+                return false;
+            }
+
+
+            /*
+             * Temporary server error.
+             *
+             * Keep the JWT.
+             */
+
+            return true;
+        }
+
+
+        /*
+         * ----------------------------------------------------
+         * READ JSON RESPONSE
+         * ----------------------------------------------------
+         */
+
+        const data =
+            await response.json();
+
+
+        /*
+         * ----------------------------------------------------
+         * ACCEPT SUCCESS RESPONSE
+         * ----------------------------------------------------
+         */
+
+        if (
+            data.status ===
+            'success'
+        ) {
+
+            return true;
+        }
+
+
+        /*
+         * ----------------------------------------------------
+         * ACCEPT AUTHENTICATED RESPONSE
+         * ----------------------------------------------------
+         */
+
+        if (
+            data.authenticated ===
+            true
+        ) {
+
+            return true;
+        }
+
+
+        /*
+         * ----------------------------------------------------
+         * ACCEPT VALID RESPONSE
+         *
+         * This is the response currently returned by your
+         * api/check_session.php.
+         * ----------------------------------------------------
+         */
+
+        if (
+            data.valid ===
+            true
+        ) {
+
+            return true;
+        }
+
+
+        /*
+         * Session endpoint explicitly says the token is not
+         * valid.
+         */
+
+        return false;
+
+    }
+    catch (error) {
+
+        console.error(
+            'Session check failed:',
+            error
+        );
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not log the user out just because fetch()
+         * encountered a network/server error.
+         *
+         * The JWT is still available and the protected
+         * API endpoints can validate it themselves.
+         */
+
+        return true;
+    }
+}
+
+
+// ============================================================
+// LOGOUT
+// ============================================================
+
+async function logoutUser() {
+
+    try {
+
+        await fetch(
+            'api/logout.php',
+            {
+
+                method:
+                    'POST',
+
+                credentials:
+                    'include',
+
+                headers:
+                    getAuthHeaders()
+
+            }
+        );
+
+    }
+    catch (error) {
+
+        console.warn(
+            'Logout request failed:',
+            error
+        );
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * CLEAR AUTHENTICATION DATA
+     * --------------------------------------------------------
+     */
+
+    clearAuthData();
+
+
+    /*
+     * --------------------------------------------------------
+     * REDIRECT TO LOGIN
+     * --------------------------------------------------------
+     */
+
+    window.location.href =
+        'account.php';
+}
+
+
+// ============================================================
+// START SESSION WATCH
+// ============================================================
+
+let authSessionTimer =
+    null;
+
+
+function startSessionWatch() {
+
+    stopSessionWatch();
+
+
+    /*
+     * Check every 60 seconds.
+     */
+
+    authSessionTimer =
+        setInterval(
+            async function () {
+
+                const token =
+                    getAuthToken();
+
+
+                /*
+                 * No token.
+                 */
+
+                if (!token) {
+
+                    return;
+                }
+
+
+                const valid =
+                    await checkAuthSession();
+
+
+                /*
+                 * Only log out when the server actually says
+                 * the authentication is invalid.
+                 */
+
+                if (!valid) {
+
+                    console.warn(
+                        'Authentication session expired.'
+                    );
+
+
+                    stopSessionWatch();
+
+
+                    clearAuthData();
+
+
+                    window.location.href =
+                        'account.php';
+                }
+
+            },
+
+            60000
+        );
+}
+
+
+// ============================================================
+// STOP SESSION WATCH
+// ============================================================
+
+function stopSessionWatch() {
+
+    if (
+        authSessionTimer
+    ) {
+
+        clearInterval(
+            authSessionTimer
+        );
+
+
+        authSessionTimer =
+            null;
+    }
+}
+
+
+// ============================================================
+// REQUIRE LOGIN
+// ============================================================
+
+function requireLogin() {
+
+    if (
+        !isLoggedIn()
+    ) {
+
+        redirectToLogin();
+
+        return false;
+    }
+
+
+    return true;
+}
+
+
+// ============================================================
+// FETCH WITH AUTHENTICATION
+// ============================================================
+
+async function authFetch(
+    url,
+    options = {}
+) {
+
+    const token =
+        getAuthToken();
+
+
+    /*
+     * Start with our normal authentication headers.
+     */
+
+    const headers = {
+
+        ...getAuthHeaders(),
+
+        ...(options.headers || {})
+
+    };
+
+
+    /*
+     * Make absolutely sure the latest JWT is included.
+     */
+
+    if (token) {
+
+        headers[
+            'Authorization'
+        ] =
+            `Bearer ${token}`;
+    }
+
+
+    const response =
+        await fetch(
+            url,
+            {
+
+                ...options,
+
+                credentials:
+                    'include',
+
+                headers:
+                    headers
+
+            }
+        );
+
+
+    /*
+     * --------------------------------------------------------
+     * HANDLE REAL AUTHENTICATION FAILURE
+     * --------------------------------------------------------
+     */
+
+    if (
+        response.status ===
+        401
+    ) {
+
+        console.warn(
+            'Authentication expired or rejected.'
+        );
+
+
+        /*
+         * Clear the JWT because the server explicitly rejected
+         * it.
+         */
+
+        clearAuthData();
+
+
+        window.location.href =
+            'account.php';
+
+
+        throw new Error(
+            'Authentication expired.'
+        );
+    }
+
+
+    return response;
+}
+
+
+// ============================================================
+// PARSE AUTH RESPONSE
+// ============================================================
+
+async function parseAuthResponse(
+    response
+) {
+
+    let data;
+
+
+    try {
+
+        data =
+            await response.json();
+
+    }
+    catch (error) {
+
+        throw new Error(
+            'Invalid server response.'
+        );
+    }
+
+
+    /*
+     * HTTP error
+     */
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.message ||
+            `HTTP ${response.status}`
+        );
+    }
+
+
+    /*
+     * API returned an explicit error status.
+     */
+
+    if (
+        data.status &&
+        data.status !==
+            'success'
+    ) {
+
+        throw new Error(
+            data.message ||
+            'Authentication request failed.'
+        );
+    }
+
+
+    return data;
+}
+
+
+// ============================================================
+// SAVE LOGIN DATA
+// ============================================================
+
+function saveAuthData(
+    token,
+    user
+) {
+
+    try {
+
+        /*
+         * Save JWT.
+         */
+
+        if (token) {
+
+            localStorage.setItem(
+                'jwt_token',
+                token
+            );
+        }
+
+
+        /*
+         * Save user information.
+         */
+
+        if (user) {
+
+            localStorage.setItem(
+                'user',
+                JSON.stringify(
+                    user
+                )
+            );
+
+
+            /*
+             * Keep admin_user synchronized for compatibility
+             * with older EJR Garage pages.
+             */
+
+            if (
+                Number(user.role_id) === 2 ||
+                Number(user.id) === 21
+            ) {
+
+                localStorage.setItem(
+                    'admin_user',
+                    JSON.stringify(
+                        user
+                    )
+                );
             }
         }
+
     }
-    echo json_encode(["status" => "success", "reply" => $botReply ?? "I'm not sure about that. Would you like to talk to a live agent?", "mode" => "bot"]);
-    exit;
+    catch (error) {
+
+        console.error(
+            'Unable to save authentication data:',
+            error
+        );
+    }
 }
 
-// ── ORIGINAL CHECK SESSION LOGIC ──────────────────────────────────
-$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
-$authHeader = $headers['authorization'] ?? '';
 
-if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
+// ============================================================
+// CLEAR LOGIN DATA
+// ============================================================
+
+function clearAuthData() {
+
     try {
-        $decoded = JWT::decode($matches[1], new Key($secret_key, 'HS256'));
-        $userId  = $decoded->uid;
-        $role    = (int)($decoded->role ?? 0);
 
-        // Admin dashboard doesn't send/store a session_token fingerprint, so it
-        // can't be compared here — skip the single-device check for admins.
-        if ($role === 2 || $userId === 21) {
-            echo json_encode(['valid' => true]); exit;
-        }
+        localStorage.removeItem(
+            'jwt_token'
+        );
 
-        $clientToken = $input['session_token'] ?? '';
-        $stmt = $conn->prepare("SELECT session_token FROM users WHERE id = ?");
-        $stmt->bind_param("i", $userId); $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        if (!$row || $row['session_token'] !== $clientToken) {
-            echo json_encode(['valid' => false, 'reason' => 'another_device']); exit;
-        }
-        echo json_encode(['valid' => true]); exit;
-    } catch (Exception $e) {
-        // JWT expired or invalid — treat as idle session timeout
-        echo json_encode(['valid' => false, 'reason' => 'expired']); exit;
+
+        localStorage.removeItem(
+            'user'
+        );
+
+
+        localStorage.removeItem(
+            'admin_user'
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            'Unable to clear authentication data:',
+            error
+        );
     }
 }
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['session_token'])) {
-    echo json_encode(['valid' => false, 'reason' => 'expired']); exit;
+
+// ============================================================
+// PROTECT ADMIN PAGE
+// ============================================================
+
+async function protectAdminPage() {
+
+    /*
+     * --------------------------------------------------------
+     * CHECK JWT
+     * --------------------------------------------------------
+     */
+
+    const token =
+        getAuthToken();
+
+
+    if (!token) {
+
+        redirectToLogin();
+
+        return false;
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * CHECK SAVED USER
+     * --------------------------------------------------------
+     */
+
+    const user =
+        getCurrentUser();
+
+
+    /*
+     * If we have user information and it is not an admin,
+     * redirect them.
+     */
+
+    if (
+        user &&
+        !isAdmin()
+    ) {
+
+        window.location.href =
+            'account.php';
+
+        return false;
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * VERIFY TOKEN WITH SERVER
+     * --------------------------------------------------------
+     */
+
+    const sessionValid =
+        await checkAuthSession();
+
+
+    if (!sessionValid) {
+
+        clearAuthData();
+
+        redirectToLogin();
+
+        return false;
+    }
+
+
+    return true;
 }
-$stmt = $conn->prepare("SELECT session_token FROM users WHERE id = ?");
-$stmt->bind_param("i", $_SESSION['user_id']); $stmt->execute();
-$row = $stmt->get_result()->fetch_assoc();
-if (!$row || $row['session_token'] !== $_SESSION['session_token']) {
-    session_destroy();
-    echo json_encode(['valid' => false, 'reason' => 'another_device']); exit;
+
+
+// ============================================================
+// INITIALIZE AUTHENTICATION
+// ============================================================
+
+async function initializeAuth() {
+
+    const currentPage =
+        window.location.pathname
+            .split('/')
+            .pop()
+            .toLowerCase();
+
+
+    /*
+     * --------------------------------------------------------
+     * ADMIN DASHBOARD PROTECTION
+     * --------------------------------------------------------
+     */
+
+    if (
+        currentPage ===
+        'admin_dashboard.php'
+    ) {
+
+        const allowed =
+            await protectAdminPage();
+
+
+        if (!allowed) {
+
+            return false;
+        }
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * START SESSION MONITORING
+     * --------------------------------------------------------
+     */
+
+    if (
+        isLoggedIn()
+    ) {
+
+        startSessionWatch();
+    }
+
+
+    return true;
 }
-echo json_encode(['valid' => true]);
+
+
+// ============================================================
+// AUTO INITIALIZATION
+// ============================================================
+
+if (
+    document.readyState ===
+    'loading'
+) {
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            initializeAuth();
+
+        }
+    );
+
+}
+else {
+
+    initializeAuth();
+}
+
+
+// ============================================================
+// GLOBAL AUTH OBJECT
+// ============================================================
+
+window.EJRAuth = {
+
+    getToken:
+        getAuthToken,
+
+    getHeaders:
+        getAuthHeaders,
+
+    getUser:
+        getCurrentUser,
+
+    isLoggedIn:
+        isLoggedIn,
+
+    isAdmin:
+        isAdmin,
+
+    requireLogin:
+        requireLogin,
+
+    requireAdmin:
+        requireAdmin,
+
+    checkSession:
+        checkAuthSession,
+
+    logout:
+        logoutUser,
+
+    startWatch:
+        startSessionWatch,
+
+    stopWatch:
+        stopSessionWatch,
+
+    fetch:
+        authFetch,
+
+    save:
+        saveAuthData,
+
+    clear:
+        clearAuthData
+
+};
+
+
+// ============================================================
+// AUTH.JS END
+// ============================================================
