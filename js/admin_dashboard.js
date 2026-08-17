@@ -237,7 +237,7 @@ function loadOrders() {
         })
         .catch(err => {
             console.error('Orders error:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
         });
 }
 
@@ -259,13 +259,336 @@ function filterAndRenderOrders() {
 }
 
 function renderOrders(orders) {
-    const tbody = document.getElementById('ordersTableBody');
+
+    const tbody =
+        document.getElementById(
+            'ordersTableBody'
+        );
+
+
     if (!tbody) return;
 
+
     if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders match your search.</td></tr>';
+
+        tbody.innerHTML = `
+            <tr>
+
+                <td
+                    colspan="9"
+                    class="text-center text-muted py-4"
+                >
+                    No orders match your search.
+                </td>
+
+            </tr>
+        `;
+
         return;
+
     }
+
+
+    tbody.innerHTML =
+        orders.map(o => {
+
+            const year =
+                new Date(
+                    o.created_at
+                ).getFullYear();
+
+
+            const orderNo =
+                `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
+
+
+            const itemsArr =
+                typeof o.items === 'string'
+                    ? JSON.parse(o.items)
+                    : o.items;
+
+
+            const itemsList =
+                Array.isArray(itemsArr)
+                    ? itemsArr
+                        .map(
+                            i =>
+                                `${i.name} ×${i.qty}`
+                        )
+                        .join(', ')
+                    : o.items;
+
+
+            const date =
+                new Date(
+                    o.created_at
+                ).toLocaleDateString(
+                    'en-US',
+                    {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }
+                );
+
+
+            const safeName =
+                String(
+                    o.customer_name || ''
+                )
+                .replace(
+                    /'/g,
+                    "\\'"
+                );
+
+
+            const isPending =
+                String(
+                    o.status || ''
+                ).toLowerCase()
+                === 'pending';
+
+
+            const address =
+                o.delivery_address ||
+                'No address provided';
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | ADDRESS DISPLAY
+            |--------------------------------------------------------------------------
+            */
+
+            const addressHtml = `
+
+                <div
+                    style="
+                        max-width:220px;
+                        white-space:normal;
+                        word-break:break-word;
+                    "
+                >
+
+                    <div class="d-flex align-items-start">
+
+                        <i
+                            class="bi bi-geo-alt-fill text-danger me-2 mt-1"
+                        ></i>
+
+                        <span
+                            class="small text-muted"
+                            title="${escapeHtmlAdmin(address)}"
+                        >
+                            ${escapeHtmlAdmin(address)}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            return `
+
+                <tr>
+
+                    <!-- ORDER NUMBER -->
+
+                    <td>
+
+                        <code
+                            style="color:#b30000;"
+                        >
+                            ${orderNo}
+                        </code>
+
+                    </td>
+
+
+                    <!-- CUSTOMER -->
+
+                    <td class="fw-bold">
+
+                        ${escapeHtmlAdmin(
+                            o.customer_name
+                        )}
+
+                    </td>
+
+
+                    <!-- CONTACT -->
+
+                    <td>
+
+                        ${escapeHtmlAdmin(
+                            o.contact
+                        )}
+
+                    </td>
+
+
+                    <!-- DELIVERY ADDRESS -->
+
+                    <td>
+
+                        ${addressHtml}
+
+                    </td>
+
+
+                    <!-- ITEMS -->
+
+                    <td
+                        class="text-muted small"
+                        style="
+                            max-width:180px;
+                            white-space:nowrap;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                        "
+                        title="${escapeHtmlAdmin(itemsList)}"
+                    >
+
+                        ${escapeHtmlAdmin(
+                            itemsList
+                        )}
+
+                    </td>
+
+
+                    <!-- TOTAL -->
+
+                    <td class="fw-bold text-danger">
+
+                        ₱${parseFloat(
+                            o.total_price
+                        ).toLocaleString(
+                            'en-PH',
+                            {
+                                minimumFractionDigits:2
+                            }
+                        )}
+
+                    </td>
+
+
+                    <!-- DATE -->
+
+                    <td>
+
+                        ${date}
+
+                    </td>
+
+
+                    <!-- STATUS -->
+
+                    <td>
+
+                        ${statusBadge(
+                            o.status
+                        )}
+
+                    </td>
+
+
+                    <!-- ACTIONS -->
+
+                    <td>
+
+                        <div class="btn-group">
+
+                            ${
+                                isPending
+                                    ? `
+
+                                    <button
+                                        class="btn btn-sm btn-outline-success"
+                                        onclick="
+                                            updateOrder(
+                                                ${o.id},
+                                                '${o.status}',
+                                                '${safeName}'
+                                            )
+                                        "
+                                        title="Manage"
+                                    >
+
+                                        <i
+                                            class="bi bi-pencil-square"
+                                        ></i>
+
+                                    </button>
+
+                                    `
+                                    : ''
+                            }
+
+
+                            <button
+                                class="btn btn-sm btn-outline-secondary"
+                                onclick="
+                                    deleteOrder(
+                                        ${o.id}
+                                    )
+                                "
+                                title="Delete"
+                            >
+
+                                <i
+                                    class="bi bi-trash"
+                                ></i>
+
+                            </button>
+
+
+                            <a
+                                href="
+                                    api/admin/generate_parts_receipt.php?id=${o.id}
+                                "
+                                target="_blank"
+                                class="btn btn-sm btn-outline-primary"
+                                title="View Invoice"
+                            >
+
+                                <i
+                                    class="bi bi-receipt"
+                                ></i>
+
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join('');
+
+}
+
+
+/* ============================================================
+   ADMIN HTML ESCAPE
+============================================================ */
+
+function escapeHtmlAdmin(value) {
+
+    const div =
+        document.createElement(
+            'div'
+        );
+
+    div.textContent =
+        value ?? '';
+
+    return div.innerHTML;
+
+}
 
     tbody.innerHTML = orders.map(o => {
         const year      = new Date(o.created_at).getFullYear();
