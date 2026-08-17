@@ -1,929 +1,2341 @@
-/* =============================================================
-   EJR Garage — Admin Dashboard CSS
-   Professional dark-accented control panel aesthetic
-   ============================================================= */
+/* ============================================================
+   EJR GARAGE — ADMIN DASHBOARD CSS
+   File: css/admin_dashboard.css
+   ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+/* ============================================================
+   ROOT VARIABLES
+   ============================================================ */
 
 :root {
-    --ejr-red:      #e62429;
-    --ejr-red-dark: #b30000;
-    --ejr-dark:     #0f1117;
-    --ejr-card-bg:  #ffffff;
-    --ejr-body-bg:  #f1f3f7;
-    --ejr-border:   #e8eaef;
-    --ejr-text:     #1a1d23;
-    --ejr-muted:    #6b7280;
-    --ejr-radius:   14px;
-    --ejr-shadow:   0 2px 16px rgba(0,0,0,0.07);
-    --ejr-shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+    --ejr-red: #b30000;
+    --ejr-red-dark: #8f0000;
+    --ejr-red-light: #f8e6e6;
+
+    --ejr-dark: #1f1f1f;
+    --ejr-gray: #6c757d;
+    --ejr-light: #f6f6f6;
+    --ejr-border: #e4e4e4;
+    --ejr-white: #ffffff;
+
+    --sidebar-width: 250px;
+    --header-height: 70px;
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.08);
+
+    --radius: 12px;
 }
 
-/* ── BODY ──────────────────────────────────────────────────── */
 
-body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--ejr-body-bg);
-    color: var(--ejr-text);
-}
+/* ============================================================
+   GLOBAL RESET
+   ============================================================ */
 
-/* ── HERO HEADER ───────────────────────────────────────────── */
-
-.ejr-admin-header {
-    background: linear-gradient(135deg, #0f1117 0%, #1a0505 50%, #2d0808 100%);
-    padding: 36px 0 40px;
-    position: relative;
-    overflow: hidden;
-}
-
-.ejr-admin-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        radial-gradient(circle at 20% 50%, rgba(230,36,41,0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(230,36,41,0.08) 0%, transparent 40%);
-}
-
-.ejr-admin-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(230,36,41,0.6),
-        transparent
-    );
-}
-
-.ejr-header-glow {
-    position: absolute;
-    top: -60px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 500px;
-    height: 200px;
-    background: radial-gradient(
-        ellipse,
-        rgba(230,36,41,0.2),
-        transparent 70%
-    );
-    pointer-events: none;
-}
-
-.ejr-avatar-shield {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, #e62429, #b30000);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(230,36,41,0.4);
-    flex-shrink: 0;
-}
-
-.ejr-admin-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    color: rgba(230,36,41,0.8);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.ejr-admin-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.9rem;
-    font-weight: 800;
-    color: #ffffff;
-    margin: 0;
-    line-height: 1.1;
-}
-
-.ejr-admin-sub {
-    font-size: 13px;
-    color: rgba(255,255,255,0.45);
-    margin: 4px 0 0;
-}
-
-.ejr-back-btn {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: rgba(255,255,255,0.8);
-    padding: 9px 20px;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.25s;
-    backdrop-filter: blur(8px);
-}
-
-.ejr-back-btn:hover {
-    background: rgba(230,36,41,0.2);
-    border-color: rgba(230,36,41,0.4);
-    color: #fff;
-}
-
-/* ── MAIN BODY ─────────────────────────────────────────────── */
-
-.ejr-admin-body {
-    padding: 40px 0 60px;
-    min-height: calc(100vh - 200px);
-}
-
-/* ── STAT CARDS ────────────────────────────────────────────── */
-
-.ejr-stat-card {
-    background: var(--ejr-card-bg);
-    border-radius: var(--ejr-radius);
-    padding: 22px 20px 0;
-    box-shadow: var(--ejr-shadow);
-    border: 1px solid var(--ejr-border);
-    overflow: hidden;
-    position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.ejr-stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--ejr-shadow-lg);
-}
-
-.ejr-stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    margin-bottom: 14px;
-}
-
-.ejr-stat-num {
-    font-family: 'Syne', sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--ejr-red);
-    line-height: 1;
-    margin-bottom: 4px;
-}
-
-.ejr-stat-label {
-    font-size: 12px;
-    color: var(--ejr-muted);
-    font-weight: 500;
-    margin-bottom: 16px;
-}
-
-.ejr-stat-bar {
-    height: 3px;
-    margin: 0 -20px;
-    opacity: 0.6;
-}
-
-/* ── SEARCH ────────────────────────────────────────────────── */
-
-.ejr-search-wrap {
-    position: relative;
-    max-width: 480px;
-}
-
-.ejr-search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--ejr-red);
-    font-size: 15px;
-}
-
-.ejr-search-input {
-    width: 100%;
-    padding: 11px 16px 11px 40px;
-    border: 1.5px solid var(--ejr-border);
-    border-radius: 50px;
-    background: #fff;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    color: var(--ejr-text);
-    box-shadow: var(--ejr-shadow);
-    transition: border-color 0.2s, box-shadow 0.2s;
-    outline: none;
+* {
     box-sizing: border-box;
 }
 
-.ejr-search-input:focus {
-    border-color: var(--ejr-red);
-    box-shadow: 0 0 0 3px rgba(230,36,41,0.1);
+
+html {
+    scroll-behavior: smooth;
 }
 
-/* ── TAB NAV ───────────────────────────────────────────────── */
 
-.ejr-tab-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+body {
+    margin: 0;
+    padding: 0;
+
+    background: #f5f5f5;
+
+    color: #212529;
+
+    font-family:
+        "Poppins",
+        Arial,
+        sans-serif;
+
+    overflow-x: hidden;
 }
 
-.ejr-tab-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 16px;
-    border-radius: 50px;
-    border: 1.5px solid var(--ejr-border);
-    background: #fff;
-    color: var(--ejr-muted);
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+
+button {
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    white-space: nowrap;
 }
 
-.ejr-tab-btn i {
-    font-size: 14px;
+
+/* ============================================================
+   MAIN DASHBOARD
+   ============================================================ */
+
+.admin-dashboard {
+    width: 100%;
+    min-height: 100vh;
+
+    background: #f5f5f5;
 }
 
-.ejr-tab-btn:hover {
-    border-color: var(--ejr-red);
+
+.admin-main {
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+
+    margin-left: var(--sidebar-width);
+
+    transition:
+        margin-left 0.25s ease,
+        width 0.25s ease;
+}
+
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.admin-sidebar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: var(--sidebar-width);
+
+    background: #ffffff;
+
+    border-right: 1px solid var(--ejr-border);
+
+    z-index: 1050;
+
+    overflow-y: auto;
+
+    box-shadow:
+        2px 0 12px rgba(0, 0, 0, 0.04);
+}
+
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 10px;
+}
+
+
+.admin-logo {
+    height: var(--header-height);
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 22px;
+
+    border-bottom:
+        1px solid var(--ejr-border);
+
+    font-size: 21px;
+    font-weight: 700;
+
     color: var(--ejr-red);
-    background: rgba(230,36,41,0.04);
 }
 
-.ejr-tab-btn.active {
-    background: var(--ejr-red);
-    border-color: var(--ejr-red);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(230,36,41,0.35);
+
+.admin-logo i {
+    margin-right: 10px;
 }
 
-.ejr-tab-badge {
-    background: rgba(0,0,0,0.08);
-    color: inherit;
+
+.admin-nav {
+    padding: 18px 12px;
+}
+
+
+.admin-nav-section {
+    margin-bottom: 22px;
+}
+
+
+.admin-nav-title {
+    padding: 7px 12px;
+
+    margin-bottom: 7px;
+
     font-size: 10px;
     font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 20px;
-    min-width: 20px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.8px;
+
+    color: #999999;
+}
+
+
+.admin-nav a,
+.admin-nav button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 11px 13px;
+    margin-bottom: 4px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #555555;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    text-align: left;
+
+    transition: all 0.2s ease;
+}
+
+
+.admin-nav a i,
+.admin-nav button i {
+    width: 20px;
+
     text-align: center;
+
+    font-size: 16px;
 }
 
-.ejr-tab-btn.active .ejr-tab-badge {
-    background: rgba(255,255,255,0.25);
-    color: #fff;
+
+.admin-nav a:hover,
+.admin-nav button:hover {
+    background: #f7eeee;
+
+    color: var(--ejr-red);
 }
 
-.ejr-tab-badge--red {
-    background: var(--ejr-red) !important;
-    color: #fff !important;
+
+.admin-nav a.active,
+.admin-nav button.active {
+    background: var(--ejr-red);
+
+    color: #ffffff;
+
+    font-weight: 600;
 }
 
-.ejr-tab-btn.active .ejr-tab-badge--red {
-    background: rgba(255,255,255,0.25) !important;
-}
 
-/* ── CARDS ─────────────────────────────────────────────────── */
+/* ============================================================
+   HEADER
+   ============================================================ */
 
-.ejr-card {
-    background: var(--ejr-card-bg);
-    border-radius: var(--ejr-radius);
-    border: 1px solid var(--ejr-border);
-    box-shadow: var(--ejr-shadow);
-    padding: 28px;
-    margin-bottom: 20px;
-    min-width: 0;
-    overflow: hidden;
-}
+.admin-header {
+    position: sticky;
 
-.ejr-card-header {
+    top: 0;
+
+    z-index: 1000;
+
+    width: 100%;
+
+    min-height: var(--header-height);
+
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    gap: 12px;
-    flex-wrap: wrap;
+
+    gap: 20px;
+
+    padding: 0 25px;
+
+    background: #ffffff;
+
+    border-bottom:
+        1px solid var(--ejr-border);
+
+    box-shadow:
+        0 1px 8px rgba(0, 0, 0, 0.03);
 }
 
-.ejr-card-title {
+
+.admin-header-left {
+    min-width: 0;
+
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-family: 'Syne', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--ejr-text);
+
+    gap: 15px;
 }
 
-.ejr-card-icon {
-    width: 36px;
-    height: 36px;
+
+.admin-header-title {
+    margin: 0;
+
+    font-size: 21px;
+    font-weight: 700;
+
+    color: #222222;
+
+    white-space: nowrap;
+}
+
+
+.admin-header-right {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+/* ============================================================
+   SIDEBAR TOGGLE
+   ============================================================ */
+
+.sidebar-toggle {
+    width: 40px;
+    height: 40px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--ejr-border);
+
     border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #333333;
+}
+
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+
+.admin-search-wrapper {
+    position: relative;
+
+    width: min(420px, 100%);
+}
+
+
+.admin-search-wrapper > i {
+    position: absolute;
+
+    left: 14px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #999999;
+
+    pointer-events: none;
+}
+
+
+.admin-search {
+    width: 100%;
+    height: 42px;
+
+    padding:
+        0 42px 0 40px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 10px;
+
+    background: #fafafa;
+
+    outline: none;
+
+    font-size: 13px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.admin-search:focus {
+    background: #ffffff;
+
+    border-color: var(--ejr-red);
+
+    box-shadow:
+        0 0 0 3px rgba(
+            179,
+            0,
+            0,
+            0.08
+        );
+}
+
+
+.admin-search::placeholder {
+    color: #aaaaaa;
+}
+
+
+.admin-search-clear {
+    position: absolute;
+
+    right: 10px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 27px;
+    height: 27px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #eeeeee;
+
+    color: #777777;
+
+    padding: 0;
+}
+
+
+.admin-search-clear:hover {
+    background: #dddddd;
+
+    color: #333333;
+}
+
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+
+.admin-content {
+    width: 100%;
+    max-width: 1800px;
+
+    margin: 0 auto;
+
+    padding: 25px;
+}
+
+
+.admin-section {
+    display: none;
+
+    width: 100%;
+}
+
+
+.admin-section.active {
+    display: block;
+}
+
+
+/* ============================================================
+   DASHBOARD STAT CARDS
+   ============================================================ */
+
+.dashboard-cards {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 18px;
+
+    margin-bottom: 25px;
+}
+
+
+.dashboard-card {
+    min-width: 0;
+
+    padding: 20px;
+
+    border:
+        1px solid var(--ejr-border);
+
+    border-radius: var(--radius);
+
+    background: #ffffff;
+
+    box-shadow: var(--shadow-sm);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow: var(--shadow-md);
+}
+
+
+.dashboard-card-label {
+    margin-bottom: 7px;
+
+    font-size: 12px;
+
+    color: #777777;
+
+    font-weight: 500;
+}
+
+
+.dashboard-card-value {
+    font-size: 27px;
+
+    line-height: 1.1;
+
+    font-weight: 700;
+
+    color: #222222;
+}
+
+
+.dashboard-card-icon {
+    width: 44px;
+    height: 44px;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
-}
 
-/* ── BUTTONS ───────────────────────────────────────────────── */
+    border-radius: 10px;
 
-.ejr-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    text-decoration: none;
-    white-space: nowrap;
-}
+    background: var(--ejr-red-light);
 
-.ejr-btn--red {
-    background: var(--ejr-red);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(230,36,41,0.3);
-}
-
-.ejr-btn--red:hover {
-    background: var(--ejr-red-dark);
-    box-shadow: 0 4px 12px rgba(230,36,41,0.4);
-    color: #fff;
-}
-
-.ejr-btn--outline {
-    background: transparent;
-    border: 1.5px solid var(--ejr-border);
-    color: var(--ejr-muted);
-}
-
-.ejr-btn--outline:hover {
-    border-color: var(--ejr-red);
     color: var(--ejr-red);
+
+    font-size: 20px;
 }
 
-.ejr-btn--warn {
-    background: #f59e0b;
-    color: #fff;
-}
 
-.ejr-btn--warn:hover {
-    background: #d97706;
-}
+/* ============================================================
+   PANELS
+   ============================================================ */
 
-/* ── TABLE ─────────────────────────────────────────────────── */
-
-.ejr-table {
+.admin-panel {
     width: 100%;
-    max-width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 13.5px;
+    min-width: 0;
+
+    margin-bottom: 22px;
+
+    border:
+        1px solid var(--ejr-border);
+
+    border-radius: var(--radius);
+
+    background: #ffffff;
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
 }
 
-/* Scrollable data area */
-.table-responsive {
-    width: 100%;
-    max-width: 100%;
-    max-height: 520px;
-    overflow-y: auto;
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--ejr-border) transparent;
-    box-sizing: border-box;
+
+.admin-panel-header {
+    min-height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 14px 20px;
+
+    border-bottom:
+        1px solid var(--ejr-border);
 }
 
-.table-responsive::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
 
-.table-responsive::-webkit-scrollbar-track {
-    background: transparent;
-}
+.admin-panel-title {
+    margin: 0;
 
-.table-responsive::-webkit-scrollbar-thumb {
-    background: var(--ejr-border);
-    border-radius: 8px;
-}
+    font-size: 17px;
 
-.table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #c7cbd4;
-}
-
-/* Sticky header */
-.ejr-table thead tr {
-    background: #f8f9fb;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
-.ejr-table thead th {
-    padding: 11px 16px;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--ejr-muted);
-    border-bottom: 1.5px solid var(--ejr-border);
-    white-space: nowrap;
-}
 
-.ejr-table tbody tr {
-    transition: background 0.15s;
-}
-
-.ejr-table tbody tr:hover {
-    background: rgba(230,36,41,0.03);
-}
-
-.ejr-table tbody td {
-    padding: 13px 16px;
-    border-bottom: 1px solid #f1f3f7;
-    vertical-align: middle;
-    color: var(--ejr-text);
-}
-
-.ejr-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.ejr-loading {
-    text-align: center;
-    padding: 32px !important;
-    color: var(--ejr-muted);
+    color: #222222;
 }
 
 
-/* =============================================================
-   APPOINTMENTS TABLE
-   Fits completely inside the appointment container.
-   Prevents horizontal scrolling.
-   ============================================================= */
+.admin-panel-subtitle {
+    margin: 3px 0 0;
 
-#tab-appointments {
+    font-size: 12px;
+
+    color: #888888;
+}
+
+
+.admin-panel-body {
     width: 100%;
-    max-width: 100%;
     min-width: 0;
-    box-sizing: border-box;
+
+    padding: 20px;
 }
 
-#tab-appointments .ejr-card {
+
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
+
+.admin-filter-bar {
+    width: 100%;
+
+    display: flex;
+    align-items: flex-end;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+}
+
+
+.admin-filter-item {
+    min-width: 150px;
+
+    flex:
+        0 1 190px;
+}
+
+
+.admin-filter-item label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    color: #666666;
+}
+
+
+.admin-filter-item select,
+.admin-filter-item input {
+    width: 100%;
+
+    height: 39px;
+
+    padding: 0 11px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    font-size: 12px;
+
+    outline: none;
+}
+
+
+.admin-filter-item select:focus,
+.admin-filter-item input:focus {
+    border-color: var(--ejr-red);
+
+    box-shadow:
+        0 0 0 3px rgba(
+            179,
+            0,
+            0,
+            0.07
+        );
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.admin-btn {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    min-height: 38px;
+
+    padding: 8px 14px;
+
+    border:
+        1px solid transparent;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: all 0.2s ease;
+}
+
+
+.admin-btn-primary {
+    background: var(--ejr-red);
+
+    color: #ffffff;
+
+    border-color: var(--ejr-red);
+}
+
+
+.admin-btn-primary:hover {
+    background: var(--ejr-red-dark);
+
+    border-color: var(--ejr-red-dark);
+
+    color: #ffffff;
+}
+
+
+.admin-btn-secondary {
+    background: #ffffff;
+
+    color: #444444;
+
+    border-color: #dddddd;
+}
+
+
+.admin-btn-secondary:hover {
+    background: #f5f5f5;
+
+    color: #222222;
+}
+
+
+.admin-btn-danger {
+    background: #dc3545;
+
+    color: #ffffff;
+
+    border-color: #dc3545;
+}
+
+
+.admin-btn-success {
+    background: #198754;
+
+    color: #ffffff;
+
+    border-color: #198754;
+}
+
+
+.admin-btn-sm {
+    min-height: 31px;
+
+    padding: 5px 9px;
+
+    font-size: 11px;
+}
+
+
+/* ============================================================
+   TABLE CONTAINER
+   ============================================================ */
+
+.admin-table-container {
     width: 100%;
     max-width: 100%;
+
     min-width: 0;
-    box-sizing: border-box;
+
+    overflow: hidden;
 }
 
-#tab-appointments .table-responsive {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-sizing: border-box;
-}
 
-/* Force appointment table to stay within container */
-#tab-appointments .ejr-table {
+/* ============================================================
+   ALL ADMIN TABLES
+   ============================================================ */
+
+.admin-table {
     width: 100%;
     max-width: 100%;
-    min-width: 0;
+
+    margin: 0;
+
     table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
+
+    border-collapse: collapse;
+
+    font-size: 12px;
 }
 
-/* Appointment headers */
-#tab-appointments .ejr-table thead th {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    padding: 10px 8px;
+
+.admin-table thead th {
+    padding: 12px 10px;
+
+    background: #f8f8f8;
+
+    color: #555555;
+
+    border-bottom:
+        1px solid #dddddd;
+
     font-size: 10px;
-    line-height: 1.25;
-}
 
-/* Appointment cells */
-#tab-appointments .ejr-table tbody td {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    padding: 11px 8px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.3px;
+
     vertical-align: middle;
-    max-width: 0;
-    line-height: 1.35;
+
+    overflow-wrap: anywhere;
 }
 
-/* -------------------------------------------------------------
-   APPOINTMENT COLUMN WIDTHS
-   ------------------------------------------------------------- */
 
-/* Customer */
-#tab-appointments .ejr-table th:nth-child(1),
-#tab-appointments .ejr-table td:nth-child(1) {
-    width: 17%;
+.admin-table tbody td {
+    padding: 12px 10px;
+
+    border-bottom:
+        1px solid #eeeeee;
+
+    color: #444444;
+
+    vertical-align: middle;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
 }
 
-/* Service */
-#tab-appointments .ejr-table th:nth-child(2),
-#tab-appointments .ejr-table td:nth-child(2) {
-    width: 17%;
+
+.admin-table tbody tr {
+    transition:
+        background 0.15s ease;
 }
 
-/* Vehicle */
-#tab-appointments .ejr-table th:nth-child(3),
-#tab-appointments .ejr-table td:nth-child(3) {
+
+.admin-table tbody tr:hover {
+    background: #fcfcfc;
+}
+
+
+.admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* ============================================================
+   APPOINTMENTS
+   ============================================================ */
+
+.appointments-container {
+    width: 100%;
+    max-width: 100%;
+
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+
+/*
+   IMPORTANT:
+
+   Do NOT use:
+
+   .appointments-container {
+       overflow-x: auto;
+   }
+
+   because that creates the horizontal scrollbar.
+
+   The table below uses table-layout: fixed to stay inside
+   the appointment panel.
+*/
+
+.appointments-table {
+    width: 100%;
+    max-width: 100%;
+
+    margin: 0;
+
+    table-layout: fixed;
+
+    border-collapse: collapse;
+
+    font-size: 11px;
+}
+
+
+.appointments-table thead th {
+    padding: 10px 7px;
+
+    background: #f8f8f8;
+
+    color: #555555;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    text-align: left;
+
+    vertical-align: middle;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
+}
+
+
+.appointments-table tbody td {
+    padding: 10px 7px;
+
+    border-bottom:
+        1px solid #eeeeee;
+
+    color: #444444;
+
+    vertical-align: middle;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
+}
+
+
+.appointments-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+.appointments-table tbody tr:hover {
+    background: #fcfcfc;
+}
+
+
+/* Appointment column widths */
+
+.appointments-table th:nth-child(1),
+.appointments-table td:nth-child(1) {
+    width: 7%;
+}
+
+
+.appointments-table th:nth-child(2),
+.appointments-table td:nth-child(2) {
+    width: 15%;
+}
+
+
+.appointments-table th:nth-child(3),
+.appointments-table td:nth-child(3) {
+    width: 14%;
+}
+
+
+.appointments-table th:nth-child(4),
+.appointments-table td:nth-child(4) {
+    width: 12%;
+}
+
+
+.appointments-table th:nth-child(5),
+.appointments-table td:nth-child(5) {
+    width: 12%;
+}
+
+
+.appointments-table th:nth-child(6),
+.appointments-table td:nth-child(6) {
+    width: 11%;
+}
+
+
+.appointments-table th:nth-child(7),
+.appointments-table td:nth-child(7) {
+    width: 11%;
+}
+
+
+.appointments-table th:nth-child(8),
+.appointments-table td:nth-child(8) {
+    width: 18%;
+}
+
+
+/* ============================================================
+   APPOINTMENT ACTIONS
+   ============================================================ */
+
+.appointment-actions {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 4px;
+}
+
+
+.appointment-actions .btn {
+    min-width: 28px;
+    min-height: 28px;
+
+    padding: 4px 7px;
+
+    font-size: 11px;
+}
+
+
+/* ============================================================
+   TABLE ACTIONS
+   ============================================================ */
+
+.table-actions {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 4px;
+}
+
+
+.table-actions .btn {
+    flex: 0 0 auto;
+}
+
+
+/* ============================================================
+   USER TABLE
+   ============================================================ */
+
+.users-table {
+    width: 100%;
+    max-width: 100%;
+
+    table-layout: fixed;
+}
+
+
+.users-table th,
+.users-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
+}
+
+
+.users-table th:nth-child(1),
+.users-table td:nth-child(1) {
+    width: 7%;
+}
+
+
+.users-table th:nth-child(2),
+.users-table td:nth-child(2) {
+    width: 19%;
+}
+
+
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) {
+    width: 20%;
+}
+
+
+.users-table th:nth-child(4),
+.users-table td:nth-child(4) {
+    width: 14%;
+}
+
+
+.users-table th:nth-child(5),
+.users-table td:nth-child(5) {
+    width: 12%;
+}
+
+
+.users-table th:nth-child(6),
+.users-table td:nth-child(6) {
+    width: 12%;
+}
+
+
+.users-table th:nth-child(7),
+.users-table td:nth-child(7) {
     width: 16%;
 }
 
-/* Date */
-#tab-appointments .ejr-table th:nth-child(4),
-#tab-appointments .ejr-table td:nth-child(4) {
-    width: 14%;
+
+/* ============================================================
+   VEHICLES TABLE
+   ============================================================ */
+
+.vehicles-table {
+    width: 100%;
+    max-width: 100%;
+
+    table-layout: fixed;
 }
 
-/* Mechanic */
-#tab-appointments .ejr-table th:nth-child(5),
-#tab-appointments .ejr-table td:nth-child(5) {
-    width: 14%;
+
+.vehicles-table th,
+.vehicles-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
 }
 
-/* Status */
-#tab-appointments .ejr-table th:nth-child(6),
-#tab-appointments .ejr-table td:nth-child(6) {
+
+.vehicles-table th:nth-child(1),
+.vehicles-table td:nth-child(1) {
+    width: 17%;
+}
+
+
+.vehicles-table th:nth-child(2),
+.vehicles-table td:nth-child(2) {
     width: 11%;
 }
 
-/* Action */
-#tab-appointments .ejr-table th:nth-child(7),
-#tab-appointments .ejr-table td:nth-child(7) {
+
+.vehicles-table th:nth-child(3),
+.vehicles-table td:nth-child(3) {
+    width: 13%;
+}
+
+
+.vehicles-table th:nth-child(4),
+.vehicles-table td:nth-child(4) {
+    width: 9%;
+}
+
+
+.vehicles-table th:nth-child(5),
+.vehicles-table td:nth-child(5) {
+    width: 13%;
+}
+
+
+.vehicles-table th:nth-child(6),
+.vehicles-table td:nth-child(6) {
     width: 11%;
 }
 
-/* -------------------------------------------------------------
-   APPOINTMENT ACTION BUTTONS
-   ------------------------------------------------------------- */
 
-#tab-appointments .ejr-table td:last-child {
-    text-align: center;
+.vehicles-table th:nth-child(7),
+.vehicles-table td:nth-child(7) {
+    width: 11%;
 }
 
-#tab-appointments .ejr-table td:last-child .ejr-btn,
-#tab-appointments .ejr-table td:last-child button {
-    max-width: 100%;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    font-size: 11px;
-    padding: 6px 8px;
-    box-sizing: border-box;
+
+.vehicles-table th:nth-child(8),
+.vehicles-table td:nth-child(8) {
+    width: 15%;
 }
 
-/* -------------------------------------------------------------
-   APPOINTMENT STATUS BADGES
-   ------------------------------------------------------------- */
 
-#tab-appointments .ejr-table .badge,
-#tab-appointments .ejr-table .status-badge {
+/* ============================================================
+   SERVICE HISTORY TABLE
+   ============================================================ */
+
+.history-table {
+    width: 100%;
     max-width: 100%;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+
+    table-layout: fixed;
 }
 
-/* -------------------------------------------------------------
-   APPOINTMENT TEXT
-   ------------------------------------------------------------- */
 
-#tab-appointments .ejr-table td strong,
-#tab-appointments .ejr-table td span,
-#tab-appointments .ejr-table td div {
-    max-width: 100%;
+.history-table th,
+.history-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
     overflow-wrap: anywhere;
+
     word-break: break-word;
 }
 
-/* -------------------------------------------------------------
-   APPOINTMENT CARD HEADER
-   ------------------------------------------------------------- */
 
-#tab-appointments .ejr-card-header {
-    min-width: 0;
+.history-table th:nth-child(1),
+.history-table td:nth-child(1) {
+    width: 7%;
+}
+
+
+.history-table th:nth-child(2),
+.history-table td:nth-child(2) {
+    width: 15%;
+}
+
+
+.history-table th:nth-child(3),
+.history-table td:nth-child(3) {
+    width: 17%;
+}
+
+
+.history-table th:nth-child(4),
+.history-table td:nth-child(4) {
+    width: 15%;
+}
+
+
+.history-table th:nth-child(5),
+.history-table td:nth-child(5) {
+    width: 12%;
+}
+
+
+.history-table th:nth-child(6),
+.history-table td:nth-child(6) {
+    width: 12%;
+}
+
+
+.history-table th:nth-child(7),
+.history-table td:nth-child(7) {
+    width: 10%;
+}
+
+
+.history-table th:nth-child(8),
+.history-table td:nth-child(8) {
+    width: 12%;
+}
+
+
+/* ============================================================
+   ORDERS TABLE
+   ============================================================ */
+
+.orders-table {
+    width: 100%;
     max-width: 100%;
+
+    table-layout: fixed;
 }
 
-#tab-appointments .ejr-card-header > * {
-    min-width: 0;
+
+.orders-table th,
+.orders-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
 }
 
-/* ── FILTER BAR ────────────────────────────────────────────── */
 
-.ejr-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+/* ============================================================
+   MECHANICS TABLE
+   ============================================================ */
+
+.mechanics-table {
+    width: 100%;
+    max-width: 100%;
+
+    table-layout: fixed;
+}
+
+
+.mechanics-table th,
+.mechanics-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
+}
+
+
+/* ============================================================
+   INQUIRIES TABLE
+   ============================================================ */
+
+.inquiries-table {
+    width: 100%;
+    max-width: 100%;
+
+    table-layout: fixed;
+}
+
+
+.inquiries-table th,
+.inquiries-table td {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    overflow-wrap: anywhere;
+
+    word-break: break-word;
+}
+
+
+/* ============================================================
+   STATUS BADGES
+   ============================================================ */
+
+.status-badge {
+    display: inline-flex;
+
     align-items: center;
+    justify-content: center;
+
+    max-width: 100%;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    white-space: normal;
+
+    text-align: center;
+
+    word-break: break-word;
 }
 
-.ejr-filter-input {
-    padding: 8px 12px;
-    border: 1.5px solid var(--ejr-border);
+
+.status-pending {
+    background: #fff3cd;
+
+    color: #856404;
+}
+
+
+.status-confirmed {
+    background: #d1ecf1;
+
+    color: #0c5460;
+}
+
+
+.status-in-progress {
+    background: #cfe2ff;
+
+    color: #084298;
+}
+
+
+.status-completed {
+    background: #d1e7dd;
+
+    color: #0f5132;
+}
+
+
+.status-cancelled {
+    background: #f8d7da;
+
+    color: #842029;
+}
+
+
+.status-active {
+    background: #d1e7dd;
+
+    color: #0f5132;
+}
+
+
+.status-inactive {
+    background: #e2e3e5;
+
+    color: #41464b;
+}
+
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+
+.admin-pagination {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    padding: 14px 18px;
+
+    border-top:
+        1px solid var(--ejr-border);
+}
+
+
+.admin-pagination-info {
+    font-size: 11px;
+
+    color: #777777;
+}
+
+
+.admin-pagination-buttons {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+
+.admin-pagination-buttons button {
+    min-width: 31px;
+    height: 31px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: #555555;
+
+    font-size: 11px;
+}
+
+
+.admin-pagination-buttons button:hover {
+    border-color: var(--ejr-red);
+
+    color: var(--ejr-red);
+}
+
+
+.admin-pagination-buttons button.active {
+    background: var(--ejr-red);
+
+    border-color: var(--ejr-red);
+
+    color: #ffffff;
+}
+
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+
+.admin-form-group {
+    margin-bottom: 16px;
+}
+
+
+.admin-form-group label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    color: #555555;
+}
+
+
+.admin-form-control {
+    width: 100%;
+
+    min-height: 40px;
+
+    padding: 8px 11px;
+
+    border:
+        1px solid #dddddd;
+
     border-radius: 8px;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
+
+    background: #ffffff;
+
+    color: #333333;
+
     outline: none;
-    transition: border-color 0.2s;
+
+    font-size: 12px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.admin-form-control:focus {
+    border-color: var(--ejr-red);
+
+    box-shadow:
+        0 0 0 3px rgba(
+            179,
+            0,
+            0,
+            0.07
+        );
+}
+
+
+.admin-form-control::placeholder {
+    color: #aaaaaa;
+}
+
+
+/* ============================================================
+   LIVE CHAT
+   ============================================================ */
+
+.admin-chat {
+    width: 100%;
+
+    min-height: 600px;
+
+    display: grid;
+
+    grid-template-columns:
+        280px minmax(0, 1fr);
+
+    border:
+        1px solid var(--ejr-border);
+
+    border-radius: var(--radius);
+
+    background: #ffffff;
+
+    overflow: hidden;
+}
+
+
+.admin-chat-users {
+    min-width: 0;
+
+    border-right:
+        1px solid var(--ejr-border);
+
+    overflow-y: auto;
+}
+
+
+.admin-chat-user {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px;
+
+    border-bottom:
+        1px solid #eeeeee;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease;
+}
+
+
+.admin-chat-user:hover {
+    background: #fafafa;
+}
+
+
+.admin-chat-user.active {
+    background: var(--ejr-red-light);
+
+    border-left:
+        3px solid var(--ejr-red);
+}
+
+
+.admin-chat-avatar {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 auto;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--ejr-red-light);
+
+    color: var(--ejr-red);
+
+    font-weight: 700;
+}
+
+
+.admin-chat-main {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+
+.admin-chat-messages {
+    min-width: 0;
+
+    min-height: 450px;
+    max-height: 500px;
+
+    overflow-y: auto;
+
+    padding: 18px;
+
+    background: #f8f8f8;
+}
+
+
+.admin-chat-message {
+    max-width: 75%;
+
+    margin-bottom: 10px;
+
+    padding: 9px 12px;
+
+    border-radius: 12px;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+
+    overflow-wrap: anywhere;
+}
+
+
+.admin-chat-message.customer {
+    margin-right: auto;
+
+    background: #ffffff;
+
+    border:
+        1px solid #eeeeee;
+}
+
+
+.admin-chat-message.admin {
+    margin-left: auto;
+
+    background: var(--ejr-red);
+
+    color: #ffffff;
+}
+
+
+.admin-chat-input {
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 8px;
+
+    padding: 12px;
+
+    background: #ffffff;
+
+    border-top:
+        1px solid var(--ejr-border);
+}
+
+
+.admin-chat-input textarea {
     flex: 1;
-    min-width: 160px;
-    box-sizing: border-box;
-}
 
-.ejr-filter-input:focus {
-    border-color: var(--ejr-red);
-}
+    min-height: 42px;
+    max-height: 120px;
 
-.ejr-filter-select {
-    padding: 8px 12px;
-    border: 1.5px solid var(--ejr-border);
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
+    resize: vertical;
+
+    padding: 10px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 9px;
+
     outline: none;
-    background: #fff;
-    min-width: 160px;
-    transition: border-color 0.2s;
-    box-sizing: border-box;
+
+    font-size: 12px;
 }
 
-.ejr-filter-select:focus {
+
+.admin-chat-input textarea:focus {
     border-color: var(--ejr-red);
 }
 
-/* ── LIVE CHAT ─────────────────────────────────────────────── */
 
-.ejr-chat-sidebar {
-    background: #f8f9fb;
+/* ============================================================
+   LOADING
+   ============================================================ */
+
+.admin-loading {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 150px;
+
+    color: #777777;
+
+    font-size: 12px;
 }
 
-.ejr-chat-body {
-    background: #f1f3f7;
+
+.admin-loading .spinner-border {
+    margin-right: 8px;
 }
 
-.ejr-chat-footer {
-    padding: 16px 20px;
-    border-top: 1.5px solid var(--ejr-border);
-    background: #fff;
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.admin-empty {
+    padding: 45px 20px;
+
+    text-align: center;
+
+    color: #888888;
 }
 
-.ejr-chat-input {
-    border: 1.5px solid var(--ejr-border) !important;
-    border-right: none !important;
-    border-radius: 8px 0 0 8px !important;
-    font-family: 'DM Sans', sans-serif;
+
+.admin-empty i {
+    display: block;
+
+    margin-bottom: 10px;
+
+    font-size: 30px;
+
+    color: #cccccc;
+}
+
+
+.admin-empty-title {
+    margin-bottom: 4px;
+
     font-size: 14px;
-    padding: 10px 14px !important;
-}
 
-.ejr-chat-input:focus {
-    border-color: var(--ejr-red) !important;
-    box-shadow: none !important;
-}
+    font-weight: 600;
 
-
-/* ── MOBILE CHAT ───────────────────────────────────────────── */
-
-@media (max-width: 767px) {
-
-    #tab-live-chat .d-flex.flex-column.flex-md-row {
-        height: auto !important;
-        flex-direction: column !important;
-    }
-
-    .ejr-chat-sidebar {
-        max-height: 220px !important;
-        flex: none !important;
-        border-bottom: 2px solid #e62429 !important;
-        border-right: none !important;
-    }
-
-    #adminChatArea {
-        height: 420px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #adminChatBody {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .ejr-chat-footer {
-        flex-shrink: 0;
-    }
-
-    .ejr-chat-input {
-        font-size: 16px !important;
-    }
+    color: #666666;
 }
 
 
-/* ── DESKTOP CHAT ──────────────────────────────────────────── */
+.admin-empty-text {
+    font-size: 11px;
 
-@media (min-width: 768px) {
-
-    #tab-live-chat .d-flex.flex-column.flex-md-row {
-        height: 600px !important;
-    }
-
-    .ejr-chat-sidebar {
-        width: 33.333% !important;
-        max-height: 600px !important;
-        flex: 0 0 33.333% !important;
-    }
-
-    #adminChatArea {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        height: 600px;
-    }
-
-    #adminChatBody {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-    }
+    color: #999999;
 }
 
 
-/* ── ACTIVE CHAT HIGHLIGHT ─────────────────────────────────── */
+/* ============================================================
+   MODALS
+   ============================================================ */
 
-.active-chat {
-    background: rgba(230,36,41,0.06) !important;
-    border-left: 3px solid var(--ejr-red) !important;
+.modal-content {
+    border: 0;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 15px 50px rgba(
+            0,
+            0,
+            0,
+            0.18
+        );
 }
 
 
-/* ── SWEETALERT OVERRIDE ───────────────────────────────────── */
+.modal-header {
+    border-bottom:
+        1px solid #eeeeee;
 
-.swal2-container {
-    z-index: 99999999 !important;
+    padding: 16px 20px;
 }
+
+
+.modal-footer {
+    border-top:
+        1px solid #eeeeee;
+
+    padding: 13px 20px;
+}
+
+
+.modal-title {
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   SWEETALERT
+   ============================================================ */
 
 .swal2-popup {
-    border-radius: 16px !important;
-    font-family: 'DM Sans', sans-serif !important;
+    border-radius:
+        14px !important;
+
+    font-family:
+        "Poppins",
+        Arial,
+        sans-serif !important;
 }
+
 
 .swal2-title {
-    font-family: 'Syne', sans-serif !important;
+    font-size:
+        20px !important;
 }
 
 
-/* ── SCROLLBAR ─────────────────────────────────────────────── */
-
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+.swal2-html-container {
+    font-size:
+        13px !important;
 }
 
-::-webkit-scrollbar-track {
+
+.swal2-confirm {
+    background:
+        var(--ejr-red) !important;
+}
+
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+
+.admin-sidebar::-webkit-scrollbar,
+.admin-chat-users::-webkit-scrollbar,
+.admin-chat-messages::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.admin-sidebar::-webkit-scrollbar-track,
+.admin-chat-users::-webkit-scrollbar-track,
+.admin-chat-messages::-webkit-scrollbar-track {
     background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+
+.admin-sidebar::-webkit-scrollbar-thumb,
+.admin-chat-users::-webkit-scrollbar-thumb,
+.admin-chat-messages::-webkit-scrollbar-thumb {
+    background: #cccccc;
+
     border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #b30000;
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+
+.spin {
+    animation:
+        adminSpin 1s linear infinite;
 }
 
 
-/* =============================================================
-   APPOINTMENTS — TABLET
-   ============================================================= */
+@keyframes adminSpin {
 
-@media (max-width: 992px) {
+    from {
+        transform:
+            rotate(0deg);
+    }
 
-    #tab-appointments .ejr-table th,
-    #tab-appointments .ejr-table td {
-        padding: 9px 6px;
+    to {
+        transform:
+            rotate(360deg);
+    }
+
+}
+
+
+/* ============================================================
+   LARGE SCREENS
+   ============================================================ */
+
+@media (max-width: 1200px) {
+
+    .dashboard-cards {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+
+    .admin-content {
+        padding: 20px;
+    }
+
+
+    .admin-header {
+        padding: 0 20px;
+    }
+
+
+    .admin-table {
         font-size: 11px;
     }
 
-    #tab-appointments .ejr-table th {
-        font-size: 9px;
+
+    .admin-table th,
+    .admin-table td {
+        padding: 9px 7px;
     }
 
-    #tab-appointments .ejr-table td:last-child .ejr-btn,
-    #tab-appointments .ejr-table td:last-child button {
+
+    .appointments-table {
         font-size: 10px;
-        padding: 5px 6px;
     }
+
+
+    .appointments-table th,
+    .appointments-table td {
+        padding: 8px 5px;
+    }
+
 }
 
 
-/* =============================================================
-   APPOINTMENTS — MOBILE
-   ============================================================= */
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 992px) {
+
+    :root {
+        --sidebar-width: 0px;
+    }
+
+
+    .admin-sidebar {
+        width: 250px;
+
+        transform:
+            translateX(-100%);
+
+        transition:
+            transform 0.25s ease;
+    }
+
+
+    .admin-sidebar.open {
+        transform:
+            translateX(0);
+    }
+
+
+    .admin-main {
+        width: 100%;
+
+        margin-left: 0;
+    }
+
+
+    .sidebar-toggle {
+        display: flex;
+    }
+
+
+    .admin-header-title {
+        font-size: 18px;
+    }
+
+
+    .admin-search-wrapper {
+        max-width: 320px;
+    }
+
+
+    .admin-chat {
+        grid-template-columns:
+            220px minmax(0, 1fr);
+    }
+
+
+    .admin-panel-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
 
 @media (max-width: 768px) {
 
-    .ejr-admin-title {
-        font-size: 1.4rem;
+    .admin-header {
+        height: auto;
+
+        min-height: 65px;
+
+        padding: 10px 14px;
+
+        flex-wrap: wrap;
     }
 
-    .ejr-card {
-        padding: 18px;
+
+    .admin-header-left {
+        width: 100%;
     }
 
-    .ejr-tab-btn span:not(.ejr-tab-badge) {
-        display: none;
+
+    .admin-header-right {
+        width: 100%;
     }
 
-    .ejr-tab-btn {
-        padding: 9px 12px;
+
+    .admin-search-wrapper {
+        width: 100%;
+
+        max-width: none;
     }
 
-    .ejr-stat-num {
-        font-size: 1.6rem;
+
+    .admin-content {
+        padding: 14px;
     }
 
-    /* Appointment table */
-    #tab-appointments .ejr-table th,
-    #tab-appointments .ejr-table td {
-        padding: 8px 5px;
-        font-size: 10px;
+
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+
+        gap: 12px;
     }
 
-    #tab-appointments .ejr-table th {
-        font-size: 8px;
-        letter-spacing: 0.3px;
+
+    .dashboard-card {
+        padding: 16px;
     }
 
-    #tab-appointments .ejr-table td:last-child .ejr-btn,
-    #tab-appointments .ejr-table td:last-child button {
+
+    .admin-panel-body {
+        padding: 14px;
+    }
+
+
+    .admin-filter-bar {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+
+    .admin-filter-item {
+        width: 100%;
+
+        flex: 1 1 auto;
+    }
+
+
+    /*
+       Smaller table text keeps the appointments inside
+       the container instead of creating horizontal scrolling.
+    */
+
+    .admin-table,
+    .appointments-table,
+    .users-table,
+    .vehicles-table,
+    .history-table {
         font-size: 9px;
-        padding: 4px 5px;
-    }
-}
-
-
-/* =============================================================
-   VERY SMALL SCREENS
-   ============================================================= */
-
-@media (max-width: 576px) {
-
-    #tab-appointments .ejr-card {
-        padding: 12px;
     }
 
-    #tab-appointments .table-responsive {
-        max-height: 500px;
+
+    .admin-table th,
+    .admin-table td,
+    .appointments-table th,
+    .appointments-table td {
+        padding: 7px 4px;
     }
 
-    #tab-appointments .ejr-table {
-        font-size: 9px;
-    }
 
-    #tab-appointments .ejr-table th,
-    #tab-appointments .ejr-table td {
-        padding: 7px 3px;
-    }
-
-    #tab-appointments .ejr-table th {
+    .appointments-table th {
         font-size: 7px;
     }
 
-    #tab-appointments .ejr-table td:last-child .ejr-btn,
-    #tab-appointments .ejr-table td:last-child button {
-        font-size: 8px;
-        padding: 3px 4px;
+
+    .appointments-table .btn {
+        min-width: 23px;
+
+        min-height: 23px;
+
+        padding: 2px 4px;
+
+        font-size: 9px;
     }
+
+
+    .status-badge {
+        padding: 3px 5px;
+
+        font-size: 7px;
+    }
+
+
+    .admin-chat {
+        min-height: 500px;
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .admin-chat-users {
+        max-height: 180px;
+
+        border-right: 0;
+
+        border-bottom:
+            1px solid var(--ejr-border);
+    }
+
+
+    .admin-chat-messages {
+        max-height: 400px;
+    }
+
 }
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 480px) {
+
+    .admin-content {
+        padding: 10px;
+    }
+
+
+    .admin-header {
+        padding: 9px 10px;
+    }
+
+
+    .admin-header-title {
+        font-size: 16px;
+    }
+
+
+    .admin-panel {
+        border-radius: 9px;
+    }
+
+
+    .admin-panel-header {
+        padding: 12px;
+    }
+
+
+    .admin-panel-body {
+        padding: 10px;
+    }
+
+
+    /*
+       Extra-small appointment layout.
+    */
+
+    .appointments-table {
+        width: 100%;
+
+        font-size: 7px;
+    }
+
+
+    .appointments-table th,
+    .appointments-table td {
+        padding: 5px 2px;
+    }
+
+
+    .appointments-table th {
+        font-size: 6px;
+    }
+
+
+    .appointments-table .appointment-actions {
+        gap: 2px;
+    }
+
+
+    .appointments-table .appointment-actions .btn {
+        min-width: 20px;
+
+        min-height: 20px;
+
+        padding: 1px 3px;
+
+        font-size: 7px;
+    }
+
+
+    .admin-btn {
+        font-size: 10px;
+
+        padding: 7px 9px;
+    }
+
+
+    .admin-pagination {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+
+    .admin-pagination-buttons {
+        justify-content: center;
+    }
+
+}
+
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+
+@media print {
+
+    .admin-sidebar,
+    .admin-header,
+    .admin-filter-bar,
+    .admin-btn,
+    .table-actions {
+        display: none !important;
+    }
+
+
+    .admin-main {
+        width: 100% !important;
+
+        margin-left: 0 !important;
+    }
+
+
+    .admin-content {
+        padding: 0 !important;
+    }
+
+
+    .admin-panel {
+        border: 0 !important;
+
+        box-shadow: none !important;
+    }
+
+
+    .admin-table,
+    .appointments-table {
+        font-size: 9px !important;
+    }
+
+}
+
+
+/* ============================================================
+   END OF ADMIN DASHBOARD CSS
+   ============================================================ */
