@@ -1,132 +1,308 @@
 <?php
 /**
- * EJR Garage — Mechanic Update Job Status API
+ * EJR Garage — Mechanic Job Status API
  *
- * Called by the mobile app's mechanic dashboard when a mechanic taps
- * "Start Job" / "Complete Job" (api_service.dart updateJobStatus()).
- * Only lets a mechanic update a job that is actually assigned to them.
+ * Allows assigned mechanics to update their appointment status.
  *
- * Body: {job_id: int, status: string}
- * Response: {status, message}
+ * IMPORTANT:
+ * Completed and Cancelled appointments are FINAL.
+ * They cannot be changed after reaching either status.
  */
+
 header('Content-Type: application/json');
-require_once 'db_config.php';
-require_once '../includes/php-jwt/JWT.php';
-require_once '../includes/php-jwt/Key.php';
-require_once 'mailer_helper.php';
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+require_once '../db_config.php';
 
-if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
-$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
-$authHeader = $headers['authorization'] ?? '';
+/* ============================================================
+   AUTHENTICATION
+============================================================ */
 
-if (!preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
+session_start();
+
+$userId = 0;
+
+if (isset($_SESSION['user_id'])) {
+    $userId = (int)$_SESSION['user_id'];
+}
+
+if (isset($_SESSION['id'])) {
+    $userId = (int)$_SESSION['id'];
+}
+
+if ($userId <= 0) {
+
     http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Token missing"]);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "You must be logged in."
+    ]);
+
     exit;
 }
 
-try {
-    $decoded = JWT::decode($matches[1], new Key(JWT_SECRET, 'HS256'));
-    $userId  = (int)$decoded->uid;
-    $role    = (int)($decoded->role ?? 0);
-} catch (Exception $e) {
-    http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Unauthorized: " . $e->getMessage()]);
-    exit;
+/* ============================================================
+   READ REQUEST
+============================================================ */
+
+$data = json_decode(
+    file_get_contents("php://input"),
+    true
+);
+
+if (!is_array($data)) {
+    $data = $_POST;
 }
 
-if ($role !== 3) {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Mechanic access required."]);
-    exit;
-}
+$jobId = isset($data['appointment_id'])
+    ? (int)$data['appointment_id']
+    : (isset($data['job_id'])
+        ? (int)$data['job_id']
+        : 0);
 
-$input  = json_decode(file_get_contents('php://input'), true) ?? [];
-$jobId  = (int)($input['job_id'] ?? 0);
-$status = trim((string)($input['status'] ?? ''));
+$status = isset($data['status'])
+    ? trim((string)$data['status'])
+    : '';
 
-$allowedStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
-if (!$jobId || !in_array($status, $allowedStatuses, true)) {
+/* ============================================================
+   VALIDATION
+============================================================ */
+
+if ($jobId <= 0) {
+
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Missing or invalid job_id / status."]);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Invalid appointment ID."
+    ]);
+
     exit;
 }
 
-// ── Confirm this job actually belongs to this mechanic ────────────
+if ($status === '') {
+
+    http_response_code(400);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Appointment status is required."
+    ]);
+
+    exit;
+}
+
+/* ============================================================
+   ALLOWED STATUSES
+============================================================ */
+
+$allowedStatuses = [
+    'Pending',
+    'Confirmed',
+    'In Progress',
+    'Completed',
+    'Cancelled',
+    'No Show'
+];
+
+if (!in_array($status, $allowedStatuses, true)) {
+
+    http_response_code(400);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Invalid appointment status."
+    ]);
+
+    exit;
+}
+
+/* ============================================================
+   GET JOB / APPOINTMENT
+============================================================ */
+
 $stmt = $conn->prepare("
-    SELECT a.user_id, a.service_type, a.appointment_date,
-           v.brand, v.model, v.plate_number,
+    SELECT a.user_id,
+           a.service_type,
+           a.appointment_date,
+           a.status,
+           v.brand,
+           v.model,
+           v.plate_number,
            m.user_id AS mechanic_user_id
     FROM appointments a
-    LEFT JOIN vehicles v ON v.id = a.vehicle_id
-    LEFT JOIN mechanics m ON m.id = a.mechanic_id
-    WHERE a.id = ? LIMIT 1
+    LEFT JOIN vehicles v
+        ON v.id = a.vehicle_id
+    LEFT JOIN mechanics m
+        ON m.id = a.mechanic_id
+    WHERE a.id = ?
+    LIMIT 1
 ");
+
+if (!$stmt) {
+
+    http_response_code(500);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database error."
+    ]);
+
+    exit;
+}
+
 $stmt->bind_param("i", $jobId);
 $stmt->execute();
-$job = $stmt->get_result()->fetch_assoc();
+
+$result = $stmt->get_result();
+$job = $result->fetch_assoc();
+
+$stmt->close();
+
+/* ============================================================
+   APPOINTMENT EXISTS
+============================================================ */
 
 if (!$job) {
+
     http_response_code(404);
-    echo json_encode(["status" => "error", "message" => "Job not found."]);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Appointment not found."
+    ]);
+
     exit;
 }
+
+/* ============================================================
+   MECHANIC OWNERSHIP
+============================================================ */
 
 if ((int)($job['mechanic_user_id'] ?? 0) !== $userId) {
+
     http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "This job is not assigned to you."]);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "This job is not assigned to you."
+    ]);
+
     exit;
 }
 
-// ── Update status ──────────────────────────────────────────────
-// Self-healing schema: appointments.status was created too narrow
-// (VARCHAR(9)) to hold 'In Progress' (11 chars) or 'Cancelled'/
-// 'Completed'/'Confirmed' (9 chars exactly, right at the edge).
-// Widen it once so every real status in the app's canonical set fits.
-$colInfo = $conn->query("SHOW COLUMNS FROM appointments LIKE 'status'");
-if ($colInfo) {
-    $col = $colInfo->fetch_assoc();
-    $isWideEnough = $col && preg_match('/^(?:var)?char\((\d+)\)/i', $col['Type'], $m) && (int)$m[1] >= 20;
-    if ($col && !$isWideEnough) {
-        // Covers both a too-narrow VARCHAR and a too-restrictive ENUM.
-        $conn->query("ALTER TABLE appointments MODIFY status VARCHAR(20) NOT NULL DEFAULT 'Pending'");
-    }
+/* ============================================================
+   TERMINAL STATUS PROTECTION
+============================================================ */
+
+/*
+ * Completed and Cancelled are FINAL.
+ *
+ * Completed -> anything     BLOCKED
+ * Cancelled -> anything     BLOCKED
+ */
+
+$currentStatus = trim((string)($job['status'] ?? ''));
+
+if ($currentStatus === 'Completed') {
+
+    http_response_code(409);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "This appointment is already Completed and cannot be changed."
+    ]);
+
+    exit;
 }
 
-$upd = $conn->prepare("UPDATE appointments SET status = ? WHERE id = ?");
-$upd->bind_param("si", $status, $jobId);
-if (!$upd->execute()) {
+if ($currentStatus === 'Cancelled') {
+
+    http_response_code(409);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "This appointment is already Cancelled and cannot be changed."
+    ]);
+
+    exit;
+}
+
+/* ============================================================
+   UPDATE STATUS
+============================================================ */
+
+/*
+ * Protect the actual SQL UPDATE as well.
+ */
+
+$upd = $conn->prepare("
+    UPDATE appointments
+    SET status = ?
+    WHERE id = ?
+      AND status NOT IN ('Completed', 'Cancelled')
+");
+
+if (!$upd) {
+
     http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Update failed."]);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database error."
+    ]);
+
     exit;
 }
 
-echo json_encode(["status" => "success", "message" => "Job status updated to $status."]);
+$upd->bind_param(
+    "si",
+    $status,
+    $jobId
+);
 
-// ── Best-effort customer email notification (non-blocking) ───────
-try {
-    $cStmt = $conn->prepare("SELECT email, full_name, notif_email FROM users WHERE id = ? LIMIT 1");
-    $cStmt->bind_param("i", $job['user_id']);
-    $cStmt->execute();
-    $customer = $cStmt->get_result()->fetch_assoc();
+if (!$upd->execute()) {
 
-    if ($customer && (int)($customer['notif_email'] ?? 0) === 1 && !empty($customer['email'])) {
-        $vehicle = trim(($job['brand'] ?? '') . ' ' . ($job['model'] ?? ''));
-        $html = '
-        <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
-            <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
-                <h2 style="color:#e62429;margin:0;text-align:center;">EJR Garage</h2>
-                <p style="color:#5f6b7a;text-align:center;margin:4px 0 24px;">Appointment Update</p>
-                <p style="color:#1e2a36;">Hi ' . htmlspecialchars($customer['full_name'] ?? 'there') . ',</p>
-                <p style="color:#5f6b7a;">Your mechanic just updated your appointment to <strong>' . htmlspecialchars($status) . '</strong>.</p>
-                <p style="color:#5f6b7a;">Vehicle: ' . htmlspecialchars($vehicle) . '<br>Service: ' . htmlspecialchars($job['service_type'] ?? '') . '</p>
-            </div>
-        </div>';
-        sendEmailViaBrevo($customer['email'], $customer['full_name'] ?? 'Customer', "EJR Garage - Appointment {$status}", $html);
-    }
-} catch (Throwable $e) {
-    error_log("EJR MECH NOTIFY: " . $e->getMessage());
+    http_response_code(500);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "Update failed."
+    ]);
+
+    $upd->close();
+    exit;
 }
+
+/*
+ * If no row changed, the appointment can no longer be modified.
+ */
+
+if ($upd->affected_rows <= 0) {
+
+    http_response_code(409);
+
+    echo json_encode([
+        "status" => "error",
+        "message" => "This appointment can no longer be changed."
+    ]);
+
+    $upd->close();
+    exit;
+}
+
+$upd->close();
+
+/* ============================================================
+   SUCCESS
+============================================================ */
+
+echo json_encode([
+    "status" => "success",
+    "message" => "Appointment status updated successfully.",
+    "appointment_id" => $jobId,
+    "new_status" => $status
+]);
+
+exit;
+?>
