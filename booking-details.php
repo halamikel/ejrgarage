@@ -304,47 +304,88 @@
             </div>
 
 
-            <!-- ============================================================
-     FUEL TYPE
-============================================================ -->
-<div class="col-md-6">
-    <div class="form-group">
-        <label for="fuel">Fuel Type</label>
-        <select
-            name="fuel"
-            id="fuel"
-            class="form-control"
-            required
-        >
-            <option value="">Select Fuel Type</option>
-            <option value="Gasoline">Gasoline</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Electric">Electric</option>
-        </select>
-    </div>
-</div>
+            <!-- =================================================
+                 TRANSMISSION
+            ================================================== -->
+
+            <div class="col-6 col-md-6">
+
+              <label
+                class="form-label"
+                for="transmission"
+              >
+                Transmission
+              </label>
 
 
-<!-- ============================================================
-     TRANSMISSION
-============================================================ -->
-<div class="col-md-6">
-    <div class="form-group">
-        <label for="transmission">Transmission</label>
-        <select
-            name="transmission"
-            id="transmission"
-            class="form-control"
-            required
-        >
-            <option value="">Select Transmission</option>
-            <option value="Automatic">Automatic</option>
-            <option value="Manual">Manual</option>
-            <option value="CVT">CVT</option>
-        </select>
-    </div>
-</div>
+              <select
+                class="form-select"
+                id="transmission"
+              >
+
+                <option value="">
+                  Select transmission
+                </option>
+
+                <option value="Automatic">
+                  Automatic
+                </option>
+
+                <option value="Manual">
+                  Manual
+                </option>
+
+                <option value="CVT">
+                  CVT
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 FUEL TYPE
+            ================================================== -->
+
+            <div class="col-6 col-md-6">
+
+              <label
+                class="form-label"
+                for="fuel"
+              >
+                Fuel Type
+              </label>
+
+
+              <select
+                class="form-select"
+                id="fuel"
+              >
+
+                <option value="">
+                  Select fuel type
+                </option>
+
+                <option value="Gasoline">
+                  Gasoline
+                </option>
+
+                <option value="Diesel">
+                  Diesel
+                </option>
+
+                <option value="Hybrid">
+                  Hybrid
+                </option>
+
+                <option value="Electric">
+                  Electric
+                </option>
+
+              </select>
+
+            </div>
 
 
             <!-- =================================================
