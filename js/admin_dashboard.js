@@ -182,19 +182,49 @@ function loadInquiries() {
 }
 
 function filterAndRenderInquiries() {
+
     const term = globalSearchTerm;
-    const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
+
+    // Default to ALL so previous/responded inquiries remain visible.
+    const statusFilter =
+        document.getElementById('inquiriesStatusFilter')?.value || 'all';
 
     const filtered = inquiriesData.filter(i => {
-        const matchesTerm = !term ||
-            (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
-            (i.part_name && i.part_name.toLowerCase().includes(term)) ||
-            (i.contact && i.contact.toLowerCase().includes(term));
-        const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'pending' && i.status !== 'responded') ||
-            (statusFilter === 'responded' && i.status === 'responded');
+
+        const matchesTerm =
+            !term ||
+
+            (i.customer_name &&
+                i.customer_name.toLowerCase().includes(term)) ||
+
+            (i.part_name &&
+                i.part_name.toLowerCase().includes(term)) ||
+
+            (i.contact &&
+                i.contact.toLowerCase().includes(term)) ||
+
+            (i.message &&
+                i.message.toLowerCase().includes(term)) ||
+
+            (i.reply_message &&
+                i.reply_message.toLowerCase().includes(term));
+
+        const matchesStatus =
+            statusFilter === 'all' ||
+
+            (
+                statusFilter === 'pending' &&
+                i.status !== 'responded'
+            ) ||
+
+            (
+                statusFilter === 'responded' &&
+                i.status === 'responded'
+            );
+
         return matchesTerm && matchesStatus;
     });
+
     renderInquiries(filtered);
 }
 

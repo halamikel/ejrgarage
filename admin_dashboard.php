@@ -1291,28 +1291,11 @@ include 'includes/header.php';
 
                     <div class="ejr-filter-bar mb-3">
 
-                        <select
-                            id="inquiriesStatusFilter"
-                            class="ejr-filter-select"
-                            onchange="applyAllFilters()"
-                        >
-
-                            <option
-                                value="pending"
-                                selected
-                            >
-                                Pending Only
-                            </option>
-
-                            <option value="responded">
-                                Responded Only
-                            </option>
-
-                            <option value="all">
-                                All Inquiries
-                            </option>
-
-                        </select>
+                        <select id="inquiriesStatusFilter" class="form-select">
+    <option value="all" selected>All Inquiries</option>
+    <option value="pending">Pending</option>
+    <option value="responded">Responded</option>
+</select>
 
                     </div>
 
