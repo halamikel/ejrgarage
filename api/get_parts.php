@@ -15,9 +15,21 @@ if ($category) {
     $params[] = $category;
 }
 if ($search) {
-    $sql    .= " AND name LIKE ?";
-    $types  .= 's';
-    $like     = "%$search%";
+
+    $sql .= "
+        AND (
+            name LIKE ?
+            OR brand LIKE ?
+            OR description LIKE ?
+        )
+    ";
+
+    $types .= 'sss';
+
+    $like = "%$search%";
+
+    $params[] = $like;
+    $params[] = $like;
     $params[] = $like;
 }
 
