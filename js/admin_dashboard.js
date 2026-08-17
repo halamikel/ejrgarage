@@ -579,23 +579,12 @@ function manageApp(id, currentStatus) {
     // FINAL STATUS PROTECTION
     // =========================================================
     //
-    // Completed and Cancelled appointments are FINAL.
+    // Completed and Cancelled are permanent.
+    // Do not even open the status selector for them.
     //
-    // Completed cannot become:
-    // - Pending
-    // - Confirmed
-    // - In Progress
-    // - Cancelled
+    // The backend also enforces this rule, so this UI check
+    // is only an additional layer of protection.
     //
-    // Cancelled cannot become:
-    // - Pending
-    // - Confirmed
-    // - In Progress
-    // - Completed
-    //
-    // The backend also enforces this rule. This check simply
-    // prevents the admin from opening the status selector.
-    // =========================================================
 
     if (currentStatus === 'Completed') {
 
@@ -609,7 +598,6 @@ function manageApp(id, currentStatus) {
         return;
     }
 
-
     if (currentStatus === 'Cancelled') {
 
         Swal.fire({
@@ -621,62 +609,6 @@ function manageApp(id, currentStatus) {
 
         return;
     }
-
-
-    // =========================================================
-    // NORMAL STATUS UPDATE
-    // =========================================================
-
-    Swal.fire({
-
-        title: 'Update Appointment Status',
-
-        input: 'select',
-
-        inputOptions: {
-
-            'Pending':
-                'Pending',
-
-            'Confirmed':
-                'Confirmed',
-
-            'In Progress':
-                'In Progress',
-
-            'Completed':
-                'Completed',
-
-            'Cancelled':
-                'Cancelled'
-        },
-
-        inputValue: currentStatus,
-
-        showCancelButton: true,
-
-        confirmButtonColor: '#b30000',
-
-        confirmButtonText: 'Update',
-
-        cancelButtonText: 'Cancel'
-
-    }).then(result => {
-
-        if (result.isConfirmed && result.value) {
-
-            postData(
-                'api/admin/update_appointment.php',
-                {
-                    appointment_id: id,
-                    status: result.value
-                }
-            );
-
-        }
-
-    });
-}
 
     // =========================================================
     // NORMAL STATUS UPDATE

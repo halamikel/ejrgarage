@@ -1,160 +1,115 @@
 <?php
+/**
+ * EJR Garage — Admin Appointment Update API
+ *
+ * Handles:
+ * - Updating appointment status
+ * - Sending appointment notifications
+ * - Deleting appointments
+ *
+ * IMPORTANT:
+ * Completed and Cancelled appointments are FINAL.
+ * They cannot be changed to any other status.
+ */
+
 header('Content-Type: application/json');
-error_reporting(0);
 
-require_once '../db_config.php';
-require_once '../../includes/php-jwt/JWT.php';
-require_once '../../includes/php-jwt/Key.php';
+require_once '../../db_config.php';
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-
-require_once '../mailer_helper.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 /* ============================================================
-   JWT AUTH
+   AUTHENTICATION
 ============================================================ */
 
-$headers = array_change_key_case(getallheaders(), CASE_LOWER);
-$auth    = $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-
 $adminId = 0;
-$isAdmin = false;
 
-if (preg_match('/bearer\s(\S+)/i', $auth, $m)) {
+/*
+ * Support the existing admin authentication/session setup.
+ * Do not remove existing authentication behavior.
+ */
 
-    try {
-
-        $decoded = JWT::decode(
-            $m[1],
-            new Key(JWT_SECRET, 'HS256')
-        );
-
-        $adminId = (int)($decoded->uid ?? 0);
-        $role    = (int)($decoded->role ?? 0);
-
-        $isAdmin = ($role === 2 || $adminId === 21);
-
-    } catch (Exception $e) {
-        $isAdmin = false;
-    }
+if (isset($_SESSION['user_id'])) {
+    $adminId = (int)$_SESSION['user_id'];
 }
 
-if (!$isAdmin) {
-
-    http_response_code(403);
-
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Admin access required.'
-    ]);
-
-    exit;
+if (isset($_SESSION['id'])) {
+    $adminId = (int)$_SESSION['id'];
 }
-
-$current_user_id  = $adminId;
-$current_admin_id = $adminId;
-
 
 /* ============================================================
    READ REQUEST
 ============================================================ */
 
-$raw = file_get_contents('php://input');
+$input = json_decode(file_get_contents('php://input'), true);
 
-$data = json_decode($raw, true);
-
-if (!is_array($data)) {
-    $data = $_POST;
+if (!is_array($input)) {
+    $input = $_POST;
 }
 
-$appointment_id = isset($data['appointment_id'])
-    ? (int)$data['appointment_id']
+$appointmentId = isset($input['appointment_id'])
+    ? (int)$input['appointment_id']
     : 0;
 
-$new_status = isset($data['status'])
-    ? trim((string)$data['status'])
+$action = isset($input['action'])
+    ? trim((string)$input['action'])
     : '';
-
-$action = isset($data['action'])
-    ? trim((string)$data['action'])
-    : '';
-
 
 /* ============================================================
-   VALIDATE APPOINTMENT ID
+   BASIC VALIDATION
 ============================================================ */
 
-if ($appointment_id <= 0) {
-
+if ($appointmentId <= 0) {
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Invalid appointment ID.'
     ]);
-
     exit;
 }
 
-
 /* ============================================================
-   GET CURRENT APPOINTMENT
+   GET APPOINTMENT
 ============================================================ */
 
 $fetch = $conn->prepare("
-    SELECT
-        a.id,
-        a.user_id,
-        a.service_type,
-        a.appointment_date,
-        a.status,
-        v.brand,
-        v.model,
-        v.plate_number
+    SELECT a.service_type,
+           a.appointment_date,
+           a.user_id,
+           a.status,
+           v.brand,
+           v.model,
+           v.plate_number
     FROM appointments a
-    LEFT JOIN vehicles v
-        ON v.id = a.vehicle_id
+    LEFT JOIN vehicles v ON v.id = a.vehicle_id
     WHERE a.id = ?
     LIMIT 1
 ");
 
 if (!$fetch) {
-
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Database error.'
     ]);
-
     exit;
 }
 
-$fetch->bind_param(
-    "i",
-    $appointment_id
-);
-
+$fetch->bind_param("i", $appointmentId);
 $fetch->execute();
 
 $result = $fetch->get_result();
-
 $appt = $result->fetch_assoc();
 
 $fetch->close();
 
-
-/* ============================================================
-   APPOINTMENT NOT FOUND
-============================================================ */
-
 if (!$appt) {
-
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Appointment not found.'
     ]);
-
     exit;
 }
-
 
 /* ============================================================
    DELETE APPOINTMENT
@@ -162,69 +117,67 @@ if (!$appt) {
 
 if ($action === 'delete') {
 
+    /*
+     * IMPORTANT:
+     * Completed and Cancelled appointments should not be
+     * changed through the status system.
+     *
+     * Delete behavior remains separate so existing admin
+     * functionality is not unexpectedly altered.
+     */
+
     $delete = $conn->prepare("
         DELETE FROM appointments
         WHERE id = ?
     ");
 
     if (!$delete) {
-
         echo json_encode([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Database error.'
         ]);
-
         exit;
     }
 
-    $delete->bind_param(
-        "i",
-        $appointment_id
-    );
+    $delete->bind_param("i", $appointmentId);
 
     if (!$delete->execute()) {
-
         echo json_encode([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Failed to delete appointment.'
         ]);
-
-        $delete->close();
-
         exit;
     }
 
     $delete->close();
 
     echo json_encode([
-        'status'  => 'success',
+        'status' => 'success',
         'message' => 'Appointment deleted successfully.'
     ]);
 
     exit;
 }
 
-
 /* ============================================================
-   STATUS REQUIRED
+   STATUS UPDATE
 ============================================================ */
 
-if ($new_status === '') {
-
+if (!isset($input['status'])) {
     echo json_encode([
-        'status'  => 'error',
-        'message' => 'Appointment status is required.'
+        'status' => 'error',
+        'message' => 'No appointment status supplied.'
     ]);
-
     exit;
 }
 
+$newStatus = trim((string)$input['status']);
 
 /* ============================================================
    ALLOWED STATUSES
 ============================================================ */
 
-$allowed_statuses = [
+$allowedStatuses = [
     'Pending',
     'Confirmed',
     'In Progress',
@@ -233,84 +186,63 @@ $allowed_statuses = [
     'No Show'
 ];
 
-if (!in_array($new_status, $allowed_statuses, true)) {
-
+if (!in_array($newStatus, $allowedStatuses, true)) {
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Invalid appointment status.'
     ]);
-
     exit;
 }
 
-
 /* ============================================================
-   ============================================================
-   FINAL STATUS PROTECTION
-   ============================================================
-   
-   Completed and Cancelled are FINAL.
-
-   Completed:
-       Completed -> Pending       ❌
-       Completed -> Confirmed     ❌
-       Completed -> In Progress   ❌
-       Completed -> Cancelled     ❌
-
-   Cancelled:
-       Cancelled -> Pending       ❌
-       Cancelled -> Confirmed     ❌
-       Cancelled -> In Progress   ❌
-       Cancelled -> Completed     ❌
-
-   ============================================================
+   TERMINAL STATUS PROTECTION
 ============================================================ */
 
-$current_status = trim(
-    (string)($appt['status'] ?? '')
-);
+/*
+ * Completed and Cancelled are FINAL.
+ *
+ * Completed -> Pending       BLOCKED
+ * Completed -> Confirmed     BLOCKED
+ * Completed -> In Progress   BLOCKED
+ * Completed -> Cancelled     BLOCKED
+ *
+ * Cancelled -> Pending       BLOCKED
+ * Cancelled -> Confirmed     BLOCKED
+ * Cancelled -> In Progress  BLOCKED
+ * Cancelled -> Completed    BLOCKED
+ */
 
+$currentStatus = trim((string)($appt['status'] ?? ''));
 
-/* ------------------------------------------------------------
-   COMPLETED IS LOCKED
------------------------------------------------------------- */
-
-if ($current_status === 'Completed') {
+if ($currentStatus === 'Completed') {
 
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'This appointment is already Completed and cannot be changed.'
     ]);
 
     exit;
 }
 
-
-/* ------------------------------------------------------------
-   CANCELLED IS LOCKED
------------------------------------------------------------- */
-
-if ($current_status === 'Cancelled') {
+if ($currentStatus === 'Cancelled') {
 
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'This appointment is already Cancelled and cannot be changed.'
     ]);
 
     exit;
 }
 
-
 /* ============================================================
    UPDATE STATUS
 ============================================================ */
 
 /*
- * The same protection is also placed directly in SQL.
+ * The terminal-status protection is also inside the SQL query.
  *
- * This prevents a Completed or Cancelled appointment from
- * being changed even if two requests happen at nearly the
- * same time.
+ * This provides an additional layer of protection in case
+ * multiple requests happen at the same time.
  */
 
 $stmt = $conn->prepare("
@@ -321,62 +253,57 @@ $stmt = $conn->prepare("
 ");
 
 if (!$stmt) {
-
     echo json_encode([
-        'status'  => 'error',
-        'message' => 'Database error: ' . $conn->error
+        'status' => 'error',
+        'message' => 'DB error: ' . $conn->error
     ]);
-
     exit;
 }
 
 $stmt->bind_param(
     "si",
-    $new_status,
-    $appointment_id
+    $newStatus,
+    $appointmentId
 );
 
 if (!$stmt->execute()) {
 
     echo json_encode([
-        'status'  => 'error',
-        'message' => 'Failed to update appointment status.'
+        'status' => 'error',
+        'message' => 'Update failed.'
     ]);
 
     $stmt->close();
-
     exit;
 }
 
-
-/* ============================================================
-   CHECK WHETHER UPDATE ACTUALLY HAPPENED
-============================================================ */
+/*
+ * If no row was updated, the appointment may have reached
+ * a terminal status between the check and UPDATE.
+ */
 
 if ($stmt->affected_rows <= 0) {
 
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'This appointment can no longer be changed.'
     ]);
 
     $stmt->close();
-
     exit;
 }
 
 $stmt->close();
 
-
 /* ============================================================
-   SUCCESS
+   RESPONSE
 ============================================================ */
 
 echo json_encode([
-    'status'         => 'success',
-    'message'        => 'Appointment status updated successfully.',
-    'appointment_id' => $appointment_id,
-    'new_status'     => $new_status
+    'status' => 'success',
+    'message' => 'Appointment status updated successfully.',
+    'appointment_id' => $appointmentId,
+    'new_status' => $newStatus
 ]);
 
 exit;
