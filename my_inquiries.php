@@ -111,86 +111,323 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     loadMyInquiries();
+
+/*
+|--------------------------------------------------------------------------
+| AUTOMATICALLY CHECK FOR ADMIN REPLIES
+|--------------------------------------------------------------------------
+|
+| This refreshes the inquiry list every 5 seconds.
+| The customer does NOT need to refresh the browser.
+|
+*/
+
+setInterval(() => {
+
+    if (document.visibilityState === "visible") {
+        loadMyInquiries();
+    }
+
+}, 5000);
 });
 
 async function loadMyInquiries() {
-    try {
-        // Pointing to the specific get_inquiries API
-        const response = await fetch('api/get_inquiries.php', { 
-            credentials: 'include' 
-        });
-        
-        const data = await response.json();
-        const container = document.getElementById("inquiryList");
 
-        if (data && data.status === 'success' && Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+    const container = document.getElementById("inquiryList");
+
+    if (!container) return;
+
+    const token = localStorage.getItem("jwt_token");
+
+    if (!token) {
+        window.location.href = "login.php";
+        return;
+    }
+
+    try {
+
+        const response = await fetch("api/get_inquiries.php", {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Accept": "application/json"
+            },
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        console.log("My Inquiries:", data);
+
+        if (response.status === 401) {
+
+            localStorage.removeItem("jwt_token");
+            localStorage.removeItem("user");
+
+            window.location.href = "login.php";
+            return;
+        }
+
+        if (
+            data.status === "success" &&
+            Array.isArray(data.inquiries)
+        ) {
+
+            if (data.inquiries.length === 0) {
+
+                container.innerHTML = `
+                    <div class="text-center py-5 text-secondary">
+                        <i class="bi bi-chat-left-quote fs-1 opacity-25"></i>
+
+                        <p class="mt-2">
+                            No inquiries found yet.
+                        </p>
+                    </div>
+                `;
+
+                return;
+            }
+
+
             let html = `
                 <div class="table-responsive">
+
                     <table class="table align-middle">
+
                         <thead>
                             <tr>
-                                <th style="width: 25%;">Part & Date</th>
-                                <th style="width: 55%;">Inquiry Details</th>
-                                <th style="width: 20%;" class="text-end">Status</th>
+
+                                <th style="width:25%;">
+                                    Part & Date
+                                </th>
+
+                                <th style="width:55%;">
+                                    Inquiry Details
+                                </th>
+
+                                <th style="width:20%;" class="text-end">
+                                    Status
+                                </th>
+
                             </tr>
                         </thead>
-                        <tbody>`;
+
+                        <tbody>
+            `;
+
 
             data.inquiries.forEach(inq => {
-                const status = (inq.status || 'pending').toLowerCase();
-                const badgeClass = status === 'pending' ? 'bg-warning text-dark' : 'bg-success';
-                
-                const adminReply = inq.reply_message 
-                    ? `<div class="mt-3 p-3 bg-light border-start border-danger border-4 rounded-3 shadow-sm">
-                         <div class="d-flex align-items-center mb-1">
-                            <i class="bi bi-chat-left-dots-fill text-danger me-2 small"></i>
-                            <small class="fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Garage Response</small>
-                         </div>
-                         <p class="mb-0 text-dark small">${inq.reply_message}</p>
-                       </div>` 
-                    : '';
+
+                const status =
+                    String(inq.status || "pending").toLowerCase();
+
+                let badgeClass = "bg-warning text-dark";
+
+                if (status === "responded") {
+                    badgeClass = "bg-success";
+                }
+
+                if (status === "cancelled") {
+                    badgeClass = "bg-secondary";
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | ESCAPE USER / ADMIN TEXT
+                |--------------------------------------------------------------------------
+                */
+
+                const escapeHtml = (value) => {
+
+                    const div = document.createElement("div");
+
+                    div.textContent = value ?? "";
+
+                    return div.innerHTML;
+                };
+
+
+                const partName =
+                    escapeHtml(inq.part_name || "Unknown Part");
+
+                const message =
+                    escapeHtml(inq.message || "No message");
+
+                const reply =
+                    escapeHtml(inq.reply_message || "");
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | ADMIN REPLY
+                |--------------------------------------------------------------------------
+                */
+
+                let adminReply = "";
+
+                if (reply.trim() !== "") {
+
+                    adminReply = `
+                        <div class="mt-3 p-3 bg-light border-start border-danger border-4 rounded-3 shadow-sm">
+
+                            <div class="d-flex align-items-center mb-1">
+
+                                <i class="bi bi-chat-left-dots-fill text-danger me-2 small"></i>
+
+                                <small
+                                    class="fw-bold text-uppercase"
+                                    style="
+                                        font-size:0.7rem;
+                                        letter-spacing:0.5px;
+                                    "
+                                >
+                                    Garage Response
+                                </small>
+
+                            </div>
+
+                            <p class="mb-0 text-dark small">
+                                ${reply}
+                            </p>
+
+                        </div>
+                    `;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | DATE
+                |--------------------------------------------------------------------------
+                */
+
+                let formattedDate = "Date unavailable";
+
+                if (inq.created_at) {
+
+                    const date = new Date(
+                        inq.created_at.replace(/-/g, "/")
+                    );
+
+                    if (!isNaN(date.getTime())) {
+
+                        formattedDate =
+                            date.toLocaleDateString(
+                                "en-US",
+                                {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric"
+                                }
+                            );
+                    }
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | INQUIRY ROW
+                |--------------------------------------------------------------------------
+                */
 
                 html += `
                     <tr>
+
                         <td class="py-3">
-                            <span class="fw-bold d-block text-dark">${inq.part_name}</span>
-                            <small class="text-muted">
-                                <i class="bi bi-calendar3 me-1"></i>${new Date(inq.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </small>
-                        </td>
-                        <td class="py-3">
-                            <div class="pe-lg-4">
-                                <small class="text-secondary d-block mb-1">My Message:</small>
-                                <p class="mb-0 text-muted small italic">"${inq.message || 'No message'}"</p>
-                                ${adminReply}
-                            </div>
-                        </td>
-                        <td class="py-3 text-end">
-                            <span class="badge rounded-pill ${badgeClass} px-3 py-2">
-                                ${status.toUpperCase()}
+
+                            <span class="fw-bold d-block text-dark">
+                                ${partName}
                             </span>
+
+                            <small class="text-muted">
+
+                                <i class="bi bi-calendar3 me-1"></i>
+
+                                ${formattedDate}
+
+                            </small>
+
                         </td>
-                    </tr>`;
+
+
+                        <td class="py-3">
+
+                            <div class="pe-lg-4">
+
+                                <small class="text-secondary d-block mb-1">
+                                    My Message:
+                                </small>
+
+                                <p class="mb-0 text-muted small fst-italic">
+                                    "${message}"
+                                </p>
+
+                                ${adminReply}
+
+                            </div>
+
+                        </td>
+
+
+                        <td class="py-3 text-end">
+
+                            <span
+                                class="badge rounded-pill ${badgeClass} px-3 py-2"
+                            >
+                                ${escapeHtml(status.toUpperCase())}
+                            </span>
+
+                        </td>
+
+                    </tr>
+                `;
             });
 
-            html += `</tbody></table></div>`;
+
+            html += `
+                        </tbody>
+
+                    </table>
+
+                </div>
+            `;
+
             container.innerHTML = html;
+
         } else {
+
             container.innerHTML = `
-                <div class="text-center py-5 text-secondary">
-                    <i class="bi bi-chat-left-quote fs-1 opacity-25"></i>
-                    <p class="mt-2">No inquiries found yet.</p>
-                </div>`;
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+
+                    ${
+                        data.message ||
+                        "Unable to load inquiries."
+                    }
+
+                </div>
+            `;
         }
-    } catch (err) {
-        console.error("Fetch error:", err);
-        const container = document.getElementById("inquiryList");
-        if (container) {
-            container.innerHTML = `
-                <div class="alert alert-danger mx-auto" style="max-width: 400px;">
-                    <i class="bi bi-exclamation-triangle me-2"></i> Failed to load inquiries. Please try again later.
-                </div>`;
-        }
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load inquiries:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="alert alert-danger">
+
+                <i class="bi bi-exclamation-triangle me-2"></i>
+
+                Failed to load inquiries.
+                Please try again later.
+
+            </div>
+        `;
     }
 }
 
