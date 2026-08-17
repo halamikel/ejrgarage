@@ -1207,20 +1207,17 @@ include 'includes/header.php';
 
                         <table class="ejr-table">
 
-                            <thead>
-
-                                <tr>
-
-                                    <th>Image</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Actions</th>
-
-                                </tr>
-
-                            </thead>
+                           <thead>
+    <tr>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Brand</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Stock</th>
+        <th>Actions</th>
+    </tr>
+</thead>
 
 
                             <tbody id="partsTableBody">

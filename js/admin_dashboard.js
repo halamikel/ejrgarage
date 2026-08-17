@@ -127,46 +127,153 @@ function filterAndRenderParts() {
     const stock = document.getElementById('partsStockFilter')?.value || '';
 
     const filtered = partsData.filter(p => {
+
         const matchesTerm = !term ||
             (p.name && p.name.toLowerCase().includes(term)) ||
+            (p.brand && p.brand.toLowerCase().includes(term)) ||
             (p.category && p.category.toLowerCase().includes(term));
-        const matchesCategory = !category || p.category === category;
-        const matchesStock = !stock ||
+
+        const matchesCategory =
+            !category || p.category === category;
+
+        const matchesStock =
+            !stock ||
             (stock === 'in' && p.stock > 0) ||
             (stock === 'out' && p.stock <= 0);
-        return matchesTerm && matchesCategory && matchesStock;
+
+        return matchesTerm &&
+               matchesCategory &&
+               matchesStock;
     });
+
     renderParts(filtered);
 }
 
 function renderParts(parts) {
     const tbody = document.getElementById('partsTableBody');
+
     if (!tbody) return;
+
     if (!parts.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="7" class="text-center text-muted py-4">No parts match your search.</td></tr>';
+
         return;
     }
+
     tbody.innerHTML = parts.map(p => `
+
         <tr>
-            <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
-                     onerror="this.style.display='none'"></td>
-            <td class="fw-bold">${p.name}</td>
-            <td><span class="badge bg-light text-dark border">${p.category}</span></td>
-            <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-            <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
+
+            <!-- IMAGE -->
             <td>
+                <img
+                    src="${p.image_url || ''}"
+                    style="
+                        width:50px;
+                        height:40px;
+                        object-fit:cover;
+                        border-radius:6px;
+                    "
+                    onerror="this.style.display='none'"
+                >
+            </td>
+
+
+            <!-- NAME -->
+            <td class="fw-bold">
+                ${p.name}
+            </td>
+
+
+            <!-- BRAND -->
+            <td>
+                ${
+                    p.brand
+                        ? `<span class="badge bg-light text-dark border">
+                            ${p.brand}
+                           </span>`
+                        : '<span class="text-muted">—</span>'
+                }
+            </td>
+
+
+            <!-- CATEGORY -->
+            <td>
+                <span class="badge bg-light text-dark border">
+                    ${p.category}
+                </span>
+            </td>
+
+
+            <!-- PRICE -->
+            <td>
+                ₱${parseFloat(p.price).toLocaleString(
+                    'en-PH',
+                    {
+                        minimumFractionDigits: 2
+                    }
+                )}
+            </td>
+
+
+            <!-- STOCK -->
+            <td>
+                <span
+                    class="badge ${
+                        p.stock > 0
+                            ? 'bg-success'
+                            : 'bg-danger'
+                    }"
+                >
+                    ${p.stock}
+                </span>
+            </td>
+
+
+            <!-- ACTIONS -->
+            <td>
+
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-dark"
-                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
+
+                    <button
+                        class="btn btn-sm btn-outline-dark"
+                        onclick="
+                            openEditPart(
+                                ${p.id},
+                                '${(p.name || '').replace(/'/g, "\\'")}',
+                                '${(p.brand || '').replace(/'/g, "\\'")}',
+                                '${(p.description || '').replace(/'/g, "\\'")}',
+                                ${p.price},
+                                '${(p.category || '').replace(/'/g, "\\'")}',
+                                '${(p.image_url || '').replace(/'/g, "\\'")}',
+                                ${p.stock}
+                            )
+                        "
+                    >
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger"
-                            onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
+
+
+                    <button
+                        class="btn btn-sm btn-outline-danger"
+                        onclick="
+                            deletePart(
+                                ${p.id},
+                                '${(p.name || '').replace(/'/g, "\\'")}'
+                            )
+                        "
+                    >
                         <i class="bi bi-trash"></i>
                     </button>
+
                 </div>
+
             </td>
-        </tr>`).join('');
+
+        </tr>
+
+    `).join('');
 }
 
 function loadInquiries() {
@@ -963,57 +1070,282 @@ function openAddPart() {
     });
 }
 
-function openEditPart(id, name, desc, price, category, image_url, stock) {
+function openEditPart(
+    id,
+    name,
+    brand,
+    desc,
+    price,
+    category,
+    image_url,
+    stock
+) {
     Swal.fire({
+
         title: 'Edit Part',
-        html: partForm({ name, desc, price, category, image_url, stock }),
+
+        html: partForm({
+            name: name,
+            brand: brand,
+            desc: desc,
+            price: price,
+            category: category,
+            image_url: image_url,
+            stock: stock
+        }),
+
         showCancelButton: true,
+
         confirmButtonColor: '#b30000',
+
         confirmButtonText: 'Save Changes',
-        preConfirm: () => getPartFormValues('edit', id)
+
+        preConfirm: () =>
+            getPartFormValues('edit', id)
+
     }).then(result => {
-        if (result.isConfirmed) postPartData(result.value);
+
+        if (result.isConfirmed) {
+            postPartData(result.value);
+        }
+
     });
 }
 
 function partForm(v = {}) {
+
     return `
         <div class="text-start">
-            <div class="mb-2"><label class="form-label fw-semibold small">Name</label>
-            <input id="sp-name" class="form-control" value="${v.name || ''}"></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Description</label>
-            <textarea id="sp-desc" class="form-control" rows="2">${v.desc || ''}</textarea></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
-            <input id="sp-price" type="number" class="form-control" value="${v.price || ''}"></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Category</label>
-            <select id="sp-cat" class="form-select">
-                <option value="engine"     ${v.category === 'engine'     ? 'selected' : ''}>Engine</option>
-                <option value="brakes"     ${v.category === 'brakes'     ? 'selected' : ''}>Brakes</option>
-                <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
-                <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
-            </select></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Image URL</label>
-            <input id="sp-img" class="form-control" value="${v.image_url || ''}"></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Stock</label>
-            <input id="sp-stock" type="number" class="form-control" value="${v.stock || 0}"></div>
-        </div>`;
+
+            <!-- NAME -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Name
+                </label>
+
+                <input
+                    id="sp-name"
+                    class="form-control"
+                    value="${v.name || ''}"
+                    placeholder="e.g. Brake Pad"
+                >
+
+            </div>
+
+
+            <!-- BRAND -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Brand
+                </label>
+
+                <input
+                    id="sp-brand"
+                    class="form-control"
+                    value="${v.brand || ''}"
+                    placeholder="e.g. Bosch"
+                >
+
+            </div>
+
+
+            <!-- DESCRIPTION -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Description
+                </label>
+
+                <textarea
+                    id="sp-desc"
+                    class="form-control"
+                    rows="2"
+                    placeholder="Part description"
+                >${v.desc || ''}</textarea>
+
+            </div>
+
+
+            <!-- PRICE -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Price (₱)
+                </label>
+
+                <input
+                    id="sp-price"
+                    type="number"
+                    class="form-control"
+                    value="${v.price || ''}"
+                    min="0"
+                    step="0.01"
+                >
+
+            </div>
+
+
+            <!-- CATEGORY -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Category
+                </label>
+
+                <select
+                    id="sp-cat"
+                    class="form-select"
+                >
+
+                    <option
+                        value="engine"
+                        ${v.category === 'engine' ? 'selected' : ''}
+                    >
+                        Engine
+                    </option>
+
+                    <option
+                        value="brakes"
+                        ${v.category === 'brakes' ? 'selected' : ''}
+                    >
+                        Brakes
+                    </option>
+
+                    <option
+                        value="suspension"
+                        ${v.category === 'suspension' ? 'selected' : ''}
+                    >
+                        Suspension
+                    </option>
+
+                    <option
+                        value="electrical"
+                        ${v.category === 'electrical' ? 'selected' : ''}
+                    >
+                        Electrical
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- IMAGE -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Image URL
+                </label>
+
+                <input
+                    id="sp-img"
+                    class="form-control"
+                    value="${v.image_url || ''}"
+                    placeholder="https://..."
+                >
+
+            </div>
+
+
+            <!-- STOCK -->
+            <div class="mb-2">
+
+                <label class="form-label fw-semibold small">
+                    Stock
+                </label>
+
+                <input
+                    id="sp-stock"
+                    type="number"
+                    class="form-control"
+                    value="${v.stock || 0}"
+                    min="0"
+                >
+
+            </div>
+
+        </div>
+    `;
 }
 
 function getPartFormValues(action, id = null) {
+
     const val = {
+
         action,
-        name:        document.getElementById('sp-name').value.trim(),
-        description: document.getElementById('sp-desc').value.trim(),
-        price:       parseFloat(document.getElementById('sp-price').value),
-        category:    document.getElementById('sp-cat').value,
-        image_url:   document.getElementById('sp-img').value.trim(),
-        stock:       parseInt(document.getElementById('sp-stock').value)
+
+        name:
+            document
+                .getElementById('sp-name')
+                .value
+                .trim(),
+
+        brand:
+            document
+                .getElementById('sp-brand')
+                .value
+                .trim(),
+
+        description:
+            document
+                .getElementById('sp-desc')
+                .value
+                .trim(),
+
+        price:
+            parseFloat(
+                document
+                    .getElementById('sp-price')
+                    .value
+            ),
+
+        category:
+            document
+                .getElementById('sp-cat')
+                .value,
+
+        image_url:
+            document
+                .getElementById('sp-img')
+                .value
+                .trim(),
+
+        stock:
+            parseInt(
+                document
+                    .getElementById('sp-stock')
+                    .value
+            )
     };
-    if (id) val.id = id;
-    if (!val.name || !val.price) {
-        Swal.showValidationMessage('Name and price are required.');
+
+
+    if (id) {
+        val.id = id;
+    }
+
+
+    if (!val.name) {
+
+        Swal.showValidationMessage(
+            'Part name is required.'
+        );
+
         return false;
     }
+
+
+    if (!val.price || val.price < 0) {
+
+        Swal.showValidationMessage(
+            'A valid price is required.'
+        );
+
+        return false;
+    }
+
+
     return val;
 }
 
