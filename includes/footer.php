@@ -1269,6 +1269,233 @@ if (localStorage.getItem('jwt_token')) {
 }
 
 </style>
+<!-- ============================================================
+     CHATBOT SECURITY / RESPONSIBLE USE NOTICE
+============================================================ -->
+
+<div
+    id="ejrChatSecurityNotice"
+    style="
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:10000000;
+        background:rgba(0,0,0,.68);
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+    "
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ejrChatSecurityNoticeTitle"
+>
+
+    <div
+        style="
+            width:min(560px,100%);
+            max-height:90vh;
+            overflow-y:auto;
+            background:#fff;
+            border-radius:18px;
+            box-shadow:0 24px 80px rgba(0,0,0,.35);
+            border-top:4px solid #e62429;
+        "
+    >
+
+        <!-- HEADER -->
+
+        <div
+            style="
+                padding:22px 24px 10px;
+            "
+        >
+
+            <div
+                style="
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                    margin-bottom:12px;
+                "
+            >
+
+                <div
+                    style="
+                        width:42px;
+                        height:42px;
+                        min-width:42px;
+                        border-radius:50%;
+                        background:#fff1f1;
+                        color:#e62429;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                    "
+                >
+
+                    <i class="bi bi-shield-check fs-5"></i>
+
+                </div>
+
+                <div>
+
+                    <h5
+                        id="ejrChatSecurityNoticeTitle"
+                        style="
+                            margin:0;
+                            font-weight:800;
+                            color:#1e2a36;
+                        "
+                    >
+                        Before Using EJR Assistant
+                    </h5>
+
+                    <small style="color:#6c757d;">
+                        Chatbot security and responsible-use notice
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- NOTICE -->
+
+            <div
+                style="
+                    background:#f8f9fa;
+                    border:1px solid #e9ecef;
+                    border-radius:12px;
+                    padding:14px 16px;
+                    color:#343a40;
+                    font-size:13px;
+                    line-height:1.65;
+                "
+            >
+
+                <p style="margin:0 0 10px;">
+
+                    Before the chatbot is used, the organization should
+                    review and audit the AI/vendor's
+                    <strong>security certifications</strong>
+                    and
+                    <strong>model evaluation reports</strong>,
+                    where applicable.
+
+                </p>
+
+
+                <p style="margin:0 0 10px;">
+
+                    Please do not enter passwords, payment card information,
+                    authentication codes, or other highly sensitive
+                    information into the chatbot.
+
+                </p>
+
+
+                <p style="margin:0;">
+
+                    Chatbot responses may be incomplete or inaccurate.
+                    For important decisions, verify information with
+                    EJR Garage staff.
+
+                </p>
+
+            </div>
+
+
+            <!-- ACKNOWLEDGEMENT -->
+
+            <div
+                style="
+                    display:flex;
+                    gap:9px;
+                    align-items:flex-start;
+                    margin-top:14px;
+                    font-size:12px;
+                    color:#555;
+                "
+            >
+
+                <i
+                    class="bi bi-info-circle-fill"
+                    style="
+                        color:#e62429;
+                        margin-top:2px;
+                    "
+                ></i>
+
+                <span>
+
+                    By continuing, you acknowledge that you have read
+                    this notice and understand the responsible-use
+                    guidance above.
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+
+        <div
+            style="
+                display:flex;
+                justify-content:flex-end;
+                gap:8px;
+                padding:14px 24px 20px;
+                border-top:1px solid #eee;
+                margin-top:4px;
+            "
+        >
+
+            <button
+                type="button"
+                id="ejrChatSecurityCancel"
+                style="
+                    border:1px solid #ced4da;
+                    background:#fff;
+                    color:#495057;
+                    border-radius:20px;
+                    padding:8px 17px;
+                    font-size:13px;
+                    font-weight:600;
+                    cursor:pointer;
+                "
+            >
+                Cancel
+            </button>
+
+
+            <button
+                type="button"
+                id="ejrChatSecurityContinue"
+                style="
+                    border:0;
+                    background:#e62429;
+                    color:#fff;
+                    border-radius:20px;
+                    padding:8px 18px;
+                    font-size:13px;
+                    font-weight:700;
+                    cursor:pointer;
+                "
+            >
+
+                <i class="bi bi-shield-check me-1"></i>
+
+                I Understand &amp; Continue
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 <!-- ============================================================
      CHAT JAVASCRIPT - PART 2
@@ -1295,6 +1522,143 @@ let suppressNextPoll = false;
 let adminSelectedCustomerId = null;
 
 let adminSelectedCustomerName = '';
+
+let ejrChatSecurityNoticeOpen = false;
+
+const EJR_CHAT_SECURITY_ACK_KEY =
+    'ejr_chat_security_notice_ack_v1';
+
+
+/* ============================================================
+   CHATBOT SECURITY / RESPONSIBLE USE NOTICE
+============================================================ */
+
+function hasAcceptedEJRChatSecurityNotice() {
+
+    try {
+
+        return (
+            localStorage.getItem(
+                EJR_CHAT_SECURITY_ACK_KEY
+            ) === 'accepted'
+        );
+
+    } catch (error) {
+
+        console.warn(
+            'Unable to read chatbot security notice state:',
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+function openEJRChatSecurityNotice() {
+
+    const notice =
+        document.getElementById(
+            'ejrChatSecurityNotice'
+        );
+
+    if (!notice) {
+
+        return false;
+
+    }
+
+    ejrChatSecurityNoticeOpen = true;
+
+    notice.style.display = 'flex';
+
+    document.body.style.overflow = 'hidden';
+
+    return true;
+
+}
+
+
+function closeEJRChatSecurityNotice() {
+
+    const notice =
+        document.getElementById(
+            'ejrChatSecurityNotice'
+        );
+
+    if (notice) {
+
+        notice.style.display = 'none';
+
+    }
+
+    ejrChatSecurityNoticeOpen = false;
+
+    document.body.style.overflow = '';
+
+}
+
+
+function acceptEJRChatSecurityNotice() {
+
+    try {
+
+        localStorage.setItem(
+            EJR_CHAT_SECURITY_ACK_KEY,
+            'accepted'
+        );
+
+    } catch (error) {
+
+        console.warn(
+            'Unable to save chatbot security notice acknowledgement:',
+            error
+        );
+
+    }
+
+    closeEJRChatSecurityNotice();
+
+    actuallyOpenEJRChat();
+
+}
+
+
+function initializeEJRChatSecurityNotice() {
+
+    const continueButton =
+        document.getElementById(
+            'ejrChatSecurityContinue'
+        );
+
+    const cancelButton =
+        document.getElementById(
+            'ejrChatSecurityCancel'
+        );
+
+
+    if (continueButton) {
+
+        continueButton.addEventListener(
+            'click',
+            acceptEJRChatSecurityNotice
+        );
+
+    }
+
+
+    if (cancelButton) {
+
+        cancelButton.addEventListener(
+            'click',
+            closeEJRChatSecurityNotice
+        );
+
+    }
+
+}
 
 
 
@@ -1358,10 +1722,15 @@ function getEJRChatToken() {
    TOGGLE CHAT
 ============================================================ */
 
+/* ============================================================
+   TOGGLE CHAT
+============================================================ */
+
 function toggleChat() {
 
     const box =
         document.getElementById('chatBox');
+
 
     if (!box) {
 
@@ -1373,8 +1742,14 @@ function toggleChat() {
 
     }
 
+
     const isOpen =
         box.style.display === 'flex';
+
+
+    /* ========================================================
+       CLOSE CHAT
+    ======================================================== */
 
     if (isOpen) {
 
@@ -1383,6 +1758,46 @@ function toggleChat() {
         return;
 
     }
+
+
+    /* ========================================================
+       SECURITY NOTICE
+    ======================================================== */
+
+    if (!hasAcceptedEJRChatSecurityNotice()) {
+
+        openEJRChatSecurityNotice();
+
+        return;
+
+    }
+
+
+    /* ========================================================
+       OPEN CHAT
+    ======================================================== */
+
+    actuallyOpenEJRChat();
+
+}
+
+
+/* ============================================================
+   ACTUALLY OPEN CHAT
+============================================================ */
+
+function actuallyOpenEJRChat() {
+
+    const box =
+        document.getElementById('chatBox');
+
+
+    if (!box) {
+
+        return;
+
+    }
+
 
     box.style.display = 'flex';
 
@@ -1412,9 +1827,11 @@ function toggleChat() {
             'chatNotification'
         );
 
+
     if (notification) {
 
-        notification.style.display = 'none';
+        notification.style.display =
+            'none';
 
     }
 
@@ -4299,6 +4716,8 @@ document.addEventListener(
 
     }
 );
+
+initializeEJRChatSecurityNotice();
 
 </script>
 
