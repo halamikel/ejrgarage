@@ -1443,29 +1443,20 @@ include 'includes/header.php';
 
                             <thead>
 
-    <tr>
+                                <tr>
 
-        <th>Order #</th>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Contact</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
 
-        <th>Customer</th>
+                                </tr>
 
-        <th>Contact</th>
-
-        <th>Delivery Address</th>
-
-        <th>Items</th>
-
-        <th>Total</th>
-
-        <th>Date</th>
-
-        <th>Status</th>
-
-        <th>Actions</th>
-
-    </tr>
-
-</thead>
+                            </thead>
 
 
                             <tbody id="ordersTableBody">
@@ -1473,7 +1464,7 @@ include 'includes/header.php';
                                 <tr>
 
                                     <td
-                                        colspan="9"
+                                        colspan="8"
                                         class="ejr-loading"
                                     >
 
