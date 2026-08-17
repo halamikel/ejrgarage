@@ -231,6 +231,80 @@ include 'includes/header.php';
 
             </div>
 
+            <!-- ============================================================
+     MECHANIC SELECTION
+     OPTIONAL
+============================================================ -->
+
+<div class="mechanic-selection mt-4">
+
+    <h5 class="fw-bold mb-2">
+        Choose a Mechanic
+        <span class="text-muted fw-normal" style="font-size: 14px;">
+            (Optional)
+        </span>
+    </h5>
+
+    <p class="text-muted small mb-3">
+        You can choose a preferred mechanic, or leave this blank
+        and let EJR Garage assign one for you.
+    </p>
+
+
+    <div class="form-group">
+
+        <label for="mechanicSelect">
+            Preferred Mechanic
+        </label>
+
+        <select
+            id="mechanicSelect"
+            name="mechanic_id"
+            class="form-control"
+        >
+
+            <option value="">
+                No preferred mechanic
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <!-- Loading message -->
+
+    <div
+        id="mechanicLoading"
+        class="text-muted small mt-2"
+        style="display: none;"
+    >
+
+        <span class="spinner-border spinner-border-sm me-1"></span>
+
+        Loading available mechanics...
+
+    </div>
+
+
+    <!-- Error message -->
+
+    <div
+        id="mechanicError"
+        class="alert alert-danger mt-2"
+        style="display: none;"
+    ></div>
+
+
+    <small class="text-muted">
+        <i class="bi bi-info-circle"></i>
+
+        Only mechanics currently available for booking
+        will appear here.
+    </small>
+
+</div>
+
 
 
             <!-- =================================================
@@ -607,6 +681,284 @@ include 'includes/header.php';
     }
 
 })();
+
+// ============================================================
+// MECHANIC SELECTION
+// ============================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const mechanicSelect =
+            document.getElementById(
+                "mechanicSelect"
+            );
+
+        const mechanicLoading =
+            document.getElementById(
+                "mechanicLoading"
+            );
+
+        const mechanicError =
+            document.getElementById(
+                "mechanicError"
+            );
+
+
+        if (!mechanicSelect) {
+            return;
+        }
+
+
+        // ========================================================
+        // LOAD AVAILABLE MECHANICS
+        // ========================================================
+
+        async function loadMechanics() {
+
+            mechanicLoading.style.display =
+                "block";
+
+            mechanicError.style.display =
+                "none";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "api/get_mechanics.php"
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Failed to load mechanics."
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    data.status !==
+                    "success"
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Failed to load mechanics."
+                    );
+
+                }
+
+
+                // Clear existing options
+
+                mechanicSelect.innerHTML = "";
+
+
+                // Default option
+
+                const defaultOption =
+                    document.createElement(
+                        "option"
+                    );
+
+                defaultOption.value =
+                    "";
+
+                defaultOption.textContent =
+                    "No preferred mechanic";
+
+                mechanicSelect.appendChild(
+                    defaultOption
+                );
+
+
+                // ==================================================
+                // ADD AVAILABLE MECHANICS
+                // ==================================================
+
+                if (
+                    data.mechanics &&
+                    data.mechanics.length > 0
+                ) {
+
+                    data.mechanics.forEach(
+                        function (mechanic) {
+
+                            const option =
+                                document.createElement(
+                                    "option"
+                                );
+
+
+                            option.value =
+                                mechanic.id;
+
+
+                            option.textContent =
+                                mechanic.name;
+
+
+                            if (
+                                mechanic.specialty
+                            ) {
+
+                                option.textContent +=
+                                    " - " +
+                                    mechanic.specialty;
+
+                            }
+
+
+                            mechanicSelect.appendChild(
+                                option
+                            );
+
+                        }
+                    );
+
+                }
+
+                else {
+
+                    const noMechanicsOption =
+                        document.createElement(
+                            "option"
+                        );
+
+                    noMechanicsOption.disabled =
+                        true;
+
+                    noMechanicsOption.textContent =
+                        "No mechanics currently available";
+
+                    mechanicSelect.appendChild(
+                        noMechanicsOption
+                    );
+
+                }
+
+
+                // ==================================================
+                // RESTORE PREVIOUS SELECTION
+                // ==================================================
+
+                const savedMechanic =
+                    localStorage.getItem(
+                        "selectedMechanicId"
+                    );
+
+
+                if (
+                    savedMechanic
+                ) {
+
+                    const mechanicExists =
+                        Array.from(
+                            mechanicSelect.options
+                        ).some(
+                            function (option) {
+
+                                return (
+                                    option.value ===
+                                    savedMechanic
+                                );
+
+                            }
+                        );
+
+
+                    if (
+                        mechanicExists
+                    ) {
+
+                        mechanicSelect.value =
+                            savedMechanic;
+
+                    }
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Mechanic loading error:",
+                    error
+                );
+
+
+                mechanicError.textContent =
+                    "Unable to load mechanics. You can continue without selecting a mechanic.";
+
+
+                mechanicError.style.display =
+                    "block";
+
+            }
+
+            finally {
+
+                mechanicLoading.style.display =
+                    "none";
+
+            }
+
+        }
+
+
+        // ========================================================
+        // MECHANIC SELECTION
+        // ========================================================
+
+        mechanicSelect.addEventListener(
+            "change",
+            function () {
+
+                const mechanicId =
+                    this.value;
+
+
+                if (
+                    mechanicId
+                ) {
+
+                    localStorage.setItem(
+                        "selectedMechanicId",
+                        mechanicId
+                    );
+
+                }
+
+                else {
+
+                    localStorage.removeItem(
+                        "selectedMechanicId"
+                    );
+
+                }
+
+            }
+        );
+
+
+        // ========================================================
+        // INITIAL LOAD
+        // ========================================================
+
+        loadMechanics();
+
+    }
+);
 
 </script>
 
