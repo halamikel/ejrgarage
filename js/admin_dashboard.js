@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Enter key handled by onkeydown in HTML to avoid double-fire
 
     const adminSearch = document.getElementById("adminSearch");
-
     if (adminSearch) {
         adminSearch.addEventListener("input", function (e) {
             globalSearchTerm = e.target.value.toLowerCase().trim();
@@ -50,40 +49,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ── Chat Sync Loop ───────────────────────────────────────
-
     setInterval(() => {
-
-        const chatTabActive =
-            document
-                .querySelector("#tab-live-chat")
-                ?.classList
-                .contains("show");
-
+        const chatTabActive = document.querySelector("#tab-live-chat")?.classList.contains("show");
         if (chatTabActive) {
-
             loadAdminChatUsers();
-
-            if (currentChatUserId) {
-                loadAdminMessages(currentChatUserId);
-            }
-
+            if (currentChatUserId) loadAdminMessages(currentChatUserId);
         }
-
     }, 8000);
 
-
-    const btnAddBusyDate =
-        document.getElementById('btnAddBusyDate');
-
-    if (btnAddBusyDate) {
-        btnAddBusyDate.addEventListener(
-            'click',
-            openBlockDate
-        );
-    }
+    const btnAddBusyDate = document.getElementById('btnAddBusyDate');
+    if (btnAddBusyDate) btnAddBusyDate.addEventListener('click', openBlockDate);
 
     startRealtime();
-
 });
 
 
@@ -92,853 +69,244 @@ document.addEventListener("DOMContentLoaded", () => {
 // =============================================================
 
 function loadFullSiteData() {
-
-    fetch(
-        'api/admin/get_full_site_data.php?t=' + Date.now(),
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status === 'success') {
-
-            masterData = data;
-
-            filterAndRenderAppointments();
-            filterAndRenderUsers();
-            filterAndRenderVehicles();
-
-            updateStats(data);
-
-        }
-
-    })
-
-    .catch(err =>
-        console.error(
-            "Fetch failed:",
-            err
-        )
-    );
-
+    fetch('api/admin/get_full_site_data.php?t=' + Date.now(), { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                masterData = data;
+                filterAndRenderAppointments();
+                filterAndRenderUsers();
+                filterAndRenderVehicles();
+                updateStats(data);
+            }
+        })
+        .catch(err => console.error("Fetch failed:", err));
 }
-
 
 function loadServiceHistory() {
-
-    fetch(
-        'api/admin/get_service_history.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status === 'success') {
-
-            historyData = data.history;
-
-            document.getElementById(
-                'badgeHistory'
-            ).textContent =
-                historyData.length;
-
-            filterAndRenderHistory();
-
-        }
-
-    })
-
-    .catch(() => {
-
-        document.getElementById(
-            'historyTableBody'
-        ).innerHTML =
-            '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load history.</td></tr>';
-
-    });
-
+    fetch('api/admin/get_service_history.php', { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                historyData = data.history;
+                document.getElementById('badgeHistory').textContent = historyData.length;
+                filterAndRenderHistory();
+            }
+        })
+        .catch(() => {
+            document.getElementById('historyTableBody').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load history.</td></tr>';
+        });
 }
-
 
 function loadParts() {
-
-    fetch(
-        'api/admin/manage_parts.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status !== 'success') {
-            return;
-        }
-
-        partsData = data.parts;
-
-        document.getElementById(
-            'badgeParts'
-        ).textContent =
-            partsData.length;
-
-        populatePartsCategoryFilter();
-
-        filterAndRenderParts();
-
-    });
-
+    fetch('api/admin/manage_parts.php', { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            partsData = data.parts;
+            document.getElementById('badgeParts').textContent = partsData.length;
+            populatePartsCategoryFilter();
+            filterAndRenderParts();
+        });
 }
-
 
 function populatePartsCategoryFilter() {
-
-    const sel =
-        document.getElementById(
-            'partsCategoryFilter'
-        );
-
-    if (!sel) {
-        return;
-    }
-
-    const current =
-        sel.value;
-
-    const categories =
-        [
-            ...new Set(
-                partsData
-                    .map(p => p.category)
-                    .filter(Boolean)
-            )
-        ].sort();
-
-    sel.innerHTML =
-        '<option value="">All Categories</option>' +
-        categories
-            .map(
-                c =>
-                    `<option value="${c}">${c}</option>`
-            )
-            .join('');
-
-    if (categories.includes(current)) {
-        sel.value = current;
-    }
-
+    const sel = document.getElementById('partsCategoryFilter');
+    if (!sel) return;
+    const current = sel.value;
+    const categories = [...new Set(partsData.map(p => p.category).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Categories</option>' +
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (categories.includes(current)) sel.value = current;
 }
-
 
 function filterAndRenderParts() {
+    const term = globalSearchTerm;
+    const category = document.getElementById('partsCategoryFilter')?.value || '';
+    const stock = document.getElementById('partsStockFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-    const category =
-        document
-            .getElementById(
-                'partsCategoryFilter'
-            )
-            ?.value || '';
-
-    const stock =
-        document
-            .getElementById(
-                'partsStockFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        partsData.filter(p => {
-
-            const matchesTerm =
-                !term ||
-
-                (p.name &&
-                    p.name
-                        .toLowerCase()
-                        .includes(term)) ||
-
-                (p.category &&
-                    p.category
-                        .toLowerCase()
-                        .includes(term));
-
-
-            const matchesCategory =
-                !category ||
-                p.category === category;
-
-
-            const matchesStock =
-                !stock ||
-
-                (stock === 'in' &&
-                    p.stock > 0) ||
-
-                (stock === 'out' &&
-                    p.stock <= 0);
-
-
-            return (
-                matchesTerm &&
-                matchesCategory &&
-                matchesStock
-            );
-
-        });
-
-
+    const filtered = partsData.filter(p => {
+        const matchesTerm = !term ||
+            (p.name && p.name.toLowerCase().includes(term)) ||
+            (p.category && p.category.toLowerCase().includes(term));
+        const matchesCategory = !category || p.category === category;
+        const matchesStock = !stock ||
+            (stock === 'in' && p.stock > 0) ||
+            (stock === 'out' && p.stock <= 0);
+        return matchesTerm && matchesCategory && matchesStock;
+    });
     renderParts(filtered);
-
 }
-
 
 function renderParts(parts) {
-
-    const tbody =
-        document.getElementById(
-            'partsTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
+    const tbody = document.getElementById('partsTableBody');
+    if (!tbody) return;
     if (!parts.length) {
-
-        tbody.innerHTML =
-            '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
-
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
         return;
     }
-
-
-    tbody.innerHTML =
-        parts.map(p => `
-
+    tbody.innerHTML = parts.map(p => `
         <tr>
-
+            <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
+                     onerror="this.style.display='none'"></td>
+            <td class="fw-bold">${p.name}</td>
+            <td><span class="badge bg-light text-dark border">${p.category}</span></td>
+            <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
             <td>
-
-                <img
-                    src="${p.image_url || ''}"
-                    style="
-                        width:50px;
-                        height:40px;
-                        object-fit:cover;
-                        border-radius:6px;
-                    "
-                    onerror="this.style.display='none'"
-                >
-
-            </td>
-
-            <td class="fw-bold">
-                ${p.name}
-            </td>
-
-            <td>
-                <span class="badge bg-light text-dark border">
-                    ${p.category}
-                </span>
-            </td>
-
-            <td>
-                ₱${parseFloat(p.price)
-                    .toLocaleString(
-                        'en-PH',
-                        {
-                            minimumFractionDigits: 2
-                        }
-                    )}
-            </td>
-
-            <td>
-                <span
-                    class="badge ${
-                        p.stock > 0
-                            ? 'bg-success'
-                            : 'bg-danger'
-                    }"
-                >
-                    ${p.stock}
-                </span>
-            </td>
-
-            <td>
-
                 <div class="btn-group">
-
-                    <button
-                        class="btn btn-sm btn-outline-dark"
-                        onclick="openEditPart(
-                            ${p.id},
-                            '${p.name.replace(/'/g,"\\'")}',
-                            '${(p.description||'').replace(/'/g,"\\'")}',
-                            ${p.price},
-                            '${p.category}',
-                            '${p.image_url||''}',
-                            ${p.stock}
-                        )"
-                    >
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-
-
-                    <button
-                        class="btn btn-sm btn-outline-danger"
-                        onclick="deletePart(
-                            ${p.id},
-                            '${p.name.replace(/'/g,"\\'")}'
-                        )"
-                    >
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
                         <i class="bi bi-trash"></i>
                     </button>
-
                 </div>
-
             </td>
-
-        </tr>
-
-    `).join('');
-
+        </tr>`).join('');
 }
-
 
 function loadInquiries() {
-
-    fetch(
-        'api/admin/manage_parts.php?action=get_inquiries',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status !== 'success') {
-            return;
-        }
-
-        inquiriesData =
-            data.inquiries;
-
-        const pendingCount =
-            inquiriesData.filter(
-                i => i.status !== 'responded'
-            ).length;
-
-        document.getElementById(
-            'badgeInquiries'
-        ).textContent =
-            pendingCount;
-
-        filterAndRenderInquiries();
-
-    });
-
+    fetch('api/admin/manage_parts.php?action=get_inquiries', { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            inquiriesData = data.inquiries;
+            const pendingCount = inquiriesData.filter(i => i.status !== 'responded').length;
+            document.getElementById('badgeInquiries').textContent = pendingCount;
+            filterAndRenderInquiries();
+        });
 }
-
 
 function filterAndRenderInquiries() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
 
-    const term =
-        globalSearchTerm;
-
-    const statusFilter =
-        document
-            .getElementById(
-                'inquiriesStatusFilter'
-            )
-            ?.value || 'pending';
-
-
-    const filtered =
-        inquiriesData.filter(i => {
-
-            const matchesTerm =
-                !term ||
-
-                (
-                    i.customer_name &&
-                    i.customer_name
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    i.part_name &&
-                    i.part_name
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    i.contact &&
-                    i.contact
-                        .toLowerCase()
-                        .includes(term)
-                );
-
-
-            const matchesStatus =
-                statusFilter === 'all' ||
-
-                (
-                    statusFilter === 'pending' &&
-                    i.status !== 'responded'
-                ) ||
-
-                (
-                    statusFilter === 'responded' &&
-                    i.status === 'responded'
-                );
-
-
-            return (
-                matchesTerm &&
-                matchesStatus
-            );
-
-        });
-
-
+    const filtered = inquiriesData.filter(i => {
+        const matchesTerm = !term ||
+            (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
+            (i.part_name && i.part_name.toLowerCase().includes(term)) ||
+            (i.contact && i.contact.toLowerCase().includes(term));
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'pending' && i.status !== 'responded') ||
+            (statusFilter === 'responded' && i.status === 'responded');
+        return matchesTerm && matchesStatus;
+    });
     renderInquiries(filtered);
-
 }
-
 
 function renderInquiries(inquiries) {
-
-    const tbody =
-        document.getElementById(
-            'inquiriesTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    tbody.innerHTML =
-        inquiries.length
-
-            ? inquiries.map(i => `
-
+    const tbody = document.getElementById('inquiriesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = inquiries.length ? inquiries.map(i => `
         <tr>
-
+            <td><span class="badge bg-light text-dark border">${i.part_name}</span></td>
+            <td class="fw-bold">${i.customer_name}</td>
+            <td>${i.contact}</td>
+            <td class="text-muted small">${i.message || '—'}</td>
+            <td>${new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+            <td><span class="badge ${i.status === 'responded' ? 'bg-success' : 'bg-warning text-dark'}">${i.status === 'responded' ? 'responded' : 'pending'}</span></td>
             <td>
-                <span class="badge bg-light text-dark border">
-                    ${i.part_name}
-                </span>
-            </td>
-
-            <td class="fw-bold">
-                ${i.customer_name}
-            </td>
-
-            <td>
-                ${i.contact}
-            </td>
-
-            <td class="text-muted small">
-                ${i.message || '—'}
-            </td>
-
-            <td>
-                ${new Date(
-                    i.created_at
-                ).toLocaleDateString(
-                    'en-US',
-                    {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                    }
-                )}
-            </td>
-
-            <td>
-
-                <span
-                    class="badge ${
-                        i.status === 'responded'
-                            ? 'bg-success'
-                            : 'bg-warning text-dark'
-                    }"
-                >
-                    ${
-                        i.status === 'responded'
-                            ? 'responded'
-                            : 'pending'
-                    }
-                </span>
-
-            </td>
-
-            <td>
-
                 <div class="btn-group">
-
-                    <button
-                        class="btn btn-sm btn-outline-success"
-                        onclick="updateInquiry(${i.id})"
-                    >
+                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})">
                         <i class="bi bi-check-lg"></i>
                     </button>
-
-                    <button
-                        class="btn btn-sm btn-outline-danger"
-                        onclick="deleteInquiry(${i.id})"
-                    >
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})">
                         <i class="bi bi-trash"></i>
                     </button>
-
                 </div>
-
             </td>
-
-        </tr>
-
-    `).join('')
-
-    :
-
-    '<tr><td colspan="7" class="text-center text-muted py-4">No inquiries match your search.</td></tr>';
-
+        </tr>`).join('')
+    : '<tr><td colspan="7" class="text-center text-muted py-4">No inquiries match your search.</td></tr>';
 }
-
 
 function loadOrders() {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
 
-    const tbody =
-        document.getElementById(
-            'ordersTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    fetch(
-        'api/admin/manage_orders.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status !== 'success') {
-            throw new Error(
-                data.message
-            );
-        }
-
-        ordersData =
-            data.orders ?? [];
-
-        document.getElementById(
-            'badgeOrders'
-        ).textContent =
-            ordersData.length;
-
-        filterAndRenderOrders();
-
-    })
-
-    .catch(err => {
-
-        console.error(
-            'Orders error:',
-            err
-        );
-
-        tbody.innerHTML =
-            '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
-
-    });
-
+    fetch('api/admin/manage_orders.php', { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') throw new Error(data.message);
+            ordersData = data.orders ?? [];
+            document.getElementById('badgeOrders').textContent = ordersData.length;
+            filterAndRenderOrders();
+        })
+        .catch(err => {
+            console.error('Orders error:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
+        });
 }
-
 
 function filterAndRenderOrders() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-    const statusFilter =
-        document
-            .getElementById(
-                'ordersStatusFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        ordersData.filter(o => {
-
-            const year =
-                new Date(
-                    o.created_at
-                ).getFullYear();
-
-            const orderNo =
-                `EJR-ORD-${year}-${String(
-                    o.id
-                ).padStart(5, '0')}`
-                .toLowerCase();
-
-
-            const matchesTerm =
-                !term ||
-
-                (
-                    o.customer_name &&
-                    o.customer_name
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    o.contact &&
-                    o.contact
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                orderNo.includes(term);
-
-
-            const matchesStatus =
-                !statusFilter ||
-                o.status
-                    .toLowerCase() ===
-                    statusFilter
-                        .toLowerCase();
-
-
-            return (
-                matchesTerm &&
-                matchesStatus
-            );
-
-        });
-
-
+    const filtered = ordersData.filter(o => {
+        const year = new Date(o.created_at).getFullYear();
+        const orderNo = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`.toLowerCase();
+        const matchesTerm = !term ||
+            (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+            (o.contact && o.contact.toLowerCase().includes(term)) ||
+            orderNo.includes(term);
+        const matchesStatus = !statusFilter || o.status.toLowerCase() === statusFilter.toLowerCase();
+        return matchesTerm && matchesStatus;
+    });
     renderOrders(filtered);
-
 }
 
-
 function renderOrders(orders) {
-
-    const tbody =
-        document.getElementById(
-            'ordersTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
 
     if (!orders.length) {
-
-        tbody.innerHTML =
-            '<tr><td colspan="8" class="text-center text-muted py-4">No orders match your search.</td></tr>';
-
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders match your search.</td></tr>';
         return;
     }
 
+    tbody.innerHTML = orders.map(o => {
+        const year      = new Date(o.created_at).getFullYear();
+        const orderNo   = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
+        const itemsArr  = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+        const itemsList = Array.isArray(itemsArr)
+            ? itemsArr.map(i => `${i.name} ×${i.qty}`).join(', ')
+            : o.items;
+        const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const safeName  = o.customer_name.replace(/'/g, "\\'");
+        const isPending = o.status.toLowerCase() === 'pending';
 
-    tbody.innerHTML =
-        orders.map(o => {
-
-            const year =
-                new Date(
-                    o.created_at
-                ).getFullYear();
-
-
-            const orderNo =
-                `EJR-ORD-${year}-${String(
-                    o.id
-                ).padStart(5, '0')}`;
-
-
-            const itemsArr =
-                typeof o.items === 'string'
-                    ? JSON.parse(o.items)
-                    : o.items;
-
-
-            const itemsList =
-                Array.isArray(itemsArr)
-
-                    ? itemsArr
-                        .map(
-                            i =>
-                                `${i.name} ×${i.qty}`
-                        )
-                        .join(', ')
-
-                    : o.items;
-
-
-            const date =
-                new Date(
-                    o.created_at
-                ).toLocaleDateString(
-                    'en-US',
-                    {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                    }
-                );
-
-
-            const safeName =
-                o.customer_name
-                    .replace(
-                        /'/g,
-                        "\\'"
-                    );
-
-
-            const isPending =
-                o.status
-                    .toLowerCase() ===
-                'pending';
-
-
-            return `
-
+        return `
         <tr>
-
+            <td><code style="color:#b30000;">${orderNo}</code></td>
+            <td class="fw-bold">${o.customer_name}</td>
+            <td>${o.contact}</td>
+            <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                title="${itemsList}">${itemsList}</td>
+            <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            <td>${date}</td>
+            <td>${statusBadge(o.status)}</td>
             <td>
-                <code style="color:#b30000;">
-                    ${orderNo}
-                </code>
-            </td>
-
-            <td class="fw-bold">
-                ${o.customer_name}
-            </td>
-
-            <td>
-                ${o.contact}
-            </td>
-
-            <td
-                class="text-muted small"
-                style="
-                    max-width:180px;
-                    white-space:nowrap;
-                    overflow:hidden;
-                    text-overflow:ellipsis;
-                "
-                title="${itemsList}"
-            >
-                ${itemsList}
-            </td>
-
-            <td class="fw-bold text-danger">
-                ₱${parseFloat(
-                    o.total_price
-                ).toLocaleString(
-                    'en-PH',
-                    {
-                        minimumFractionDigits: 2
-                    }
-                )}
-            </td>
-
-            <td>
-                ${date}
-            </td>
-
-            <td>
-                ${statusBadge(o.status)}
-            </td>
-
-            <td>
-
                 <div class="btn-group">
-
-                    ${
-                        isPending
-                            ? `
-                        <button
-                            class="btn btn-sm btn-outline-success"
-                            onclick="updateOrder(
-                                ${o.id},
-                                '${o.status}',
-                                '${safeName}'
-                            )"
-                            title="Manage"
-                        >
+                    ${isPending ? `
+                        <button class="btn btn-sm btn-outline-success"
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Manage">
                             <i class="bi bi-pencil-square"></i>
-                        </button>
-                        `
-                            : ''
-                    }
-
-
-                    <button
-                        class="btn btn-sm btn-outline-secondary"
-                        onclick="deleteOrder(${o.id})"
-                        title="Delete"
-                    >
+                        </button>` : ''}
+                    <button class="btn btn-sm btn-outline-secondary"
+                            onclick="deleteOrder(${o.id})" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
-
-
-                    <a
-                        href="api/admin/generate_parts_receipt.php?id=${o.id}"
-                        target="_blank"
-                        class="btn btn-sm btn-outline-primary"
-                        title="View Invoice"
-                    >
+                    <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="View Invoice">
                         <i class="bi bi-receipt"></i>
                     </a>
-
                 </div>
-
             </td>
-
-        </tr>
-
-        `;
-
-        }).join('');
-
+        </tr>`;
+    }).join('');
 }
 
 
@@ -947,1201 +315,257 @@ function renderOrders(orders) {
 // =============================================================
 
 function updateStats(data) {
-
-    const active =
-        data.appointments;
-
-    document.getElementById(
-        "statTotal"
-    ).textContent =
-        active.length;
-
-    document.getElementById(
-        "statPending"
-    ).textContent =
-        active.filter(
-            a => a.status === 'Pending'
-        ).length;
-
-    document.getElementById(
-        "statUsers"
-    ).textContent =
-        data.users.length;
-
-    document.getElementById(
-        "statVehicles"
-    ).textContent =
-        data.vehicles.length;
-
-    document.getElementById(
-        "badgeAppt"
-    ).textContent =
-        active.length;
-
-    document.getElementById(
-        "badgeUsers"
-    ).textContent =
-        data.users.length;
-
-    document.getElementById(
-        "badgeVehs"
-    ).textContent =
-        data.vehicles.length;
-
+    const active = data.appointments;
+    document.getElementById("statTotal").textContent    = active.length;
+    document.getElementById("statPending").textContent  = active.filter(a => a.status === 'Pending').length;
+    document.getElementById("statUsers").textContent    = data.users.length;
+    document.getElementById("statVehicles").textContent = data.vehicles.length;
+    document.getElementById("badgeAppt").textContent    = active.length;
+    document.getElementById("badgeUsers").textContent   = data.users.length;
+    document.getElementById("badgeVehs").textContent    = data.vehicles.length;
 }
-
 
 function statusBadge(status) {
-
-    if (!status) {
-        return `
-            <span class="badge bg-secondary">
-                Unknown
-            </span>
-        `;
-    }
-
-    const s =
-        status
-            .toLowerCase()
-            .trim();
-
-
+    if (!status) return `<span class="badge bg-secondary">Unknown</span>`;
+    const s = status.toLowerCase().trim();
     const map = {
-
-        'pending':
-            'bg-warning text-dark',
-
-        'approved':
-            'bg-success',
-
-        'confirmed':
-            'bg-success',
-
-        'in progress':
-            'bg-warning text-dark',
-
-        'completed':
-            'bg-success',
-
-        'cancelled':
-            'bg-danger'
-
+        'pending':   'bg-warning text-dark',
+        'approved':  'bg-success',
+        'confirmed': 'bg-success',
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
     };
-
-
-    const displayStatus =
-        s.charAt(0).toUpperCase() +
-        s.slice(1);
-
-
-    return `
-        <span class="badge ${map[s] || 'bg-secondary'}">
-            ${displayStatus}
-        </span>
-    `;
-
+    const displayStatus = s.charAt(0).toUpperCase() + s.slice(1);
+    return `<span class="badge ${map[s] || 'bg-secondary'}">${displayStatus}</span>`;
 }
-
 
 function filterAndRenderAppointments() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-    const statusFilter =
-        document
-            .getElementById(
-                'appointmentsStatusFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        masterData.appointments.filter(a => {
-
-            const searchable = [
-
-                a.full_name,
-
-                a.service_type,
-
-                a.vehicle_info,
-
-                a.mechanic_name,
-
-                a.appointment_date,
-
-                a.status,
-
-                a.notes,
-
-                a.cancellation_response,
-
-                a.cancellation_reason
-
-            ]
-
-            .filter(Boolean)
-
-            .join(' ')
-
-            .toLowerCase();
-
-
-            const matchesTerm =
-                !term ||
-                searchable.includes(term);
-
-
-            const matchesStatus =
-                !statusFilter ||
-                a.status === statusFilter;
-
-
-            return (
-                matchesTerm &&
-                matchesStatus
-            );
-
-        });
-
-
-    renderAppointments(
-        filtered
-    );
-
+    const filtered = masterData.appointments.filter(a => {
+        const matchesTerm = !term ||
+            (a.full_name && a.full_name.toLowerCase().includes(term)) ||
+            (a.service_type && a.service_type.toLowerCase().includes(term)) ||
+            (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
+            (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
+        const matchesStatus = !statusFilter || a.status === statusFilter;
+        return matchesTerm && matchesStatus;
+    });
+    renderAppointments(filtered);
 }
-
 
 function filterAndRenderUsers() {
+    const term = globalSearchTerm;
+    const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-    const roleFilter =
-        document
-            .getElementById(
-                'usersRoleFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        masterData.users.filter(u => {
-
-            const matchesTerm =
-                !term ||
-
-                (
-                    u.full_name &&
-                    u.full_name
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    u.email &&
-                    u.email
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    u.phone &&
-                    u.phone
-                        .toLowerCase()
-                        .includes(term)
-                );
-
-
-            const matchesRole =
-                !roleFilter ||
-                String(u.role_id) ===
-                    roleFilter;
-
-
-            return (
-                matchesTerm &&
-                matchesRole
-            );
-
-        });
-
-
-    renderUsers(
-        filtered
-    );
-
+    const filtered = masterData.users.filter(u => {
+        const matchesTerm = !term ||
+            (u.full_name && u.full_name.toLowerCase().includes(term)) ||
+            (u.email && u.email.toLowerCase().includes(term)) ||
+            (u.phone && u.phone.toLowerCase().includes(term));
+        const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
+        return matchesTerm && matchesRole;
+    });
+    renderUsers(filtered);
 }
-
 
 function filterAndRenderVehicles() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        masterData.vehicles.filter(v =>
-
-            !term ||
-
-            (
-                v.owner_name &&
-                v.owner_name
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                v.plate_number &&
-                v.plate_number
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                v.model &&
-                v.model
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                v.brand &&
-                v.brand
-                    .toLowerCase()
-                    .includes(term)
-            )
-
-        );
-
-
-    renderVehicles(
-        filtered
+    const term = globalSearchTerm;
+    const filtered = masterData.vehicles.filter(v =>
+        !term ||
+        (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
+        (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
+        (v.model && v.model.toLowerCase().includes(term)) ||
+        (v.brand && v.brand.toLowerCase().includes(term))
     );
-
+    renderVehicles(filtered);
 }
-
 
 function filterAndRenderHistory() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        historyData.filter(h =>
-
-            !term ||
-
-            (
-                h.full_name &&
-                h.full_name
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                h.service_type &&
-                h.service_type
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                h.plate_number &&
-                h.plate_number
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                h.brand &&
-                h.brand
-                    .toLowerCase()
-                    .includes(term)
-            ) ||
-
-            (
-                h.model &&
-                h.model
-                    .toLowerCase()
-                    .includes(term)
-            )
-
-        );
-
-
-    renderHistory(
-        filtered
+    const term = globalSearchTerm;
+    const filtered = historyData.filter(h =>
+        !term ||
+        (h.full_name && h.full_name.toLowerCase().includes(term)) ||
+        (h.service_type && h.service_type.toLowerCase().includes(term)) ||
+        (h.plate_number && h.plate_number.toLowerCase().includes(term)) ||
+        (h.brand && h.brand.toLowerCase().includes(term)) ||
+        (h.model && h.model.toLowerCase().includes(term))
     );
-
+    renderHistory(filtered);
 }
 
-
-// Re-applies globalSearchTerm + every tab's own dropdown filter.
+// Re-applies globalSearchTerm + every tab's own dropdown filter across
+// all ten data tabs at once. Called both by the global search box and
+// by every individual filter dropdown's onchange, so search text and
+// dropdown filters always combine correctly no matter which changed.
 function applyAllFilters() {
-
     filterAndRenderAppointments();
-
     filterAndRenderUsers();
-
     filterAndRenderVehicles();
-
     filterAndRenderHistory();
-
     filterAndRenderParts();
-
     filterAndRenderInquiries();
-
     filterAndRenderOrders();
-
     filterAndRenderServices();
-
     filterAndRenderMechanics();
-
-    if (
-        typeof applyBusyFilter ===
-        'function'
-    ) {
-        applyBusyFilter();
-    }
-
+    if (typeof applyBusyFilter === 'function') applyBusyFilter();
 }
-
 
 function renderAppointments(apps) {
-
-    const tbody =
-        document.getElementById(
-            "appointmentTableBody"
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!apps.length) {
-
-        tbody.innerHTML =
-            '<tr><td colspan="8" class="text-center text-muted py-4">No appointments found.</td></tr>';
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        apps.map(a => {
-
-            const currentStatus =
-                appointmentStatusKey(
-                    a.status
-                );
-
-
-            const isLocked =
-                currentStatus ===
-                    'Completed' ||
-
-                currentStatus ===
-                    'Cancelled';
-
-
-            const notes =
-                a.notes || '';
-
-
-            const cancellationResponse =
-                a.cancellation_response ||
-                a.cancellation_reason ||
-                '';
-
-
-            const notesHtml = [
-
-                notes
-                    ? `<div>${escapeHtml(notes)}</div>`
-                    : '',
-
-                cancellationResponse
-                    ? `
-                        <div class="small text-danger mt-1">
-                            <strong>
-                                Cancellation:
-                            </strong>
-
-                            ${escapeHtml(
-                                cancellationResponse
-                            )}
-                        </div>
-                    `
-                    : ''
-
-            ].join('');
-
-
-            return `
-
+    const active = apps;
+    document.getElementById("appointmentTableBody").innerHTML = active.length
+        ? active.map(a => `
             <tr>
-
-                <td class="fw-bold">
-                    ${escapeHtml(
-                        a.full_name ||
-                        'Guest'
-                    )}
-                </td>
-
-
+                <td class="fw-bold">${a.full_name || 'Guest'}</td>
+                <td><span class="badge bg-light text-dark border">${a.service_type}</span></td>
+                <td>${a.vehicle_info || '—'}</td>
+                <td>${a.appointment_date
+                    ? new Date(a.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '—'}</td>
                 <td>
-
-                    <span
-                        class="badge bg-light text-dark border"
-                    >
-                        ${escapeHtml(
-                            a.service_type ||
-                            '—'
-                        )}
-                    </span>
-
+                    ${a.mechanic_name
+                        ? `<span class="badge bg-info text-dark"><i class="bi bi-person-gear me-1"></i>${a.mechanic_name}</span>`
+                        : `<span class="text-muted small">Unassigned</span>`}
                 </td>
-
-
+                <td>${statusBadge(a.status)}</td>
                 <td>
-                    ${escapeHtml(
-                        a.vehicle_info ||
-                        '—'
-                    )}
-                </td>
-
-
-                <td>
-
-                    ${
-                        a.appointment_date
-
-                            ? new Date(
-                                a.appointment_date
-                            ).toLocaleDateString(
-                                'en-US',
-                                {
-                                    month:
-                                        'short',
-                                    day:
-                                        'numeric',
-                                    year:
-                                        'numeric'
-                                }
-                            )
-
-                            : '—'
-                    }
-
-                </td>
-
-
-                <td>
-
-                    ${
-                        a.mechanic_name
-
-                            ? `
-                                <span
-                                    class="badge bg-info text-dark"
-                                >
-                                    <i
-                                        class="bi bi-person-gear me-1"
-                                    ></i>
-
-                                    ${escapeHtml(
-                                        a.mechanic_name
-                                    )}
-                                </span>
-                            `
-
-                            : `
-                                <span
-                                    class="text-muted small"
-                                >
-                                    Unassigned
-                                </span>
-                            `
-                    }
-
-                </td>
-
-
-                <td>
-
-                    ${
-                        notesHtml ||
-                        '<span class="text-muted small">—</span>'
-                    }
-
-                </td>
-
-
-                <td>
-
-                    ${statusBadge(
-                        currentStatus
-                    )}
-
-                    ${
-                        isLocked
-
-                            ? `
-                                <div
-                                    class="small text-muted mt-1"
-                                >
-                                    <i
-                                        class="bi bi-lock-fill me-1"
-                                    ></i>
-
-                                    Locked
-                                </div>
-                            `
-
-                            : ''
-                    }
-
-                </td>
-
-
-                <td>
-
                     <div class="btn-group">
-
-                        <button
-                            class="
-                                btn
-                                btn-sm
-                                ${
-                                    isLocked
-                                        ? 'btn-outline-secondary'
-                                        : 'btn-outline-dark'
-                                }
-                            "
-                            onclick="manageApp(
-                                ${Number(a.id)},
-                                '${String(
-                                    currentStatus
-                                ).replace(
-                                    /'/g,
-                                    "\\'"
-                                )}'
-                            )"
-
-                            ${
-                                isLocked
-                                    ? 'title="This appointment is locked"'
-                                    : ''
-                            }
-                        >
-
-                            <i
-                                class="
-                                    bi
-                                    ${
-                                        isLocked
-                                            ? 'bi-lock-fill'
-                                            : 'bi-pencil-square'
-                                    }
-                                "
-                            ></i>
-
-                            ${
-                                isLocked
-                                    ? 'Locked'
-                                    : 'Manage'
-                            }
-
+                        <button class="btn btn-sm btn-outline-dark" onclick="manageApp(${a.id}, '${a.status}')">
+                            <i class="bi bi-pencil-square"></i> Manage
                         </button>
-
-
-                        ${
-                            !isLocked
-
-                                ? `
-                                    <button
-                                        class="
-                                            btn
-                                            btn-sm
-                                            btn-outline-primary
-                                        "
-                                        onclick="assignMechanic(
-                                            ${Number(a.id)}
-                                        )"
-                                        title="Assign Mechanic"
-                                    >
-
-                                        <i
-                                            class="
-                                                bi
-                                                bi-person-gear
-                                            "
-                                        ></i>
-
-                                    </button>
-                                `
-
-                                : ''
-                        }
-
+                        <button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
+                            <i class="bi bi-person-gear"></i>
+                        </button>
                     </div>
-
                 </td>
-
-            </tr>
-
-            `;
-
-        }).join('');
-
+            </tr>`).join('')
+        : '<tr><td colspan="7" class="text-center text-muted py-4">No appointments found.</td></tr>';
 }
-
 
 function renderUsers(users) {
-
     if (!users.length) {
-
-        document.getElementById(
-            "userTableBody"
-        ).innerHTML =
+        document.getElementById("userTableBody").innerHTML =
             '<tr><td colspan="7" class="text-center text-muted py-4">No users found.</td></tr>';
-
         return;
     }
-
-
-    document.getElementById(
-        "userTableBody"
-    ).innerHTML =
-
-        users.map(u => {
-
-            const name =
-                u.full_name.replace(
-                    /'/g,
-                    "\\'"
-                );
-
-            const email =
-                u.email.replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            return `
-
+    document.getElementById("userTableBody").innerHTML = users.map(u => {
+        const name  = u.full_name.replace(/'/g, "\\'");
+        const email = u.email.replace(/'/g, "\\'");
+        return `
         <tr>
-
+            <td>${u.id}</td>
+            <td class="fw-bold">${u.full_name}</td>
+            <td>${u.email}</td>
+            <td>${u.phone || '—'}</td>
+            <td><span class="badge ${u.role_id == 2 ? 'bg-danger' : u.role_id == 3 ? 'bg-info text-dark' : 'bg-secondary'}">
+                ${u.role_id == 2 ? 'Admin' : u.role_id == 3 ? 'Mechanic' : 'Customer'}
+            </span></td>
+            <td>${u.created_at
+                ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'}</td>
             <td>
-                ${u.id}
-            </td>
-
-            <td class="fw-bold">
-                ${u.full_name}
-            </td>
-
-            <td>
-                ${u.email}
-            </td>
-
-            <td>
-                ${u.phone || '—'}
-            </td>
-
-            <td>
-
-                <span
-                    class="
-                        badge
-                        ${
-                            u.role_id == 2
-                                ? 'bg-danger'
-                                : u.role_id == 3
-                                    ? 'bg-info text-dark'
-                                    : 'bg-secondary'
-                        }
-                    "
-                >
-
-                    ${
-                        u.role_id == 2
-                            ? 'Admin'
-                            : u.role_id == 3
-                                ? 'Mechanic'
-                                : 'Customer'
-                    }
-
-                </span>
-
-            </td>
-
-            <td>
-
-                ${
-                    u.created_at
-
-                        ? new Date(
-                            u.created_at
-                        ).toLocaleDateString(
-                            'en-US',
-                            {
-                                month:
-                                    'short',
-                                day:
-                                    'numeric',
-                                year:
-                                    'numeric'
-                            }
-                        )
-
-                        : '—'
-                }
-
-            </td>
-
-            <td>
-
                 <div class="btn-group">
-
-                    <button
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-dark
-                        "
-                        onclick="editUser(
-                            ${u.id}
-                        )"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-pencil-square
-                            "
-                        ></i>
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="editUser(${u.id})">
+                        <i class="bi bi-pencil-square"></i>
                     </button>
-
-
-                    <button
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-danger
-                        "
-                        onclick="deleteUser(
-                            ${u.id},
-                            '${name}'
-                        )"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-trash
-                            "
-                        ></i>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteUser(${u.id}, '${name}')">
+                        <i class="bi bi-trash"></i>
                     </button>
-
                 </div>
-
             </td>
-
-        </tr>
-
-        `;
-
-        }).join('');
-
+        </tr>`;
+    }).join('');
 }
-
 
 function renderVehicles(vehs) {
-
-    document.getElementById(
-        "vehicleTableBody"
-    ).innerHTML =
-
-        vehs.length
-
-            ? vehs.map(v => {
-
-                const brand =
-                    (v.brand || '')
-                        .replace(
-                            /'/g,
-                            "\\'"
-                        );
-
-                const model =
-                    (v.model || '')
-                        .replace(
-                            /'/g,
-                            "\\'"
-                        );
-
-                const plate =
-                    (v.plate_number || '')
-                        .replace(
-                            /'/g,
-                            "\\'"
-                        );
-
-                const fuel =
-                    (v.fuel_type || '')
-                        .replace(
-                            /'/g,
-                            "\\'"
-                        );
-
-                const trans =
-                    (v.transmission || '')
-                        .replace(
-                            /'/g,
-                            "\\'"
-                        );
-
-
-                return `
-
+    document.getElementById("vehicleTableBody").innerHTML = vehs.length
+        ? vehs.map(v => {
+            const brand = (v.brand || '').replace(/'/g, "\\'");
+            const model = (v.model || '').replace(/'/g, "\\'");
+            const plate = (v.plate_number || '').replace(/'/g, "\\'");
+            const fuel  = (v.fuel_type || '').replace(/'/g, "\\'");
+            const trans = (v.transmission || '').replace(/'/g, "\\'");
+            return `
             <tr>
-
-                <td class="fw-bold">
-                    ${v.owner_name || '—'}
-                </td>
-
+                <td class="fw-bold">${v.owner_name || '—'}</td>
+                <td>${v.brand || '—'}</td>
+                <td>${v.model || '—'}</td>
+                <td>${v.year_model || '—'}</td>
+                <td><code class="text-uppercase" style="color:#b30000;">${v.plate_number}</code></td>
+                <td>${v.fuel_type || '—'}</td>
+                <td>${v.transmission || '—'}</td>
                 <td>
-                    ${v.brand || '—'}
-                </td>
-
-                <td>
-                    ${v.model || '—'}
-                </td>
-
-                <td>
-                    ${v.year_model || '—'}
-                </td>
-
-                <td>
-
-                    <code
-                        class="
-                            text-uppercase
-                        "
-                        style="color:#b30000;"
-                    >
-                        ${v.plate_number}
-                    </code>
-
-                </td>
-
-                <td>
-                    ${v.fuel_type || '—'}
-                </td>
-
-                <td>
-                    ${v.transmission || '—'}
-                </td>
-
-                <td>
-
                     <div class="btn-group">
-
-                        <button
-                            class="
-                                btn
-                                btn-sm
-                                btn-outline-dark
-                            "
-                            onclick="editVehicle(
-                                ${v.id},
-                                ${v.user_id},
-                                '${brand}',
-                                '${model}',
-                                '${v.year_model || ''}',
-                                '${plate}',
-                                '${fuel}',
-                                '${trans}'
-                            )"
-                            title="Edit"
-                        >
-
-                            <i
-                                class="
-                                    bi
-                                    bi-pencil-square
-                                "
-                            ></i>
-
+                        <button class="btn btn-sm btn-outline-dark"
+                                onclick="editVehicle(${v.id}, ${v.user_id}, '${brand}', '${model}', '${v.year_model || ''}', '${plate}', '${fuel}', '${trans}')"
+                                title="Edit">
+                            <i class="bi bi-pencil-square"></i>
                         </button>
-
-
-                        <button
-                            class="
-                                btn
-                                btn-sm
-                                btn-outline-danger
-                            "
-                            onclick="deleteVehicle(
-                                ${v.id},
-                                '${plate}'
-                            )"
-                            title="Delete"
-                        >
-
-                            <i
-                                class="
-                                    bi
-                                    bi-trash
-                                "
-                            ></i>
-
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="deleteVehicle(${v.id}, '${plate}')"
+                                title="Delete">
+                            <i class="bi bi-trash"></i>
                         </button>
-
                     </div>
-
                 </td>
-
-            </tr>
-
-            `;
-
-            }).join('')
-
-            :
-
-            '<tr><td colspan="8" class="text-center text-muted py-4">No vehicles found.</td></tr>';
-
+            </tr>`;
+        }).join('')
+        : '<tr><td colspan="8" class="text-center text-muted py-4">No vehicles found.</td></tr>';
 }
 
-
 function renderHistory(data) {
-
-    const tbody =
-        document.getElementById(
-            'historyTableBody'
-        );
-
-
-    document.getElementById(
-        'historyCount'
-    ).textContent =
-
-        data.length
-            ? `Showing ${data.length} record(s)`
-            : '';
-
+    const tbody = document.getElementById('historyTableBody');
+    document.getElementById('historyCount').textContent =
+        data.length ? `Showing ${data.length} record(s)` : '';
 
     if (!data.length) {
-
-        tbody.innerHTML =
-            '<tr><td colspan="6" class="text-center text-muted py-4">No service history found.</td></tr>';
-
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No service history found.</td></tr>';
         return;
     }
 
+    tbody.innerHTML = data.map(h => {
+        const vehicle = h.brand && h.model
+            ? `${h.brand} ${h.model} (${h.year_model || '—'})`
+            : '—';
+        const date = h.service_date
+            ? new Date(h.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '—';
+        const rawDate = h.service_date ? h.service_date.substring(0, 10) : '';
+        const service = (h.service_type || '').replace(/'/g, "\\'");
+        const custName = (h.full_name || '').replace(/'/g, "\\'");
 
-    tbody.innerHTML =
-
-        data.map(h => {
-
-            const vehicle =
-                h.brand &&
-                h.model
-
-                    ? `${h.brand} ${h.model} (${h.year_model || '—'})`
-
-                    : '—';
-
-
-            const date =
-                h.service_date
-
-                    ? new Date(
-                        h.service_date
-                    ).toLocaleDateString(
-                        'en-US',
-                        {
-                            month:
-                                'short',
-                            day:
-                                'numeric',
-                            year:
-                                'numeric'
-                        }
-                    )
-
-                    : '—';
-
-
-            const rawDate =
-                h.service_date
-                    ? h.service_date.substring(
-                        0,
-                        10
-                    )
-                    : '';
-
-
-            const service =
-                (h.service_type || '')
-                    .replace(
-                        /'/g,
-                        "\\'"
-                    );
-
-
-            const custName =
-                (h.full_name || '')
-                    .replace(
-                        /'/g,
-                        "\\'"
-                    );
-
-
-            return `
-
+        return `
         <tr>
-
-            <td class="fw-bold">
-                ${h.full_name || '—'}
-            </td>
-
+            <td class="fw-bold">${h.full_name || '—'}</td>
+            <td><span class="badge bg-light text-dark border">${h.service_type || '—'}</span></td>
+            <td>${vehicle}</td>
+            <td><code class="text-uppercase" style="color:#b30000;">${h.plate_number || '—'}</code></td>
+            <td>${date}</td>
             <td>
-
-                <span
-                    class="
-                        badge
-                        bg-light
-                        text-dark
-                        border
-                    "
-                >
-                    ${h.service_type || '—'}
-                </span>
-
-            </td>
-
-            <td>
-                ${vehicle}
-            </td>
-
-            <td>
-
-                <code
-                    class="
-                        text-uppercase
-                    "
-                    style="color:#b30000;"
-                >
-                    ${h.plate_number || '—'}
-                </code>
-
-            </td>
-
-            <td>
-                ${date}
-            </td>
-
-            <td>
-
                 <div class="btn-group">
-
-                    <a
-                        href="api/admin/generate_receipt.php?id=${h.id}"
-                        target="_blank"
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-primary
-                        "
-                        title="View Invoice"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-receipt
-                            "
-                        ></i>
+                    <a href="api/admin/generate_receipt.php?id=${h.id}" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="View Invoice">
+                        <i class="bi bi-receipt"></i>
                     </a>
-
-
-                    <button
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-success
-                        "
-                        onclick="sendReceiptToUser(
-                            ${h.id},
-                            '${custName}'
-                        )"
-                        title="Send Receipt"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-send
-                            "
-                        ></i>
+                    <button class="btn btn-sm btn-outline-success"
+                            onclick="sendReceiptToUser(${h.id}, '${custName}')" title="Send Receipt">
+                        <i class="bi bi-send"></i>
                     </button>
-
-
-                    <button
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-dark
-                        "
-                        onclick="editHistory(
-                            ${h.id},
-                            '${service}',
-                            '${rawDate}'
-                        )"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-pencil-square
-                            "
-                        ></i>
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="editHistory(${h.id}, '${service}', '${rawDate}')">
+                        <i class="bi bi-pencil-square"></i>
                     </button>
-
-
-                    <button
-                        class="
-                            btn
-                            btn-sm
-                            btn-outline-danger
-                        "
-                        onclick="deleteHistory(
-                            ${h.id},
-                            '${custName}'
-                        )"
-                    >
-                        <i
-                            class="
-                                bi
-                                bi-trash
-                            "
-                        ></i>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteHistory(${h.id}, '${custName}')">
+                        <i class="bi bi-trash"></i>
                     </button>
-
                 </div>
-
             </td>
-
-        </tr>
-
-        `;
-
-        }).join('');
-
+        </tr>`;
+    }).join('');
 }
 
 
@@ -2149,554 +573,28 @@ function renderHistory(data) {
 // APPOINTMENTS
 // =============================================================
 
-/*
- * Appointment status flow:
- *
- * Pending
- *   ├── Confirmed
- *   └── Cancelled (locked)
- *
- * Confirmed
- *   ├── In Progress
- *   └── Cancelled (locked)
- *
- * In Progress
- *   ├── Completed (locked)
- *   └── Cancelled (locked)
- *
- * Completed and Cancelled are terminal states and cannot be
- * changed back to another status from the admin dashboard.
- */
-
-const APPOINTMENT_STATUS_FLOW = {
-
-    'Pending': [
-        'Confirmed',
-        'Cancelled'
-    ],
-
-    'Confirmed': [
-        'In Progress',
-        'Cancelled'
-    ],
-
-    'In Progress': [
-        'Completed',
-        'Cancelled'
-    ],
-
-    'Completed': [],
-
-    'Cancelled': []
-
-};
-
-
-const CANCELLATION_RESPONSES = [
-
-    'The selected date is fully booked.',
-
-    'No mechanic is available on the selected date.',
-
-    'The requested service is unavailable on the selected date.',
-
-    'The requested service requires a different schedule.',
-
-    'Please contact EJR Garage so we can arrange another schedule.',
-
-    'Customer requested cancellation.',
-
-    'Other / Custom Reply'
-
-];
-
-
-function escapeHtml(value) {
-
-    return String(
-        value ?? ''
-    )
-
-    .replace(
-        /&/g,
-        '&amp;'
-    )
-
-    .replace(
-        /</g,
-        '&lt;'
-    )
-
-    .replace(
-        />/g,
-        '&gt;'
-    )
-
-    .replace(
-        /"/g,
-        '&quot;'
-    )
-
-    .replace(
-        /'/g,
-        '&#039;'
-    );
-
-}
-
-
-function appointmentStatusKey(status) {
-
-    return String(
-        status || ''
-    ).trim();
-
-}
-
-
 function manageApp(id, currentStatus) {
-
-    const status =
-        appointmentStatusKey(
-            currentStatus
-        );
-
-    const allowed =
-        APPOINTMENT_STATUS_FLOW[
-            status
-        ] || [];
-
-
-    // Completed and Cancelled are intentionally locked.
-
-    if (allowed.length === 0) {
-
-        Swal.fire({
-
-            icon:
-                status === 'Completed'
-                    ? 'success'
-                    : 'info',
-
-            title:
-                `Appointment ${status}`,
-
-            text:
-                `A ${status.toLowerCase()} appointment cannot be changed or reverted.`,
-
-            confirmButtonColor:
-                '#b30000'
-
-        });
-
-        return;
-    }
-
-
     Swal.fire({
-
-        title:
-            'Update Appointment Status',
-
-        html: `
-
-            <div class="text-start">
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Current Status
-                    </label>
-
-                    <input
-                        class="form-control"
-                        value="${escapeHtml(status)}"
-                        disabled
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Next Status
-                    </label>
-
-                    <select
-                        id="appointmentNextStatus"
-                        class="form-select"
-                    >
-
-                        ${allowed.map(
-                            nextStatus =>
-                                `
-                                <option
-                                    value="${escapeHtml(
-                                        nextStatus
-                                    )}"
-                                >
-                                    ${escapeHtml(
-                                        nextStatus
-                                    )}
-                                </option>
-                                `
-                        ).join('')}
-
-                    </select>
-
-                </div>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Continue',
-
-
-        preConfirm: () => {
-
-            const nextStatus =
-                document
-                    .getElementById(
-                        'appointmentNextStatus'
-                    )
-                    ?.value || '';
-
-
-            if (
-                !nextStatus ||
-                !allowed.includes(
-                    nextStatus
-                )
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please select a valid next status.'
-                );
-
-                return false;
-            }
-
-
-            return nextStatus;
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-            return;
-        }
-
-
-        const nextStatus =
-            result.value;
-
-
-        // Cancellation requires an explicit response/reason.
-
-        if (
-            nextStatus ===
-            'Cancelled'
-        ) {
-
-            openCancellationResponse(
-                id,
-                status
-            );
-
-            return;
-        }
-
-
-        postData(
-            'api/admin/update_appointment.php',
-            {
-                appointment_id:
-                    id,
-
-                status:
-                    nextStatus
-            }
-        );
-
-    });
-
-}
-
-
-function openCancellationResponse(
-    id,
-    currentStatus
-) {
-
-    Swal.fire({
-
-        title:
-            'Cancel Appointment',
-
-        html: `
-
-            <div class="text-start">
-
-                <p class="text-muted mb-3">
-                    Choose the response that will be recorded for the customer.
-                </p>
-
-
-                <label
-                    class="form-label fw-semibold"
-                >
-                    Cancellation Response
-                </label>
-
-
-                <select
-                    id="cancellationResponse"
-                    class="form-select mb-3"
-                >
-
-                    <option value="">
-                        Select a response...
-                    </option>
-
-                    ${CANCELLATION_RESPONSES.map(
-                        response =>
-                            `
-                            <option
-                                value="${escapeHtml(
-                                    response
-                                )}"
-                            >
-                                ${escapeHtml(
-                                    response
-                                )}
-                            </option>
-                            `
-                    ).join('')}
-
-                </select>
-
-
-                <div
-                    id="customCancellationWrap"
-                    style="display:none;"
-                >
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Custom Response
-                    </label>
-
-
-                    <textarea
-                        id="customCancellationResponse"
-                        class="form-control"
-                        rows="3"
-                        maxlength="500"
-                        placeholder="Enter the cancellation response..."
-                    ></textarea>
-
-                </div>
-
-
-                <div class="mt-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Additional Notes
-
-                        <span class="text-muted">
-                            (optional)
-                        </span>
-
-                    </label>
-
-
-                    <textarea
-                        id="appointmentNotes"
-                        class="form-control"
-                        rows="3"
-                        maxlength="1000"
-                        placeholder="Add any internal appointment notes..."
-                    ></textarea>
-
-                </div>
-
-            </div>
-
-        `,
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Cancel Appointment',
-
-
-        didOpen: () => {
-
-            const responseSelect =
-                document.getElementById(
-                    'cancellationResponse'
-                );
-
-            const customWrap =
-                document.getElementById(
-                    'customCancellationWrap'
-                );
-
-
-            if (
-                responseSelect &&
-                customWrap
-            ) {
-
-                responseSelect.addEventListener(
-                    'change',
-                    () => {
-
-                        customWrap.style.display =
-                            responseSelect.value ===
-                            'Other / Custom Reply'
-
-                                ? 'block'
-                                : 'none';
-
-                    }
-                );
-
-            }
-
+        title: 'Update Appointment Status',
+        input: 'select',
+        inputOptions: {
+            'Pending':   'Pending',
+            'Confirmed': 'Confirmed',
+            'Completed': 'Completed',
+            'Cancelled': 'Cancelled'
         },
-
-
-        preConfirm: () => {
-
-            const selected =
-                document
-                    .getElementById(
-                        'cancellationResponse'
-                    )
-                    ?.value || '';
-
-
-            const custom =
-                document
-                    .getElementById(
-                        'customCancellationResponse'
-                    )
-                    ?.value
-                    .trim() || '';
-
-
-            const notes =
-                document
-                    .getElementById(
-                        'appointmentNotes'
-                    )
-                    ?.value
-                    .trim() || '';
-
-
-            if (!selected) {
-
-                Swal.showValidationMessage(
-                    'Please select a cancellation response.'
-                );
-
-                return false;
-            }
-
-
-            if (
-                selected ===
-                    'Other / Custom Reply' &&
-                !custom
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please enter the custom cancellation response.'
-                );
-
-                return false;
-            }
-
-
-            return {
-
-                response:
-                    selected ===
-                        'Other / Custom Reply'
-
-                        ? custom
-                        : selected,
-
-                notes:
-                    notes
-
-            };
-
+        inputValue: currentStatus,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Update'
+    }).then(result => {
+        if (result.isConfirmed && result.value) {
+            postData('api/admin/update_appointment.php', {
+                appointment_id: id,
+                status: result.value
+            });
         }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-            return;
-        }
-
-
-        postData(
-            'api/admin/update_appointment.php',
-            {
-
-                appointment_id:
-                    id,
-
-                status:
-                    'Cancelled',
-
-                cancellation_response:
-                    result.value.response,
-
-                notes:
-                    result.value.notes
-
-            }
-        );
-
     });
-
 }
 
 
@@ -2704,252 +602,81 @@ function openCancellationResponse(
 // USERS
 // =============================================================
 
-function filterAndRenderUsers() {
-
-    const term =
-        globalSearchTerm;
-
-    const roleFilter =
-        document
-            .getElementById(
-                'usersRoleFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        masterData.users.filter(u => {
-
-            const matchesTerm =
-                !term ||
-
-                (
-                    u.full_name &&
-                    u.full_name
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    u.email &&
-                    u.email
-                        .toLowerCase()
-                        .includes(term)
-                ) ||
-
-                (
-                    u.phone &&
-                    u.phone
-                        .toLowerCase()
-                        .includes(term)
-                );
-
-
-            const matchesRole =
-                !roleFilter ||
-                String(u.role_id) ===
-                    roleFilter;
-
-
-            return (
-                matchesTerm &&
-                matchesRole
-            );
-
+function editUser(id) {
+    fetch(`api/admin/manage_user.php?id=${id}`, { credentials: 'include', headers: getAuthHeaders() })
+        .then(response => response.json())
+        .then(res => {
+            if (res.status !== 'success') {
+                Swal.fire('Error', 'Could not load user data', 'error');
+                return;
+            }
+            const user = res.data;
+            Swal.fire({
+                title: 'Edit User',
+                html: `
+                    <div class="text-start mb-3">
+                        <label class="form-label fw-semibold small">Full Name</label>
+                        <input id="swal-name" class="form-control" value="${user.full_name}">
+                    </div>
+                    <div class="text-start mb-3">
+                        <label class="form-label fw-semibold small">Email</label>
+                        <input id="swal-email" class="form-control" value="${user.email}">
+                    </div>
+                    <div class="text-start mb-3">
+                        <label class="form-label fw-semibold small">Role</label>
+                        <select id="swal-role" class="form-select">
+                            <option value="1" ${user.role_id == 1 ? 'selected' : ''}>Customer</option>
+                            <option value="2" ${user.role_id == 2 ? 'selected' : ''}>Admin</option>
+                            <option value="3" ${user.role_id == 3 ? 'selected' : ''}>Mechanic</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-3 mt-2">
+                        <div class="form-check form-switch text-start">
+                            <input class="form-check-input" type="checkbox" id="swal-email-verified" ${user.is_verified == 1 ? 'checked' : ''}>
+                            <label class="form-check-label fw-semibold small" for="swal-email-verified">
+                                <i class="bi bi-envelope-check me-1"></i> Email Verified
+                            </label>
+                        </div>
+                        <div class="form-check form-switch text-start">
+                            <input class="form-check-input" type="checkbox" id="swal-phone-verified" ${user.is_phone_verified == 1 ? 'checked' : ''}>
+                            <label class="form-check-label fw-semibold small" for="swal-phone-verified">
+                                <i class="bi bi-phone me-1"></i> Phone Verified
+                            </label>
+                        </div>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonColor: '#b30000',
+                confirmButtonText: 'Save Changes',
+                preConfirm: () => ({
+                    action: 'update_info',
+                    user_id: id,
+                    full_name: document.getElementById('swal-name').value.trim(),
+                    email: document.getElementById('swal-email').value.trim(),
+                    role_id: parseInt(document.getElementById('swal-role').value),
+                    is_verified: document.getElementById('swal-email-verified').checked ? 1 : 0,
+                    is_phone_verified: document.getElementById('swal-phone-verified').checked ? 1 : 0
+                })
+            }).then(result => {
+                if (result.isConfirmed) postData('api/admin/manage_user.php', result.value);
+            });
+        })
+        .catch(err => {
+            console.error('Fetch error:', err);
+            Swal.fire('Error', 'An unexpected error occurred.', 'error');
         });
-
-
-    renderUsers(filtered);
-
 }
 
-
-function renderUsers(users) {
-
-    const tbody =
-        document.getElementById(
-            "userTableBody"
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!users.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-                <td
-                    colspan="7"
-                    class="text-center text-muted py-4"
-                >
-                    No users found.
-                </td>
-            </tr>
-            `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        users.map(u => {
-
-            const name =
-                String(
-                    u.full_name || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            return `
-
-                <tr>
-
-                    <td>
-                        ${escapeHtml(u.id)}
-                    </td>
-
-
-                    <td class="fw-bold">
-                        ${escapeHtml(
-                            u.full_name ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            u.email ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            u.phone ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-
-                        <span
-                            class="
-                                badge
-                                ${
-                                    u.role_id == 2
-                                        ? 'bg-danger'
-                                        : u.role_id == 3
-                                            ? 'bg-info text-dark'
-                                            : 'bg-secondary'
-                                }
-                            "
-                        >
-
-                            ${
-                                u.role_id == 2
-                                    ? 'Admin'
-                                    : u.role_id == 3
-                                        ? 'Mechanic'
-                                        : 'Customer'
-                            }
-
-                        </span>
-
-                    </td>
-
-
-                    <td>
-
-                        ${
-                            u.created_at
-
-                                ? new Date(
-                                    u.created_at
-                                ).toLocaleDateString(
-                                    'en-US',
-                                    {
-                                        month:
-                                            'short',
-                                        day:
-                                            'numeric',
-                                        year:
-                                            'numeric'
-                                    }
-                                )
-
-                                : '—'
-                        }
-
-                    </td>
-
-
-                    <td>
-
-                        <div class="btn-group">
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-dark
-                                "
-                                onclick="editUser(
-                                    ${Number(u.id)}
-                                )"
-                                title="Edit User"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-pencil-square
-                                    "
-                                ></i>
-
-                            </button>
-
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-danger
-                                "
-                                onclick="deleteUser(
-                                    ${Number(u.id)},
-                                    '${name}'
-                                )"
-                                title="Delete User"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-trash
-                                    "
-                                ></i>
-
-                            </button>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        }).join('');
-
+function deleteUser(id, name) {
+    Swal.fire({
+        title: `Delete ${name}?`,
+        text: 'This will permanently delete the user, their vehicles, and cancel their pending appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (result.isConfirmed) postData('api/admin/manage_user.php', { action: 'delete', user_id: id });
+    });
 }
 
 
@@ -2957,269 +684,121 @@ function renderUsers(users) {
 // VEHICLES
 // =============================================================
 
-function filterAndRenderVehicles() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        masterData.vehicles.filter(v => {
-
-            const searchable = [
-
-                v.owner_name,
-
-                v.plate_number,
-
-                v.model,
-
-                v.brand,
-
-                v.year_model,
-
-                v.fuel_type,
-
-                v.transmission
-
-            ]
-
-            .filter(Boolean)
-
-            .join(' ')
-
-            .toLowerCase();
-
-
-            return (
-                !term ||
-                searchable.includes(term)
-            );
-
-        });
-
-
-    renderVehicles(filtered);
-
+function vehicleForm(v = {}) {
+    return `
+        <div class="text-start">
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Brand</label>
+                    <input id="sv-brand" class="form-control" placeholder="e.g. Toyota" value="${v.brand || ''}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Model</label>
+                    <input id="sv-model" class="form-control" placeholder="e.g. Vios" value="${v.model || ''}">
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-4">
+                    <label class="form-label fw-semibold small">Year</label>
+                    <input id="sv-year" type="number" class="form-control" placeholder="e.g. 2020" min="1970" max="2099" value="${v.year_model || ''}">
+                </div>
+                <div class="col-8">
+                    <label class="form-label fw-semibold small">Plate Number</label>
+                    <input id="sv-plate" class="form-control text-uppercase" placeholder="e.g. ABC 1234" value="${v.plate_number || ''}">
+                </div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Fuel Type</label>
+                    <select id="sv-fuel" class="form-select">
+                        <option value="">Select</option>
+                        <option value="Gasoline"  ${v.fuel_type === 'Gasoline'  ? 'selected' : ''}>Gasoline</option>
+                        <option value="Diesel"    ${v.fuel_type === 'Diesel'    ? 'selected' : ''}>Diesel</option>
+                        <option value="Electric"  ${v.fuel_type === 'Electric'  ? 'selected' : ''}>Electric</option>
+                        <option value="Hybrid"    ${v.fuel_type === 'Hybrid'    ? 'selected' : ''}>Hybrid</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Transmission</label>
+                    <select id="sv-trans" class="form-select">
+                        <option value="">Select</option>
+                        <option value="Automatic" ${v.transmission === 'Automatic' ? 'selected' : ''}>Automatic</option>
+                        <option value="Manual"    ${v.transmission === 'Manual'    ? 'selected' : ''}>Manual</option>
+                        <option value="CVT"       ${v.transmission === 'CVT'       ? 'selected' : ''}>CVT</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label fw-semibold small">Owner (User ID)</label>
+                <input id="sv-userid" type="number" class="form-control" placeholder="User ID" value="${v.user_id || ''}">
+                <small class="text-muted">Check the Users tab for the correct ID.</small>
+            </div>
+        </div>`;
 }
 
-
-function renderVehicles(vehs) {
-
-    const tbody =
-        document.getElementById(
-            "vehicleTableBody"
-        );
-
-    if (!tbody) {
-        return;
+function getVehicleFormValues(action, id = null) {
+    const val = {
+        action,
+        user_id:      parseInt(document.getElementById('sv-userid').value),
+        brand:        document.getElementById('sv-brand').value.trim(),
+        model:        document.getElementById('sv-model').value.trim(),
+        year_model:   document.getElementById('sv-year').value.trim(),
+        plate_number: document.getElementById('sv-plate').value.trim().toUpperCase(),
+        fuel_type:    document.getElementById('sv-fuel').value,
+        transmission: document.getElementById('sv-trans').value
+    };
+    if (id) val.id = id;
+    if (!val.brand || !val.model || !val.plate_number || !val.year_model || !val.fuel_type || !val.transmission) {
+        Swal.showValidationMessage('All fields are required.');
+        return false;
     }
-
-
-    if (!vehs.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-                <td
-                    colspan="8"
-                    class="text-center text-muted py-4"
-                >
-                    No vehicles found.
-                </td>
-            </tr>
-            `;
-
-        return;
+    if (!val.user_id || isNaN(val.user_id)) {
+        Swal.showValidationMessage('Please enter a valid User ID.');
+        return false;
     }
+    return val;
+}
 
+function postVehicleData(payload) {
+    fetch('/api/admin/manage_vehicles.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message || 'Vehicle updated', showConfirmButton: false, timer: 2000 });
+            loadFullSiteData();
+        } else {
+            Swal.fire('Error', data.message || 'Something went wrong.', 'error');
+        }
+    })
+    .catch(() => Swal.fire('Error', 'Could not reach manage_vehicles.php', 'error'));
+}
 
-    tbody.innerHTML =
-        vehs.map(v => {
+function editVehicle(id, userId, brand, model, yearModel, plate, fuelType, transmission) {
+    Swal.fire({
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Vehicle',
+        html: vehicleForm({ user_id: userId, brand, model, year_model: yearModel, plate_number: plate, fuel_type: fuelType, transmission }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getVehicleFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postVehicleData(result.value);
+    });
+}
 
-            const brand =
-                String(
-                    v.brand || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            const model =
-                String(
-                    v.model || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            const plate =
-                String(
-                    v.plate_number || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            const fuel =
-                String(
-                    v.fuel_type || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            const trans =
-                String(
-                    v.transmission || ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            return `
-
-                <tr>
-
-                    <td class="fw-bold">
-                        ${escapeHtml(
-                            v.owner_name ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            v.brand ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            v.model ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            v.year_model ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-
-                        <code
-                            class="text-uppercase"
-                            style="color:#b30000;"
-                        >
-                            ${escapeHtml(
-                                v.plate_number ||
-                                '—'
-                            )}
-                        </code>
-
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            v.fuel_type ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            v.transmission ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-
-                        <div class="btn-group">
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-dark
-                                "
-                                onclick="editVehicle(
-                                    ${Number(v.id)},
-                                    ${Number(v.user_id)},
-                                    '${brand}',
-                                    '${model}',
-                                    '${String(
-                                        v.year_model ||
-                                        ''
-                                    ).replace(
-                                        /'/g,
-                                        "\\'"
-                                    )}',
-                                    '${plate}',
-                                    '${fuel}',
-                                    '${trans}'
-                                )"
-                                title="Edit Vehicle"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-pencil-square
-                                    "
-                                ></i>
-
-                            </button>
-
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-danger
-                                "
-                                onclick="deleteVehicle(
-                                    ${Number(v.id)},
-                                    '${plate}'
-                                )"
-                                title="Delete Vehicle"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-trash
-                                    "
-                                ></i>
-
-                            </button>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        }).join('');
-
+function deleteVehicle(id, plate) {
+    Swal.fire({
+        title: `Delete vehicle "${plate}"?`,
+        text: 'This will permanently remove the vehicle record.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (result.isConfirmed) postVehicleData({ action: 'delete', id });
+    });
 }
 
 
@@ -3227,1200 +806,213 @@ function renderVehicles(vehs) {
 // SERVICE HISTORY
 // =============================================================
 
-function filterAndRenderHistory() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        historyData.filter(h => {
-
-            const searchable = [
-
-                h.full_name,
-
-                h.service_type,
-
-                h.plate_number,
-
-                h.brand,
-
-                h.model,
-
-                h.year_model,
-
-                h.service_date
-
-            ]
-
-            .filter(Boolean)
-
-            .join(' ')
-
-            .toLowerCase();
-
-
-            return (
-                !term ||
-                searchable.includes(term)
-            );
-
-        });
-
-
-    renderHistory(filtered);
-
-}
-
-
-function renderHistory(data) {
-
-    const tbody =
-        document.getElementById(
-            'historyTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    const count =
-        document.getElementById(
-            'historyCount'
-        );
-
-
-    if (count) {
-
-        count.textContent =
-            data.length
-                ? `Showing ${data.length} record(s)`
-                : '';
-
-    }
-
-
-    if (!data.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-                <td
-                    colspan="6"
-                    class="text-center text-muted py-4"
-                >
-                    No service history found.
-                </td>
-            </tr>
-            `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        data.map(h => {
-
-            const vehicle =
-                h.brand &&
-                h.model
-
-                    ? `${h.brand} ${h.model} (${h.year_model || '—'})`
-
-                    : '—';
-
-
-            const date =
-                h.service_date
-
-                    ? new Date(
-                        h.service_date
-                    ).toLocaleDateString(
-                        'en-US',
-                        {
-                            month:
-                                'short',
-                            day:
-                                'numeric',
-                            year:
-                                'numeric'
-                        }
-                    )
-
-                    : '—';
-
-
-            const rawDate =
-                h.service_date
-                    ? String(
-                        h.service_date
-                    ).substring(
-                        0,
-                        10
-                    )
-                    : '';
-
-
-            const service =
-                String(
-                    h.service_type ||
-                    ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            const custName =
-                String(
-                    h.full_name ||
-                    ''
-                ).replace(
-                    /'/g,
-                    "\\'"
-                );
-
-
-            return `
-
-                <tr>
-
-                    <td class="fw-bold">
-                        ${escapeHtml(
-                            h.full_name ||
-                            '—'
-                        )}
-                    </td>
-
-
-                    <td>
-
-                        <span
-                            class="
-                                badge
-                                bg-light
-                                text-dark
-                                border
-                            "
-                        >
-                            ${escapeHtml(
-                                h.service_type ||
-                                '—'
-                            )}
-                        </span>
-
-                    </td>
-
-
-                    <td>
-                        ${escapeHtml(
-                            vehicle
-                        )}
-                    </td>
-
-
-                    <td>
-
-                        <code
-                            class="text-uppercase"
-                            style="color:#b30000;"
-                        >
-                            ${escapeHtml(
-                                h.plate_number ||
-                                '—'
-                            )}
-                        </code>
-
-                    </td>
-
-
-                    <td>
-                        ${date}
-                    </td>
-
-
-                    <td>
-
-                        <div class="btn-group">
-
-                            <a
-                                href="api/admin/generate_receipt.php?id=${Number(h.id)}"
-                                target="_blank"
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-primary
-                                "
-                                title="View Invoice"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-receipt
-                                    "
-                                ></i>
-
-                            </a>
-
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-success
-                                "
-                                onclick="sendReceiptToUser(
-                                    ${Number(h.id)},
-                                    '${custName}'
-                                )"
-                                title="Send Receipt"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-send
-                                    "
-                                ></i>
-
-                            </button>
-
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-dark
-                                "
-                                onclick="editHistory(
-                                    ${Number(h.id)},
-                                    '${service}',
-                                    '${rawDate}'
-                                )"
-                                title="Edit History"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-pencil-square
-                                    "
-                                ></i>
-
-                            </button>
-
-
-                            <button
-                                class="
-                                    btn
-                                    btn-sm
-                                    btn-outline-danger
-                                "
-                                onclick="deleteHistory(
-                                    ${Number(h.id)},
-                                    '${custName}'
-                                )"
-                                title="Delete History"
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-trash
-                                    ></i>
-
-                            </button>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        }).join('');
-
-}
-
-
-// =============================================================
-// APPOINTMENT FILTERS
-// =============================================================
-
-function applyAppointmentFilter() {
-
-    filterAndRenderAppointments();
-
-}
-
-
-// =============================================================
-// USER FILTER
-// =============================================================
-
-function applyUserFilter() {
-
-    filterAndRenderUsers();
-
-}
-
-
-// =============================================================
-// PARTS FILTER
-// =============================================================
-
-function applyPartsFilter() {
-
-    filterAndRenderParts();
-
-}
-
-
-// =============================================================
-// INQUIRIES FILTER
-// =============================================================
-
-function applyInquiryFilter() {
-
-    filterAndRenderInquiries();
-
-}
-
-
-// =============================================================
-// ORDERS FILTER
-// =============================================================
-
-function applyOrderFilter() {
-
-    filterAndRenderOrders();
-
-}
-
-
-// =============================================================
-// GLOBAL FILTER
-// =============================================================
-
-function applyAllFilters() {
-
-    filterAndRenderAppointments();
-
-    filterAndRenderUsers();
-
-    filterAndRenderVehicles();
-
-    filterAndRenderHistory();
-
-    filterAndRenderParts();
-
-    filterAndRenderInquiries();
-
-    filterAndRenderOrders();
-
-    filterAndRenderServices();
-
-    filterAndRenderMechanics();
-
-    if (
-        typeof applyBusyFilter ===
-        'function'
-    ) {
-
-        applyBusyFilter();
-
-    }
-
-}
-
-
-// =============================================================
-// APPOINTMENT STATUS HELPERS
-// =============================================================
-
-function getAllowedAppointmentStatuses(
-    currentStatus
-) {
-
-    const status =
-        appointmentStatusKey(
-            currentStatus
-        );
-
-
-    return (
-        APPOINTMENT_STATUS_FLOW[
-            status
-        ] || []
-    );
-
-}
-
-
-function isAppointmentLocked(
-    status
-) {
-
-    const normalized =
-        appointmentStatusKey(
-            status
-        );
-
-
-    return (
-        normalized ===
-            'Completed' ||
-
-        normalized ===
-            'Cancelled'
-    );
-
-}
-
-
-// =============================================================
-// APPOINTMENT DISPLAY HELPERS
-// =============================================================
-
-function getAppointmentNotes(
-    appointment
-) {
-
-    const notes =
-        appointment.notes ||
-        '';
-
-
-    const cancellation =
-        appointment.cancellation_response ||
-        appointment.cancellation_reason ||
-        '';
-
-
-    let html = '';
-
-
-    if (notes) {
-
-        html +=
-            `
-            <div>
-                ${escapeHtml(notes)}
-            </div>
-            `;
-
-    }
-
-
-    if (cancellation) {
-
-        html +=
-            `
-            <div
-                class="
-                    small
-                    text-danger
-                    mt-1
-                "
-            >
-
-                <strong>
-                    Cancellation:
-                </strong>
-
-                ${escapeHtml(
-                    cancellation
-                )}
-
-            </div>
-            `;
-
-    }
-
-
-    return html ||
-        '<span class="text-muted small">—</span>';
-
-}
-
-
-// =============================================================
-// APPOINTMENT MANAGEMENT
-// =============================================================
-
-function openAppointmentStatusModal(
-    id,
-    currentStatus
-) {
-
-    manageApp(
-        id,
-        currentStatus
-    );
-
-}
-
-
-// =============================================================
-// REFRESH DATA
-// =============================================================
-
-function refreshAppointments() {
-
-    loadFullSiteData();
-
-}
-
-
-function refreshUsers() {
-
-    loadFullSiteData();
-
-}
-
-
-function refreshVehicles() {
-
-    loadFullSiteData();
-
-}
-
-
-function refreshHistory() {
-
-    loadServiceHistory();
-
-}
-
-
-// =============================================================
-// END PART 2
-// =============================================================
-
-// =============================================================
-// PARTS MANAGEMENT
-// =============================================================
-
-function loadParts() {
-
-    fetch(
-        'api/admin/manage_parts.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (data.status !== 'success') {
-
-            console.error(
-                'Failed to load parts:',
-                data.message
-            );
-
-            return;
-        }
-
-
-        partsData =
-            Array.isArray(data.parts)
-                ? data.parts
-                : [];
-
-
-        const badge =
-            document.getElementById(
-                'badgeParts'
-            );
-
-
-        if (badge) {
-
-            badge.textContent =
-                partsData.length;
-
-        }
-
-
-        populatePartsCategoryFilter();
-
-        filterAndRenderParts();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Parts loading error:',
-            error
-        );
-
+function applyHistoryFilter() {
+    const term  = document.getElementById('historySearch').value.toLowerCase();
+    const month = document.getElementById('historyMonth').value;
+    const filtered = historyData.filter(h => {
+        const matchTerm = !term ||
+            (h.full_name && h.full_name.toLowerCase().includes(term)) ||
+            (h.plate_number && h.plate_number.toLowerCase().includes(term)) ||
+            (h.model && h.model.toLowerCase().includes(term));
+        const matchMonth = !month || (h.service_date && h.service_date.startsWith(month));
+        return matchTerm && matchMonth;
     });
-
+    renderHistory(filtered);
 }
 
+function clearHistoryFilter() {
+    document.getElementById('historySearch').value = '';
+    document.getElementById('historyMonth').value  = '';
+    renderHistory(historyData);
+}
 
-// -------------------------------------------------------------
-// Populate Parts Category Filter
-// -------------------------------------------------------------
-
-function populatePartsCategoryFilter() {
-
-    const select =
-        document.getElementById(
-            'partsCategoryFilter'
-        );
-
-
-    if (!select) {
-        return;
-    }
-
-
-    const currentValue =
-        select.value;
-
-
-    const categories =
-        [
-            ...new Set(
-
-                partsData
-
-                    .map(
-                        part =>
-                            part.category
-                    )
-
-                    .filter(Boolean)
-
-            )
-        ]
-
-        .sort(
-            (a, b) =>
-                String(a)
-                    .localeCompare(
-                        String(b)
-                    )
-        );
-
-
-    select.innerHTML =
-        `
-        <option value="">
-            All Categories
-        </option>
-        `;
-
-
-    categories.forEach(
-        category => {
-
-            const option =
-                document.createElement(
-                    'option'
-                );
-
-
-            option.value =
-                category;
-
-
-            option.textContent =
-                category;
-
-
-            select.appendChild(
-                option
-            );
-
+function sendReceiptToUser(id, name) {
+    Swal.fire({
+        title: 'Send Receipt?',
+        text: `Do you want to send the digital receipt to ${name}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Yes, Send Email',
+        showLoaderOnConfirm: true,
+        preConfirm: () => fetch('api/admin/send_receipt.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ appointment_id: id })
+        })
+        .then(res => { if (!res.ok) throw new Error(res.statusText); return res.json(); })
+        .catch(err => Swal.showValidationMessage(`Request failed: ${err}`)),
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then(result => {
+        if (result.isConfirmed && result.value?.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'Sent!', text: `Receipt sent to ${name}.`, timer: 2000, showConfirmButton: false });
+        } else if (result.isConfirmed) {
+            Swal.fire('Error', result.value?.message || 'Failed to send receipt.', 'error');
         }
-    );
+    });
+}
 
+function editHistory(id, service, date) {
+    Swal.fire({
+        title: 'Edit Service Record',
+        html: `
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Service Type</label>
+                <input id="swal-service" class="form-control" value="${service}">
+            </div>
+            <div class="text-start">
+                <label class="form-label fw-semibold small">Date</label>
+                <input id="swal-date" type="date" class="form-control" value="${date}">
+            </div>`,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => ({
+            action:           'update',
+            id,
+            service_type:     document.getElementById('swal-service').value.trim(),
+            appointment_date: document.getElementById('swal-date').value
+        })
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/get_service_history.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify(result.value)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Record updated', showConfirmButton: false, timer: 2000 });
+                historyData = [];
+                loadServiceHistory();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
 
-    if (
-        categories.includes(
-            currentValue
-        )
-    ) {
-
-        select.value =
-            currentValue;
-
-    }
-
+function deleteHistory(id, name) {
+    Swal.fire({
+        title: `Delete record for ${name}?`,
+        text: 'This will permanently remove this service history entry.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/get_service_history.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Record deleted', showConfirmButton: false, timer: 2000 });
+                historyData = [];
+                loadServiceHistory();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
 }
 
 
-// -------------------------------------------------------------
-// Filter Parts
-// -------------------------------------------------------------
+// =============================================================
+// PARTS
+// =============================================================
 
-function filterAndRenderParts() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const category =
-        document
-            .getElementById(
-                'partsCategoryFilter'
-            )
-            ?.value || '';
-
-
-    const stock =
-        document
-            .getElementById(
-                'partsStockFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        partsData.filter(
-            part => {
-
-                const searchable = [
-
-                    part.name,
-
-                    part.category,
-
-                    part.description,
-
-                    part.stock
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                const matchesSearch =
-                    !term ||
-                    searchable.includes(
-                        term
-                    );
-
-
-                const matchesCategory =
-                    !category ||
-                    String(
-                        part.category || ''
-                    ) ===
-                    String(category);
-
-
-                let matchesStock =
-                    true;
-
-
-                if (
-                    stock === 'in'
-                ) {
-
-                    matchesStock =
-                        Number(
-                            part.stock
-                        ) > 0;
-
-                }
-
-
-                if (
-                    stock === 'out'
-                ) {
-
-                    matchesStock =
-                        Number(
-                            part.stock
-                        ) <= 0;
-
-                }
-
-
-                if (
-                    stock === 'low'
-                ) {
-
-                    matchesStock =
-                        Number(
-                            part.stock
-                        ) > 0 &&
-                        Number(
-                            part.stock
-                        ) <= 5;
-
-                }
-
-
-                return (
-                    matchesSearch &&
-                    matchesCategory &&
-                    matchesStock
-                );
-
-            }
-        );
-
-
-    renderParts(
-        filtered
-    );
-
+function openAddPart() {
+    Swal.fire({
+        title: 'Add New Part',
+        html: partForm(),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Add Part',
+        preConfirm: () => getPartFormValues('add')
+    }).then(result => {
+        if (result.isConfirmed) postPartData(result.value);
+    });
 }
 
+function openEditPart(id, name, desc, price, category, image_url, stock) {
+    Swal.fire({
+        title: 'Edit Part',
+        html: partForm({ name, desc, price, category, image_url, stock }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getPartFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postPartData(result.value);
+    });
+}
 
-// -------------------------------------------------------------
-// Render Parts
-// -------------------------------------------------------------
+function partForm(v = {}) {
+    return `
+        <div class="text-start">
+            <div class="mb-2"><label class="form-label fw-semibold small">Name</label>
+            <input id="sp-name" class="form-control" value="${v.name || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Description</label>
+            <textarea id="sp-desc" class="form-control" rows="2">${v.desc || ''}</textarea></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
+            <input id="sp-price" type="number" class="form-control" value="${v.price || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Category</label>
+            <select id="sp-cat" class="form-select">
+                <option value="engine"     ${v.category === 'engine'     ? 'selected' : ''}>Engine</option>
+                <option value="brakes"     ${v.category === 'brakes'     ? 'selected' : ''}>Brakes</option>
+                <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
+                <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
+            </select></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Image URL</label>
+            <input id="sp-img" class="form-control" value="${v.image_url || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Stock</label>
+            <input id="sp-stock" type="number" class="form-control" value="${v.stock || 0}"></div>
+        </div>`;
+}
 
-function renderParts(parts) {
-
-    const tbody =
-        document.getElementById(
-            'partsTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
+function getPartFormValues(action, id = null) {
+    const val = {
+        action,
+        name:        document.getElementById('sp-name').value.trim(),
+        description: document.getElementById('sp-desc').value.trim(),
+        price:       parseFloat(document.getElementById('sp-price').value),
+        category:    document.getElementById('sp-cat').value,
+        image_url:   document.getElementById('sp-img').value.trim(),
+        stock:       parseInt(document.getElementById('sp-stock').value)
+    };
+    if (id) val.id = id;
+    if (!val.name || !val.price) {
+        Swal.showValidationMessage('Name and price are required.');
+        return false;
     }
-
-
-    if (!parts.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="6"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    <i
-                        class="
-                            bi
-                            bi-box-seam
-                            fs-3
-                            d-block
-                            mb-2
-                        "
-                    ></i>
-
-                    No parts match your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        parts.map(
-            part => {
-
-                const id =
-                    Number(
-                        part.id
-                    );
-
-
-                const name =
-                    escapeHtml(
-                        part.name ||
-                        'Unnamed Part'
-                    );
-
-
-                const category =
-                    escapeHtml(
-                        part.category ||
-                        'Uncategorized'
-                    );
-
-
-                const description =
-                    escapeHtml(
-                        part.description ||
-                        ''
-                    );
-
-
-                const price =
-                    Number(
-                        part.price || 0
-                    );
-
-
-                const stock =
-                    Number(
-                        part.stock || 0
-                    );
-
-
-                const image =
-                    part.image_url ||
-                    '';
-
-
-                let stockClass =
-                    'bg-success';
-
-
-                if (
-                    stock <= 0
-                ) {
-
-                    stockClass =
-                        'bg-danger';
-
-                }
-                else if (
-                    stock <= 5
-                ) {
-
-                    stockClass =
-                        'bg-warning text-dark';
-
-                }
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            ${
-                                image
-
-                                    ? `
-                                        <img
-                                            src="${escapeHtml(
-                                                image
-                                            )}"
-                                            alt="${name}"
-                                            style="
-                                                width:50px;
-                                                height:40px;
-                                                object-fit:cover;
-                                                border-radius:6px;
-                                            "
-                                            onerror="
-                                                this.style.display='none'
-                                            "
-                                        >
-                                    `
-
-                                    : `
-                                        <div
-                                            class="
-                                                bg-light
-                                                border
-                                                rounded
-                                                d-flex
-                                                align-items-center
-                                                justify-content-center
-                                            "
-                                            style="
-                                                width:50px;
-                                                height:40px;
-                                            "
-                                        >
-
-                                            <i
-                                                class="
-                                                    bi
-                                                    bi-box-seam
-                                                    text-muted
-                                                "
-                                            ></i>
-
-                                        </div>
-                                    `
-                            }
-
-                        </td>
-
-
-                        <td class="fw-bold">
-
-                            ${name}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    bg-light
-                                    text-dark
-                                    border
-                                "
-                            >
-
-                                ${category}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            ₱${price.toLocaleString(
-                                'en-PH',
-                                {
-                                    minimumFractionDigits:
-                                        2
-                                }
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    ${stockClass}
-                                "
-                            >
-
-                                ${stock}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="btn-group"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        openEditPart(
-                                            ${id},
-                                            '${String(
-                                                part.name ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                part.description ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            ${price},
-                                            '${String(
-                                                part.category ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                part.image_url ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            ${stock}
-                                        )
-                                    "
-                                    title="Edit Part"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deletePart(
-                                            ${id},
-                                            '${String(
-                                                part.name ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete Part"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
+    return val;
+}
+
+function postPartData(payload) {
+    fetch('api/admin/manage_parts.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 2000 });
+            loadParts();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+function deletePart(id, name) {
+    Swal.fire({
+        title: `Delete "${name}"?`,
+        text: 'This will also delete all inquiries for this part.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (result.isConfirmed) postPartData({ action: 'delete', id });
+    });
 }
 
 
@@ -4428,10003 +1020,1443 @@ function renderParts(parts) {
 // INQUIRIES
 // =============================================================
 
-function loadInquiries() {
-
-    fetch(
-        'api/admin/manage_parts.php?action=get_inquiries',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            console.error(
-                'Failed to load inquiries:',
-                data.message
-            );
-
-            return;
-        }
-
-
-        inquiriesData =
-            Array.isArray(
-                data.inquiries
-            )
-                ? data.inquiries
-                : [];
-
-
-        const pendingCount =
-            inquiriesData.filter(
-                inquiry =>
-                    inquiry.status !==
-                    'responded'
-            ).length;
-
-
-        const badge =
-            document.getElementById(
-                'badgeInquiries'
-            );
-
-
-        if (badge) {
-
-            badge.textContent =
-                pendingCount;
-
-        }
-
-
-        filterAndRenderInquiries();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Inquiry loading error:',
-            error
-        );
-
-    });
-
-}
-
-
-// -------------------------------------------------------------
-// Inquiry Filter
-// -------------------------------------------------------------
-
-function filterAndRenderInquiries() {
-
-    const term =
-        globalSearchTerm;
-
-
-    const statusFilter =
-        document
-            .getElementById(
-                'inquiriesStatusFilter'
-            )
-            ?.value || 'pending';
-
-
-    const filtered =
-        inquiriesData.filter(
-            inquiry => {
-
-                const searchable = [
-
-                    inquiry.customer_name,
-
-                    inquiry.part_name,
-
-                    inquiry.contact,
-
-                    inquiry.email,
-
-                    inquiry.message,
-
-                    inquiry.status
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                const matchesSearch =
-                    !term ||
-                    searchable.includes(
-                        term
-                    );
-
-
-                let matchesStatus =
-                    true;
-
-
-                if (
-                    statusFilter ===
-                    'pending'
-                ) {
-
-                    matchesStatus =
-                        inquiry.status !==
-                        'responded';
-
-                }
-                else if (
-                    statusFilter ===
-                    'responded'
-                ) {
-
-                    matchesStatus =
-                        inquiry.status ===
-                        'responded';
-
-                }
-
-
-                return (
-                    matchesSearch &&
-                    matchesStatus
-                );
-
-            }
-        );
-
-
-    renderInquiries(
-        filtered
-    );
-
-}
-
-
-// -------------------------------------------------------------
-// Render Inquiries
-// -------------------------------------------------------------
-
-function renderInquiries(
-    inquiries
-) {
-
-    const tbody =
-        document.getElementById(
-            'inquiriesTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!inquiries.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="7"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    <i
-                        class="
-                            bi
-                            bi-inbox
-                            fs-3
-                            d-block
-                            mb-2
-                        "
-                    ></i>
-
-                    No inquiries match your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        inquiries.map(
-            inquiry => {
-
-                const id =
-                    Number(
-                        inquiry.id
-                    );
-
-
-                const status =
-                    String(
-                        inquiry.status ||
-                        'pending'
-                    ).toLowerCase();
-
-
-                const isResponded =
-                    status ===
-                    'responded';
-
-
-                const date =
-                    inquiry.created_at
-
-                        ? new Date(
-                            inquiry.created_at
-                        ).toLocaleDateString(
-                            'en-US',
-                            {
-                                month:
-                                    'short',
-                                day:
-                                    'numeric',
-                                year:
-                                    'numeric'
-                            }
-                        )
-
-                        : '—';
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    bg-light
-                                    text-dark
-                                    border
-                                "
-                            >
-
-                                ${escapeHtml(
-                                    inquiry.part_name ||
-                                    '—'
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td class="fw-bold">
-
-                            ${escapeHtml(
-                                inquiry.customer_name ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${escapeHtml(
-                                inquiry.contact ||
-                                inquiry.email ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td
-                            class="
-                                text-muted
-                                small
-                            "
-                            style="
-                                max-width:220px;
-                            "
-                        >
-
-                            <div
-                                style="
-                                    white-space:nowrap;
-                                    overflow:hidden;
-                                    text-overflow:ellipsis;
-                                "
-                                title="${escapeHtml(
-                                    inquiry.message ||
-                                    ''
-                                )}"
-                            >
-
-                                ${escapeHtml(
-                                    inquiry.message ||
-                                    '—'
-                                )}
-
-                            </div>
-
-                        </td>
-
-
-                        <td>
-
-                            ${date}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    ${
-                                        isResponded
-                                            ? 'bg-success'
-                                            : 'bg-warning text-dark'
-                                    }
-                                "
-                            >
-
-                                ${
-                                    isResponded
-                                        ? 'Responded'
-                                        : 'Pending'
-                                }
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="btn-group"
-                            >
-
-                                ${
-                                    !isResponded
-
-                                        ? `
-                                            <button
-                                                class="
-                                                    btn
-                                                    btn-sm
-                                                    btn-outline-success
-                                                "
-                                                onclick="
-                                                    updateInquiry(
-                                                        ${id}
-                                                    )
-                                                "
-                                                title="Mark as Responded"
-                                            >
-
-                                                <i
-                                                    class="
-                                                        bi
-                                                        bi-check-lg
-                                                    "
-                                                ></i>
-
-                                            </button>
-                                        `
-
-                                        : ''
-                                }
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteInquiry(
-                                            ${id}
-                                        )
-                                    "
-                                    title="Delete Inquiry"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// INQUIRY ACTIONS
-// =============================================================
-
-function updateInquiry(
-    id
-) {
-
+function updateInquiry(id) {
     Swal.fire({
-
-        title:
-            'Mark Inquiry as Responded?',
-
-        text:
-            'This inquiry will be marked as responded.',
-
-        icon:
-            'question',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#198754',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Yes, Mark Responded'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
+        title: 'Reply to Inquiry',
+        input: 'textarea',
+        inputLabel: 'Your Message to Customer',
+        inputPlaceholder: 'e.g. This part is available, you can visit us tomorrow...',
+        showCancelButton: true,
+        confirmButtonText: 'Send Response',
+        confirmButtonColor: '#28a745',
+        preConfirm: (message) => {
+            if (!message) Swal.showValidationMessage('Please enter a reply message');
+            return message;
         }
-
-
-        postData(
-            'api/admin/manage_parts.php',
-            {
-
-                action:
-                    'update_inquiry',
-
-                id:
-                    id,
-
-                status:
-                    'responded'
-
-            },
-
-            () => {
-
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_parts.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'update_inquiry', id, status: 'responded', reply_message: result.value })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Reply Sent', showConfirmButton: false, timer: 2000 });
                 loadInquiries();
-
+            } else {
+                Swal.fire('Error', data.message, 'error');
             }
-        );
-
+        });
     });
-
 }
 
-
-function deleteInquiry(
-    id
-) {
-
+function deleteInquiry(id) {
     Swal.fire({
-
-        title:
-            'Delete Inquiry?',
-
-        text:
-            'This action cannot be undone.',
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_parts.php',
-            {
-
-                action:
-                    'delete_inquiry',
-
-                id:
-                    id
-
-            },
-
-            () => {
-
+        title: 'Delete this inquiry?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_parts.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete_inquiry', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Deleted', showConfirmButton: false, timer: 2000 });
                 loadInquiries();
-
             }
-        );
-
+        });
     });
-
 }
 
-
-// =============================================================
-// PARTS ACTIONS
-// =============================================================
-
-function openEditPart(
-    id,
-    name,
-    description,
-    price,
-    category,
-    imageUrl,
-    stock
-) {
-
-    Swal.fire({
-
-        title:
-            'Edit Part',
-
-        width:
-            650,
-
-        html: `
-
-            <div
-                class="text-start"
-            >
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Part Name
-                    </label>
-
-                    <input
-                        id="editPartName"
-                        class="form-control"
-                        value="${escapeHtml(name)}"
-                    >
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Description
-                    </label>
-
-                    <textarea
-                        id="editPartDescription"
-                        class="form-control"
-                        rows="3"
-                    >${escapeHtml(
-                        description
-                    )}</textarea>
-
-                </div>
-
-
-                <div
-                    class="row"
-                >
-
-                    <div
-                        class="col-md-6 mb-3"
-                    >
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Price
-                        </label>
-
-                        <input
-                            id="editPartPrice"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            class="form-control"
-                            value="${Number(
-                                price || 0
-                            )}"
-                        >
-
-                    </div>
-
-
-                    <div
-                        class="col-md-6 mb-3"
-                    >
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Stock
-                        </label>
-
-                        <input
-                            id="editPartStock"
-                            type="number"
-                            min="0"
-                            class="form-control"
-                            value="${Number(
-                                stock || 0
-                            )}"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Category
-                    </label>
-
-                    <input
-                        id="editPartCategory"
-                        class="form-control"
-                        value="${escapeHtml(
-                            category
-                        )}"
-                    >
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Image URL
-                    </label>
-
-                    <input
-                        id="editPartImage"
-                        class="form-control"
-                        value="${escapeHtml(
-                            imageUrl
-                        )}"
-                    >
-
-                </div>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Save Changes',
-
-        preConfirm: () => {
-
-            const newName =
-                document
-                    .getElementById(
-                        'editPartName'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newDescription =
-                document
-                    .getElementById(
-                        'editPartDescription'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newPrice =
-                document
-                    .getElementById(
-                        'editPartPrice'
-                    )
-                    ?.value;
-
-
-            const newStock =
-                document
-                    .getElementById(
-                        'editPartStock'
-                    )
-                    ?.value;
-
-
-            const newCategory =
-                document
-                    .getElementById(
-                        'editPartCategory'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newImage =
-                document
-                    .getElementById(
-                        'editPartImage'
-                    )
-                    ?.value
-                    .trim();
-
-
-            if (!newName) {
-
-                Swal.showValidationMessage(
-                    'Part name is required.'
-                );
-
-                return false;
-
-            }
-
-
-            if (
-                newPrice === '' ||
-                Number(newPrice) < 0
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please enter a valid price.'
-                );
-
-                return false;
-
-            }
-
-
-            if (
-                newStock === '' ||
-                Number(newStock) < 0
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please enter a valid stock quantity.'
-                );
-
-                return false;
-
-            }
-
-
-            return {
-
-                id:
-                    Number(id),
-
-                name:
-                    newName,
-
-                description:
-                    newDescription,
-
-                price:
-                    Number(newPrice),
-
-                stock:
-                    Number(newStock),
-
-                category:
-                    newCategory,
-
-                image_url:
-                    newImage
-
-            };
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_parts.php',
-            {
-
-                action:
-                    'update',
-
-                ...result.value
-
-            },
-
-            () => {
-
-                loadParts();
-
-            }
-        );
-
-    });
-
-}
-
-
-function deletePart(
-    id,
-    name
-) {
-
-    Swal.fire({
-
-        title:
-            'Delete Part?',
-
-        html:
-            `
-            Are you sure you want to delete
-            <strong>
-                ${escapeHtml(name)}
-            </strong>?
-            `,
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_parts.php',
-            {
-
-                action:
-                    'delete',
-
-                id:
-                    Number(id)
-
-            },
-
-            () => {
-
-                loadParts();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// PART 3 END
-// =============================================================
 
 // =============================================================
 // ORDERS
 // =============================================================
 
-function loadOrders() {
-
-    const tbody =
-        document.getElementById(
-            'ordersTableBody'
-        );
-
-    if (!tbody) {
+function updateOrder(id, status, name) {
+    const currentStatus = status.toLowerCase();
+    if (currentStatus === 'approved' || currentStatus === 'completed') {
+        Swal.fire({ title: 'Already Approved', html: `Order for <b>${name}</b> is already approved.`, icon: 'info', confirmButtonColor: '#b30000' });
         return;
     }
+    if (currentStatus === 'cancelled') {
+        Swal.fire({ title: 'Order Cancelled', html: `Order for <b>${name}</b> has already been cancelled.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+    Swal.fire({
+        title: 'Manage Order',
+        html: `How would you like to proceed with the order for <b>${name}</b>?`,
+        icon: 'question',
+        showConfirmButton: true,
+        confirmButtonText: '✓ Approve',
+        confirmButtonColor: '#198754',
+        showDenyButton: true,
+        denyButtonText: '✗ Decline',
+        denyButtonColor: '#dc3545',
+        showCancelButton: true,
+        cancelButtonText: 'Keep Pending'
+    }).then(result => {
+        if (result.isConfirmed) executeStatusUpdate(id, 'approved', name);
+        else if (result.isDenied) executeStatusUpdate(id, 'cancelled', name);
+    });
+}
 
-
-    fetch(
-        'api/admin/manage_orders.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
+function executeStatusUpdate(id, newStatus, name) {
+    fetch('api/admin/manage_orders.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+    })
     .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'Order Updated!', text: `Order for ${name} is now ${newStatus}.`, timer: 1500, showConfirmButton: false });
+            loadOrders();
+        } else {
+            Swal.fire('Error', data.message || 'Failed to update order', 'error');
+        }
+    })
+    .catch(err => {
+        console.error("Update error:", err);
+        Swal.fire('Error', 'Connection failed.', 'error');
+    });
+}
 
+function deleteOrder(id) {
+    Swal.fire({
+        title: 'Delete this order?',
+        text: 'This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, delete'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_orders.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Order deleted', showConfirmButton: false, timer: 2000 });
+                loadOrders();
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        });
+    });
+}
+
+
+// =============================================================
+// LIVE CHAT
+// =============================================================
+
+function loadAdminChatUsers() {
+
+    fetch('api/check_session.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            type: 'admin_get_chat_users'
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Unable to load chat users.');
+        }
+
+        return res.json();
+    })
     .then(data => {
 
-        if (
-            data.status !==
-            'success'
-        ) {
-
+        if (data.status !== 'success') {
             throw new Error(
-                data.message ||
-                'Failed to load orders.'
+                data.message || 'Unable to load chat users.'
             );
+        }
+
+        const list =
+            document.getElementById('adminChatUserList');
+
+        if (!list) {
+            return;
+        }
+
+        const users = data.users || [];
+
+        if (!users.length) {
+
+            list.innerHTML = `
+                <div class="p-4 text-center text-muted">
+                    No active conversations.
+                </div>
+            `;
+
+        } else {
+
+            list.innerHTML = users.map(user => {
+
+                const isActive =
+                    String(currentChatUserId) ===
+                    String(user.id);
+
+                const unread =
+                    parseInt(user.unread_count || 0);
+
+                const safeName =
+                    String(user.full_name || 'User')
+                        .replace(/"/g, '&quot;');
+
+                return `
+                    <div
+                        class="p-3 border-bottom chat-user-item
+                        ${isActive ? 'active-chat' : ''}"
+                        style="cursor:pointer;"
+                        data-id="${user.id}"
+                        data-name="${safeName}"
+                        onclick="selectUserChat(this)"
+                    >
+
+                        <div
+                            class="d-flex
+                            justify-content-between
+                            align-items-center mb-1"
+                        >
+
+                            <span
+                                class="fw-bold text-truncate"
+                                style="max-width:150px;"
+                            >
+                                ${user.full_name || 'User'}
+                            </span>
+
+                            <div
+                                class="d-flex
+                                gap-1
+                                align-items-center"
+                            >
+
+                                ${
+                                    unread > 0
+                                    ? `
+                                        <span
+                                            class="badge
+                                            rounded-pill
+                                            bg-danger"
+                                        >
+                                            ${unread}
+                                        </span>
+                                    `
+                                    : ''
+                                }
+
+                                ${
+                                    user.chat_session === 'live'
+                                    ? `
+                                        <span
+                                            class="badge
+                                            bg-success"
+                                        >
+                                            Live
+                                        </span>
+                                    `
+                                    : ''
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <small
+                            class="text-muted
+                            text-truncate d-block"
+                        >
+                            ${user.last_message || 'No messages yet'}
+                        </small>
+
+                    </div>
+                `;
+
+            }).join('');
 
         }
 
-
-        ordersData =
-            Array.isArray(
-                data.orders
-            )
-                ? data.orders
-                : [];
-
-
         const badge =
-            document.getElementById(
-                'badgeOrders'
-            );
-
+            document.getElementById('badgeChat');
 
         if (badge) {
 
-            badge.textContent =
-                ordersData.length;
+            const unread =
+                parseInt(data.total_unread || 0);
 
+            badge.textContent = unread;
+
+            badge.style.display =
+                unread > 0
+                    ? 'inline-block'
+                    : 'none';
         }
 
-
-        filterAndRenderOrders();
-
     })
-
-    .catch(error => {
+    .catch(err => {
 
         console.error(
-            'Orders error:',
-            error
+            'Chat users error:',
+            err
         );
 
+        const list =
+            document.getElementById(
+                'adminChatUserList'
+            );
 
-        tbody.innerHTML =
-            `
-            <tr>
+        if (list) {
 
-                <td
-                    colspan="8"
-                    class="
-                        text-center
-                        text-danger
-                        py-4
-                    "
+            list.innerHTML = `
+                <div
+                    class="p-4
+                    text-center
+                    text-danger
+                    small"
                 >
-
-                    Failed to load orders.
-
-                </td>
-
-            </tr>
+                    Could not load chats.
+                </div>
             `;
+
+        }
 
     });
 
 }
 
 
-// -------------------------------------------------------------
-// Filter Orders
-// -------------------------------------------------------------
+/* =============================================================
+   SELECT CUSTOMER
+   ============================================================= */
 
-function filterAndRenderOrders() {
+function selectUserChat(element) {
 
-    const term =
-        globalSearchTerm;
+    if (!element) {
+        return;
+    }
 
+    const userId =
+        element.dataset.id;
 
-    const statusFilter =
-        document
-            .getElementById(
-                'ordersStatusFilter'
-            )
-            ?.value || '';
+    const userName =
+        element.dataset.name || 'Customer';
 
+    currentChatUserId =
+        userId;
 
-    const filtered =
-        ordersData.filter(
-            order => {
-
-                const year =
-                    order.created_at
-
-                        ? new Date(
-                            order.created_at
-                        ).getFullYear()
-
-                        : new Date()
-                            .getFullYear();
-
-
-                const orderNumber =
-                    `EJR-ORD-${year}-${String(
-                        order.id
-                    ).padStart(
-                        5,
-                        '0'
-                    )}`;
-
-
-                const searchable = [
-
-                    orderNumber,
-
-                    order.customer_name,
-
-                    order.contact,
-
-                    order.email,
-
-                    order.status,
-
-                    order.items,
-
-                    order.total_price
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                const matchesSearch =
-                    !term ||
-                    searchable.includes(
-                        term
-                    );
-
-
-                const matchesStatus =
-                    !statusFilter ||
-
-                    String(
-                        order.status ||
-                        ''
-                    ).toLowerCase() ===
-
-                    String(
-                        statusFilter
-                    ).toLowerCase();
-
-
-                return (
-                    matchesSearch &&
-                    matchesStatus
-                );
-
-            }
+    const inputArea =
+        document.getElementById(
+            'adminInputArea'
         );
 
+    if (inputArea) {
+        inputArea.classList.remove('d-none');
+    }
 
-    renderOrders(
-        filtered
-    );
+    const title =
+        document.getElementById(
+            'chattingWithTitle'
+        );
+
+    if (title) {
+
+        title.innerText =
+            'Chatting with: ' + userName;
+
+    }
+
+    loadAdminMessages(userId);
+
+    loadAdminChatUsers();
 
 }
 
 
-// -------------------------------------------------------------
-// Render Orders
-// -------------------------------------------------------------
+/* =============================================================
+   LOAD CUSTOMER MESSAGES
+   ============================================================= */
 
-function renderOrders(
-    orders
-) {
+function loadAdminMessages(userId) {
 
-    const tbody =
-        document.getElementById(
-            'ordersTableBody'
-        );
-
-
-    if (!tbody) {
+    if (!userId) {
         return;
     }
 
+    currentChatUserId =
+        userId;
 
-    if (!orders.length) {
+    fetch('api/check_session.php', {
 
-        tbody.innerHTML =
-            `
-            <tr>
+        method: 'POST',
 
-                <td
-                    colspan="8"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
+        credentials: 'include',
 
-                    <i
-                        class="
-                            bi
-                            bi-receipt
-                            fs-3
-                            d-block
-                            mb-2
-                        "
-                    ></i>
+        headers: getAuthHeaders(),
 
-                    No orders match your search.
+        body: JSON.stringify({
 
-                </td>
+            type:
+                'admin_get_messages',
 
-            </tr>
-            `;
+            user_id:
+                userId
 
-        return;
-    }
+        })
 
+    })
+    .then(res => {
 
-    tbody.innerHTML =
-        orders.map(
-            order => {
+        if (!res.ok) {
+            throw new Error(
+                'Unable to load messages.'
+            );
+        }
 
-                const year =
-                    order.created_at
+        return res.json();
 
-                        ? new Date(
-                            order.created_at
-                        ).getFullYear()
+    })
+    .then(data => {
 
-                        : new Date()
-                            .getFullYear();
+        const body =
+            document.getElementById(
+                'adminChatBody'
+            );
 
+        if (!body) {
+            return;
+        }
 
-                const orderNumber =
-                    `EJR-ORD-${year}-${String(
-                        order.id
-                    ).padStart(
-                        5,
-                        '0'
-                    )}`;
+        const msgs =
+            data.messages || [];
 
+        body.innerHTML =
+            msgs.length
 
-                let items = [];
+            ?
 
+            msgs.map(message => {
 
-                try {
-
-                    items =
-                        typeof order.items ===
-                        'string'
-
-                            ? JSON.parse(
-                                order.items
-                            )
-
-                            : (
-                                Array.isArray(
-                                    order.items
-                                )
-                                    ? order.items
-                                    : []
-                            );
-
-                }
-                catch (error) {
-
-                    console.warn(
-                        'Could not parse order items:',
-                        error
-                    );
-
-                }
-
-
-                let itemsList =
-                    '—';
-
-
-                if (
-                    Array.isArray(items) &&
-                    items.length
-                ) {
-
-                    itemsList =
-                        items
-                            .map(
-                                item => {
-
-                                    const itemName =
-                                        item.name ||
-                                        item.part_name ||
-                                        'Item';
-
-
-                                    const quantity =
-                                        item.qty ||
-                                        item.quantity ||
-                                        1;
-
-
-                                    return `
-                                        ${escapeHtml(
-                                            itemName
-                                        )}
-                                        ×${quantity}
-                                    `;
-
-                                }
-                            )
-                            .join(', ');
-
-                }
-                else if (
-                    order.items &&
-                    typeof order.items ===
-                    'string'
-                ) {
-
-                    itemsList =
-                        escapeHtml(
-                            order.items
-                        );
-
-                }
-
-
-                const date =
-                    order.created_at
-
-                        ? new Date(
-                            order.created_at
-                        ).toLocaleDateString(
-                            'en-US',
-                            {
-                                month:
-                                    'short',
-                                day:
-                                    'numeric',
-                                year:
-                                    'numeric'
-                            }
-                        )
-
-                        : '—';
-
-
-                const customerName =
-                    String(
-                        order.customer_name ||
-                        ''
-                    ).replace(
-                        /'/g,
-                        "\\'"
-                    );
-
-
-                const isPending =
-                    String(
-                        order.status ||
-                        ''
-                    ).toLowerCase() ===
-                    'pending';
-
+                const isAdmin =
+                    message.sender === 'admin';
 
                 return `
+                    <div
+                        class="mb-3 d-flex
+                        ${
+                            isAdmin
+                            ? 'justify-content-end'
+                            : 'justify-content-start'
+                        }"
+                    >
 
-                    <tr>
-
-                        <td>
-
-                            <code
-                                style="
-                                    color:#b30000;
-                                "
-                            >
-                                ${orderNumber}
-                            </code>
-
-                        </td>
-
-
-                        <td class="fw-bold">
-
-                            ${escapeHtml(
-                                order.customer_name ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${escapeHtml(
-                                order.contact ||
-                                order.email ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td
-                            class="text-muted small"
+                        <div
+                            class="p-3 rounded-3 shadow-sm"
                             style="
-                                max-width:180px;
-                                white-space:nowrap;
-                                overflow:hidden;
-                                text-overflow:ellipsis;
+                                max-width:75%;
+                                ${
+                                    isAdmin
+                                    ?
+                                    'background:#b30000;color:white;'
+                                    :
+                                    'background:#fff;border:1px solid #ddd;'
+                                }
                             "
-                            title="${escapeHtml(
-                                itemsList
-                            )}"
                         >
 
-                            ${itemsList}
-
-                        </td>
-
-
-                        <td class="fw-bold text-danger">
-
-                            ₱${Number(
-                                order.total_price ||
-                                0
-                            ).toLocaleString(
-                                'en-PH',
-                                {
-                                    minimumFractionDigits:
-                                        2
-                                }
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${date}
-
-                        </td>
-
-
-                        <td>
-
-                            ${statusBadge(
-                                order.status
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="btn-group"
-                            >
-
-                                ${
-                                    isPending
-
-                                        ? `
-                                            <button
-                                                class="
-                                                    btn
-                                                    btn-sm
-                                                    btn-outline-dark
-                                                "
-                                                onclick="
-                                                    updateOrder(
-                                                        ${Number(
-                                                            order.id
-                                                        )},
-                                                        '${String(
-                                                            order.status ||
-                                                            ''
-                                                        ).replace(
-                                                            /'/g,
-                                                            "\\'"
-                                                        )}',
-                                                        '${customerName}'
-                                                    )
-                                                "
-                                                title="Manage Order"
-                                            >
-
-                                                <i
-                                                    class="
-                                                        bi
-                                                        bi-pencil-square
-                                                    "
-                                                ></i>
-
-                                            </button>
-                                        `
-
-                                        : ''
-                                }
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-secondary
-                                    "
-                                    onclick="
-                                        deleteOrder(
-                                            ${Number(
-                                                order.id
-                                            )}
-                                        )
-                                    "
-                                    title="Delete Order"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <a
-                                    href="
-                                        api/admin/generate_parts_receipt.php?id=${Number(
-                                            order.id
-                                        )}
-                                    "
-                                    target="_blank"
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-primary
-                                    "
-                                    title="View Invoice"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-receipt
-                                        "
-                                    ></i>
-
-                                </a>
-
+                            <div>
+                                ${message.message}
                             </div>
 
-                        </td>
+                            <small
+                                style="
+                                    font-size:0.7rem;
+                                    display:block;
+                                    margin-top:5px;
+                                    opacity:0.8;
+                                "
+                            >
+                                ${message.time || ''}
+                            </small>
 
-                    </tr>
+                        </div>
 
+                    </div>
+                `;
+
+            }).join('')
+
+            :
+
+            `
+                <div
+                    class="text-center
+                    text-muted
+                    mt-5"
+                >
+                    No messages yet.
+                </div>
+            `;
+
+        setTimeout(() => {
+
+            body.scrollTop =
+                body.scrollHeight;
+
+        }, 50);
+
+    })
+    .catch(err => {
+
+        console.error(
+            'Messages error:',
+            err
+        );
+
+    });
+
+}
+
+
+/* =============================================================
+   SEND ADMIN REPLY
+   ============================================================= */
+
+function sendAdminReply() {
+
+    const input =
+        document.getElementById(
+            'adminReplyInput'
+        );
+
+    if (!input) {
+        return;
+    }
+
+    const msg =
+        input.value.trim();
+
+    if (!msg) {
+        return;
+    }
+
+    if (!currentChatUserId) {
+
+        Swal.fire(
+            'No Customer Selected',
+            'Please select a customer first.',
+            'info'
+        );
+
+        return;
+    }
+
+
+    fetch('api/check_session.php', {
+
+        method: 'POST',
+
+        credentials: 'include',
+
+        headers: getAuthHeaders(),
+
+        body: JSON.stringify({
+
+            type:
+                'admin_send',
+
+            user_id:
+                currentChatUserId,
+
+            message:
+                msg
+
+        })
+
+    })
+    .then(res => {
+
+        if (!res.ok) {
+            throw new Error(
+                'Unable to send message.'
+            );
+        }
+
+        return res.json();
+
+    })
+    .then(data => {
+
+        if (data.status !== 'success') {
+
+            Swal.fire(
+                'Error',
+                data.message ||
+                'Unable to send message.',
+                'error'
+            );
+
+            return;
+        }
+
+        input.value = '';
+
+        loadAdminMessages(
+            currentChatUserId
+        );
+
+        loadAdminChatUsers();
+
+    })
+    .catch(err => {
+
+        console.error(
+            'Send error:',
+            err
+        );
+
+        Swal.fire(
+            'Error',
+            'Unable to send your message.',
+            'error'
+        );
+
+    });
+
+}
+
+
+/* =============================================================
+   END LIVE SESSION
+   ============================================================= */
+
+function endLiveSession() {
+
+    if (!currentChatUserId) {
+        return;
+    }
+
+    Swal.fire({
+
+        title:
+            'End Live Session?',
+
+        text:
+            'This will switch the customer back to Bot Mode.',
+
+        icon:
+            'warning',
+
+        showCancelButton:
+            true,
+
+        confirmButtonColor:
+            '#e62429',
+
+        cancelButtonColor:
+            '#6c757d',
+
+        confirmButtonText:
+            'Yes, End Session',
+
+        cancelButtonText:
+            'Cancel'
+
+    })
+    .then(result => {
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        fetch(
+            'api/check_session.php',
+            {
+                method: 'POST',
+
+                credentials: 'include',
+
+                headers: getAuthHeaders(),
+
+                body: JSON.stringify({
+
+                    type:
+                        'admin_end_session',
+
+                    user_id:
+                        currentChatUserId
+
+                })
+
+            }
+        )
+        .then(res => {
+
+            if (!res.ok) {
+
+                throw new Error(
+                    'Unable to end live session.'
+                );
+
+            }
+
+            return res.json();
+
+        })
+        .then(data => {
+
+            if (
+                data.status !==
+                'success'
+            ) {
+
+                Swal.fire(
+                    'Error',
+                    data.message ||
+                    'Failed to end session.',
+                    'error'
+                );
+
+                return;
+            }
+
+            const inputArea =
+                document.getElementById(
+                    'adminInputArea'
+                );
+
+            if (inputArea) {
+
+                inputArea.classList.add(
+                    'd-none'
+                );
+
+            }
+
+            const body =
+                document.getElementById(
+                    'adminChatBody'
+                );
+
+            if (body) {
+
+                body.innerHTML = `
+                    <div
+                        class="text-center
+                        mt-5
+                        text-muted"
+                    >
+
+                        <i
+                            class="bi
+                            bi-chat-left-dots
+                            fs-1
+                            d-block
+                            mb-2"
+                        ></i>
+
+                        <p>
+                            Select a customer
+                            to start chatting
+                        </p>
+
+                    </div>
                 `;
 
             }
-        ).join('');
 
+            currentChatUserId =
+                null;
+
+            loadAdminChatUsers();
+
+            Swal.fire(
+                'Ended',
+                'Live session ended.',
+                'success'
+            );
+
+        })
+        .catch(err => {
+
+            console.error(
+                'End session error:',
+                err
+            );
+
+            Swal.fire(
+                'System Error',
+                'Could not end the live session.',
+                'error'
+            );
+
+        });
+
+    });
+
+}
+
+// =============================================================
+// EXPORT CSV
+// =============================================================
+
+function exportCSV(type) {
+    let rows = [], headers = [], filename = '';
+    if (type === 'appointments') {
+        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Status'];
+        rows     = masterData.appointments.map(a => [a.full_name || 'Guest', a.service_type, a.vehicle_info || '—', a.appointment_date, a.status]);
+        filename = 'appointments.csv';
+    } else if (type === 'users') {
+        headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];
+        rows     = masterData.users.map(u => [u.id, u.full_name, u.email, u.phone || '—', u.role_id == 2 ? 'Admin' : 'Customer', u.created_at || '—']);
+        filename = 'users.csv';
+    } else if (type === 'history') {
+        headers  = ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date'];
+        rows     = historyData.map(h => [h.full_name || '—', h.service_type || '—', h.brand && h.model ? `${h.brand} ${h.model} (${h.year_model || '—'})` : '—', h.plate_number || '—', h.service_date || '—']);
+        filename = 'service_history.csv';
+    }
+    const csv  = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+}
+
+
+function postData(endpoint, payload) {
+    fetch(endpoint, {
+        method: 'POST', credentials: 'include',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(text => {
+                throw new Error(`Server error ${res.status}: ${text}`);
+            });
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message || 'Updated successfully', showConfirmButton: false, timer: 2500 });
+            // ✅ Wrapped separately so errors here don't trigger the catch above
+            try {
+                loadFullSiteData();
+                historyData = [];
+                loadServiceHistory();
+            } catch (reloadErr) {
+                console.warn('Reload error (non-critical):', reloadErr.message);
+            }
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('postData error:', err.message);
+        Swal.fire('Error', 'Something went wrong. Check the console.', 'error');
+    });
 }
 
 
 // =============================================================
-// SERVICES
+// REALTIME AUTO-REFRESH
+// =============================================================
+
+function startRealtime() {
+    async function loop() {
+        try {
+            loadFullSiteData();
+            loadAdminChatUsers();
+            loadParts();
+            loadInquiries();
+            loadOrders();
+            loadBusyDates();
+        } catch (e) {
+            console.error("Realtime error:", e);
+        }
+        setTimeout(loop, 5000);
+    }
+    loop();
+}
+
+function updateLiveChatBadge() {
+    fetch('api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: JSON.stringify({type:'admin_get_chat_users'}) })
+        .then(res => {
+            if (!res.ok) throw new Error('Unauthorized');
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const users        = data.users ?? [];
+                const waitingCount = users.filter(u => u.chat_session === 'waiting').length;
+                const totalUnread  = data.total_unread ?? 0;
+                document.getElementById('badgeChat').textContent = waitingCount + totalUnread;
+            }
+        })
+        .catch(err => console.error('Badge update error:', err));
+}
+
+
+// =============================================================
+// BUSY DATES
+// =============================================================
+
+let busyDatesData = [];
+
+function loadBusyDates() {
+    fetch('api/admin/manage_busy_dates.php', { credentials: 'include', headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            busyDatesData = data.dates;
+            document.getElementById('badgeBusyDates').textContent =
+                data.dates.filter(d => d.is_busy == 1).length;
+            renderBusyDates(data.dates);
+        });
+}
+
+function applyBusyFilter() {
+    const filter = document.getElementById('busyDateFilter')?.value || '';
+    const term = globalSearchTerm;
+    const filtered = busyDatesData.filter(d => {
+        const matchesFilter = filter === '' || d.is_busy == filter;
+        const matchesTerm = !term ||
+            (d.appointment_date && d.appointment_date.toLowerCase().includes(term));
+        return matchesFilter && matchesTerm;
+    });
+    renderBusyDates(filtered);
+}
+
+function renderBusyDates(dates) {
+    const tbody = document.getElementById('busyDatesTableBody');
+    if (!dates.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No dates found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = dates.map(d => {
+        const dateObj   = new Date(d.appointment_date + 'T00:00:00');
+        const formatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const dayName   = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const isBusy    = d.is_busy == 1;
+        const pct       = d.slot_limit > 0 ? Math.min(Math.round((d.current_bookings / d.slot_limit) * 100), 100) : 100;
+        const barColor  = pct >= 100 ? 'bg-danger' : pct >= 60 ? 'bg-warning' : 'bg-success';
+        return `
+        <tr>
+            <td class="fw-bold">${formatted}</td>
+            <td><span class="badge bg-light text-dark border">${dayName}</span></td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <span>${d.current_bookings} / ${d.slot_limit}</span>
+                    <div class="progress flex-grow-1" style="height:6px;min-width:80px;">
+                        <div class="progress-bar ${barColor}" style="width:${pct}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge ${isBusy ? 'bg-danger' : 'bg-success'}">${isBusy ? 'Busy' : 'Available'}</span></td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="editBusyDate(${d.id}, '${d.appointment_date}', ${d.slot_limit}, ${d.is_busy})"
+                            title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm ${isBusy ? 'btn-outline-success' : 'btn-outline-warning'}"
+                            onclick="toggleBusy(${d.id}, ${isBusy ? 0 : 1})"
+                            title="${isBusy ? 'Mark as Available' : 'Mark as Busy'}">
+                        <i class="bi bi-${isBusy ? 'unlock' : 'lock'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteBusyDate(${d.id}, '${formatted}')"
+                            title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function busyDateForm(v = {}) {
+    const today = new Date().toISOString().split('T')[0];
+    return `
+        <div class="text-start">
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Date</label>
+                <input type="date" id="bd-date" class="form-control"
+                       value="${v.date || ''}" min="${today}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Slot Limit</label>
+                <input type="number" id="bd-limit" class="form-control"
+                       value="${v.limit ?? 5}" min="1">
+                <small class="text-muted">Max appointments allowed on this day before marked busy</small>
+            </div>
+            <div class="mb-2">
+                <label class="form-label fw-semibold small">Status</label>
+                <select id="bd-busy" class="form-select">
+                    <option value="1" ${v.isBusy == 1 || v.isBusy === undefined ? 'selected' : ''}>🔴 Busy (Blocked)</option>
+                    <option value="0" ${v.isBusy == 0 ? 'selected' : ''}>🟢 Available</option>
+                </select>
+            </div>
+        </div>`;
+}
+
+function getBusyDateFormValues(action, id = null) {
+    const date    = document.getElementById('bd-date').value;
+    const limit   = parseInt(document.getElementById('bd-limit').value);
+    const is_busy = parseInt(document.getElementById('bd-busy').value);
+    if (!date) { Swal.showValidationMessage('Please select a date.'); return false; }
+    if (!limit || limit < 1) { Swal.showValidationMessage('Slot limit must be at least 1.'); return false; }
+    const payload = { action, date, limit, is_busy };
+    if (id) payload.id = id;
+    return payload;
+}
+
+function openBlockDate() {
+    Swal.fire({
+        title: '<i class="bi bi-calendar-plus me-2"></i> Add Busy Date',
+        html: busyDateForm(),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: '<i class="bi bi-plus-lg me-1"></i> Add Date',
+        preConfirm: () => getBusyDateFormValues('block')
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function editBusyDate(id, date, limit, isBusy) {
+    Swal.fire({
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Busy Date',
+        html: busyDateForm({ date, limit, isBusy }),
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => getBusyDateFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postBusyDate(result.value);
+    });
+}
+
+function postBusyDate(payload) {
+    fetch('api/admin/manage_busy_dates.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+function toggleBusy(id, isBusy) {
+    fetch('api/admin/manage_busy_dates.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify({ action: 'toggle_busy', id, is_busy: isBusy })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: isBusy ? 'Marked as Busy' : 'Marked as Available', showConfirmButton: false, timer: 2000 });
+            loadBusyDates();
+        }
+    });
+}
+
+function deleteBusyDate(id, date) {
+    Swal.fire({
+        title: `Remove ${date}?`,
+        text: 'This will remove the date record but not the actual appointments.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, remove'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_busy_dates.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Date removed', showConfirmButton: false, timer: 2000 });
+                loadBusyDates();
+            }
+        });
+    });
+}
+
+setInterval(() => {
+    fetch('/api/check_session.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+        body: JSON.stringify({})
+    })
+    .then(res => {
+        if (!res.ok) return null;
+        return res.json();
+    })
+    .then(data => {
+        if (data && data.valid === false) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Session Ended',
+                text: 'Your account was logged in from another device. You have been logged out.',
+                confirmButtonColor: '#e62429',
+                allowOutsideClick: false
+            }).then(() => {
+                window.location.href = '/login.php';
+            });
+        }
+    })
+    .catch(() => {});
+}, 30000);
+// =============================================================
+// SERVICES MANAGEMENT
 // =============================================================
 
 function loadServices() {
-
-    fetch(
-        'api/admin/manage_services.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            console.error(
-                'Failed to load services:',
-                data.message
-            );
-
-            return;
-        }
-
-
-        servicesData =
-            Array.isArray(
-                data.services
-            )
-                ? data.services
-                : [];
-
-
-        const badge =
-            document.getElementById(
-                'badgeServices'
-            );
-
-
-        if (badge) {
-
-            badge.textContent =
-                servicesData.length;
-
-        }
-
-
-        filterAndRenderServices();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Services loading error:',
-            error
-        );
-
-    });
-
+    fetch('api/admin/manage_services.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+            servicesData = data.services || [];
+            populateServicesCategoryFilter();
+            filterAndRenderServices();
+        })
+        .catch(() => {
+            const tbody = document.getElementById('servicesTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Failed to load services.</td></tr>';
+        });
 }
 
-
-// -------------------------------------------------------------
-// Filter Services
-// -------------------------------------------------------------
+function populateServicesCategoryFilter() {
+    const sel = document.getElementById('servicesCategoryFilter');
+    if (!sel) return;
+    const current = sel.value;
+    const categories = [...new Set(servicesData.map(s => s.category).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Categories</option>' +
+        categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (categories.includes(current)) sel.value = current;
+}
 
 function filterAndRenderServices() {
+    const term = globalSearchTerm;
+    const category = document.getElementById('servicesCategoryFilter')?.value || '';
+    const activeFilter = document.getElementById('servicesActiveFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        servicesData.filter(
-            service => {
-
-                const searchable = [
-
-                    service.name,
-
-                    service.service_name,
-
-                    service.description,
-
-                    service.category,
-
-                    service.price,
-
-                    service.status
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !term ||
-                    searchable.includes(
-                        term
-                    )
-                );
-
-            }
-        );
-
-
-    renderServices(
-        filtered
-    );
-
+    const filtered = servicesData.filter(s => {
+        const matchesTerm = !term ||
+            (s.name && s.name.toLowerCase().includes(term)) ||
+            (s.category && s.category.toLowerCase().includes(term));
+        const matchesCategory = !category || s.category === category;
+        const matchesActive = activeFilter === '' || String(s.is_active) === activeFilter;
+        return matchesTerm && matchesCategory && matchesActive;
+    });
+    renderServices(filtered);
 }
 
-
-// -------------------------------------------------------------
-// Render Services
-// -------------------------------------------------------------
-
-function renderServices(
-    services
-) {
-
-    const tbody =
-        document.getElementById(
-            'servicesTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
+function renderServices(services) {
+    const tbody = document.getElementById('servicesTableBody');
+    if (!tbody) return;
     if (!services.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="6"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No services match your search.
-
-                </td>
-
-            </tr>
-            `;
-
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No services match your search.</td></tr>';
         return;
     }
-
-
-    tbody.innerHTML =
-        services.map(
-            service => {
-
-                const id =
-                    Number(
-                        service.id
-                    );
-
-
-                const name =
-                    service.name ||
-                    service.service_name ||
-                    'Unnamed Service';
-
-
-                const price =
-                    Number(
-                        service.price ||
-                        0
-                    );
-
-
-                const category =
-                    service.category ||
-                    'General';
-
-
-                const description =
-                    service.description ||
-                    '';
-
-
-                const status =
-                    String(
-                        service.status ||
-                        'active'
-                    ).toLowerCase();
-
-
-                return `
-
-                    <tr>
-
-                        <td class="fw-bold">
-
-                            ${escapeHtml(
-                                name
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    bg-light
-                                    text-dark
-                                    border
-                                "
-                            >
-
-                                ${escapeHtml(
-                                    category
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            ₱${price.toLocaleString(
-                                'en-PH',
-                                {
-                                    minimumFractionDigits:
-                                        2
-                                }
-                            )}
-
-                        </td>
-
-
-                        <td
-                            class="text-muted small"
-                            style="
-                                max-width:250px;
-                            "
-                        >
-
-                            ${escapeHtml(
-                                description ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    ${
-                                        status ===
-                                        'active'
-
-                                            ? 'bg-success'
-
-                                            : 'bg-secondary'
-                                    }
-                                "
-                            >
-
-                                ${
-                                    status ===
-                                    'active'
-                                        ? 'Active'
-                                        : 'Inactive'
-                                }
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="btn-group"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        editService(
-                                            ${id}
-                                        )
-                                    "
-                                    title="Edit Service"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteService(
-                                            ${id},
-                                            '${String(
-                                                name
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete Service"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
+    tbody.innerHTML = services.map(s => `
+        <tr>
+            <td><strong>${s.name}</strong></td>
+            <td><span class="badge bg-secondary">${s.category}</span></td>
+            <td>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           style="cursor:pointer; width:2.5em; height:1.3em;"
+                           ${s.is_active == 1 ? 'checked' : ''}
+                           onchange="toggleService(${s.id}, this.checked ? 1 : 0)">
+                </div>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="deleteService(${s.id}, '${s.name.replace(/'/g,"\\'")}')" title="Remove Service">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>`).join('');
 }
 
+function deleteService(id, name) {
+    Swal.fire({
+        title: 'Remove Service?',
+        html: `Remove <strong>${name}</strong> from the services list?<br>
+               <small class="text-muted">This can't be undone. Services with active appointments can't be removed — deactivate them instead.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Remove'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_services.php', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'delete', id })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Service removed', showConfirmButton: false, timer: 2000 });
+                loadServices();
+            } else {
+                Swal.fire('Cannot Remove', d.message || 'This service could not be removed.', 'error');
+            }
+        })
+        .catch(() => Swal.fire('Error', 'Something went wrong. Please try again.', 'error'));
+    });
+}
+
+function openAddService() {
+    Swal.fire({
+        title: 'Add New Service',
+        html: `
+            <div class="text-start">
+                <label class="form-label fw-semibold">Service Name *</label>
+                <input id="svcName" class="form-control mb-3" placeholder="e.g. Engine Overhaul">
+                <label class="form-label fw-semibold">Category</label>
+                <input id="svcCategory" class="form-control" placeholder="e.g. Popular Services" value="Popular Services">
+            </div>`,
+        confirmButtonText: 'Add Service',
+        confirmButtonColor: '#e62429',
+        showCancelButton: true,
+        preConfirm: () => {
+            const name = document.getElementById('svcName').value.trim();
+            if (!name) { Swal.showValidationMessage('Service name is required.'); return false; }
+            return {
+                action: 'add',
+                name,
+                category: document.getElementById('svcCategory').value.trim() || 'General'
+            };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
+                .then(r=>r.json()).then(d=>{
+                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Service added',showConfirmButton:false,timer:2000}); loadServices(); }
+                    else Swal.fire('Error', d.message, 'error');
+                });
+        }
+    });
+}
+
+function toggleService(id, newStatus) {
+    fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'toggle', id, is_active:newStatus }) })
+        .then(r=>r.json()).then(d=>{ if(d.status!=='success'){ Swal.fire('Error', d.message, 'error'); loadServices(); } });
+}
 
 // =============================================================
-// MECHANICS
+// MECHANICS MANAGEMENT
 // =============================================================
 
 function loadMechanics() {
-
-    fetch(
-        'api/admin/manage_mechanics.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            console.error(
-                'Failed to load mechanics:',
-                data.message
-            );
-
-            return;
-        }
-
-
-        mechanicsData =
-            Array.isArray(
-                data.mechanics
-            )
-                ? data.mechanics
-                : [];
-
-
-        const badge =
-            document.getElementById(
-                'badgeMechanics'
-            );
-
-
-        if (badge) {
-
-            badge.textContent =
-                mechanicsData.length;
-
-        }
-
-
-        filterAndRenderMechanics();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Mechanics loading error:',
-            error
-        );
-
-    });
-
+    fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+            mechanicsData = data.mechanics || [];
+            filterAndRenderMechanics();
+        })
+        .catch(() => {
+            const tbody = document.getElementById('mechanicsTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Failed to load mechanics.</td></tr>';
+        });
 }
-
-
-// -------------------------------------------------------------
-// Filter Mechanics
-// -------------------------------------------------------------
 
 function filterAndRenderMechanics() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('mechanicsStatusFilter')?.value || '';
 
-    const term =
-        globalSearchTerm;
-
-
-    const filtered =
-        mechanicsData.filter(
-            mechanic => {
-
-                const searchable = [
-
-                    mechanic.full_name,
-
-                    mechanic.name,
-
-                    mechanic.email,
-
-                    mechanic.phone,
-
-                    mechanic.specialization,
-
-                    mechanic.status
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !term ||
-                    searchable.includes(
-                        term
-                    )
-                );
-
-            }
-        );
-
-
-    renderMechanics(
-        filtered
-    );
-
+    const filtered = mechanicsData.filter(m => {
+        const matchesTerm = !term ||
+            (m.name && m.name.toLowerCase().includes(term)) ||
+            (m.specialty && m.specialty.toLowerCase().includes(term));
+        const matchesStatus = !statusFilter || m.status === statusFilter;
+        return matchesTerm && matchesStatus;
+    });
+    renderMechanics(filtered);
 }
 
+// Mechanic status is one of: available, on_break, on_duty, unavailable.
+// In the app these show as "Available", "On Leave" (on_break), "Busy"
+// (on_duty), "Unavailable". Only plain 'available' is assignable — On
+// Leave and Busy both block the admin from assigning a job, same as
+// Unavailable.
+function mechanicStatusLabel(status) {
+    return { available: 'Available', on_break: 'On Leave', on_duty: 'Busy', unavailable: 'Unavailable' }[status] || status;
+}
+function mechanicStatusBadgeClass(status) {
+    if (status === 'available') return 'bg-success';
+    if (status === 'on_break') return 'bg-secondary';
+    if (status === 'on_duty') return 'bg-warning text-dark';
+    return 'bg-secondary'; // unavailable
+}
+function mechanicIsAssignable(status) {
+    return status === 'available';
+}
 
-// -------------------------------------------------------------
-// Render Mechanics
-// -------------------------------------------------------------
-
-function renderMechanics(
-    mechanics
-) {
-
-    const tbody =
-        document.getElementById(
-            'mechanicsTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
+function renderMechanics(mechanics) {
+    const tbody = document.getElementById('mechanicsTableBody');
+    if (!tbody) return;
     if (!mechanics.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="6"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No mechanics match your search.
-
-                </td>
-
-            </tr>
-            `;
-
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No mechanics match your search.</td></tr>';
         return;
     }
-
-
-    tbody.innerHTML =
-        mechanics.map(
-            mechanic => {
-
-                const id =
-                    Number(
-                        mechanic.id
-                    );
-
-
-                const name =
-                    mechanic.full_name ||
-                    mechanic.name ||
-                    'Unnamed Mechanic';
-
-
-                const status =
-                    String(
-                        mechanic.status ||
-                        'active'
-                    ).toLowerCase();
-
-
-                return `
-
-                    <tr>
-
-                        <td class="fw-bold">
-
-                            ${escapeHtml(
-                                name
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${escapeHtml(
-                                mechanic.email ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${escapeHtml(
-                                mechanic.phone ||
-                                '—'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            ${escapeHtml(
-                                mechanic.specialization ||
-                                'General'
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    ${
-                                        status ===
-                                        'active'
-
-                                            ? 'bg-success'
-
-                                            : 'bg-secondary'
-                                    }
-                                "
-                            >
-
-                                ${
-                                    status ===
-                                    'active'
-                                        ? 'Active'
-                                        : 'Inactive'
-                                }
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="btn-group"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        editMechanic(
-                                            ${id}
-                                        )
-                                    "
-                                    title="Edit Mechanic"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-sm
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteMechanic(
-                                            ${id},
-                                            '${String(
-                                                name
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete Mechanic"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
+    tbody.innerHTML = mechanics.map(m => `
+        <tr>
+            <td><strong>${m.name}</strong></td>
+            <td>${m.specialty || '—'}</td>
+            <td><span class="badge ${mechanicStatusBadgeClass(m.status)}">${mechanicStatusLabel(m.status)}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
 }
 
-
-// =============================================================
-// ORDER MANAGEMENT
-// =============================================================
-
-function updateOrder(
-    id,
-    currentStatus,
-    customerName
-) {
-
-    const status =
-        String(
-            currentStatus ||
-            'Pending'
-        );
-
-
-    const allowed = {
-
-        'Pending': [
-            'Confirmed',
-            'Cancelled'
-        ],
-
-        'Confirmed': [
-            'Completed',
-            'Cancelled'
-        ],
-
-        'Completed': []
-
-    };
-
-
-    const nextStatuses =
-        allowed[status] ||
-        [];
-
-
-    if (!nextStatuses.length) {
-
-        Swal.fire({
-
-            icon:
-                'info',
-
-            title:
-                'Order Locked',
-
-            text:
-                'This order can no longer be changed.',
-
-            confirmButtonColor:
-                '#b30000'
-
-        });
-
-        return;
-
-    }
-
-
+function openAddMechanic() {
     Swal.fire({
-
-        title:
-            'Update Order',
-
+        title: 'Add Mechanic',
         html: `
-
-            <div
-                class="text-start"
-            >
-
-                <p
-                    class="mb-3"
-                >
-
-                    Customer:
-
-                    <strong>
-                        ${escapeHtml(
-                            customerName ||
-                            'Customer'
-                        )}
-                    </strong>
-
-                </p>
-
-
-                <label
-                    class="form-label fw-semibold"
-                >
-
-                    New Status
-
-                </label>
-
-
-                <select
-                    id="orderStatusSelect"
-                    class="form-select"
-                >
-
-                    ${nextStatuses.map(
-                        s =>
-                            `
-                            <option
-                                value="${escapeHtml(
-                                    s
-                                )}"
-                            >
-
-                                ${escapeHtml(
-                                    s
-                                )}
-
-                            </option>
-                            `
-                    ).join('')}
-
-                </select>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Update',
-
-        preConfirm: () => {
-
-            return document
-                .getElementById(
-                    'orderStatusSelect'
-                )
-                ?.value || '';
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_orders.php',
-            {
-
-                action:
-                    'update_status',
-
-                id:
-                    Number(id),
-
-                status:
-                    result.value
-
-            },
-
-            () => {
-
-                loadOrders();
-
-            }
-        );
-
-    });
-
-}
-
-
-function deleteOrder(
-    id
-) {
-
-    Swal.fire({
-
-        title:
-            'Delete Order?',
-
-        text:
-            'This action cannot be undone.',
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_orders.php',
-            {
-
-                action:
-                    'delete',
-
-                id:
-                    Number(id)
-
-            },
-
-            () => {
-
-                loadOrders();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// GENERIC POST HELPER
-// =============================================================
-
-function postData(
-    url,
-    data,
-    successCallback
-) {
-
-    fetch(
-        url,
-        {
-
-            method:
-                'POST',
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders(),
-
-            body:
-                JSON.stringify(
-                    data
-                )
-
-        }
-    )
-
-    .then(response => {
-
-        if (
-            !response.ok
-        ) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        return response.json();
-
-    })
-
-    .then(result => {
-
-        if (
-            result.status ===
-            'success'
-        ) {
-
-            Swal.fire({
-
-                icon:
-                    'success',
-
-                title:
-                    'Success',
-
-                text:
-                    result.message ||
-                    'Changes saved successfully.',
-
-                confirmButtonColor:
-                    '#b30000',
-
-                timer:
-                    1800,
-
-                showConfirmButton:
-                    false
-
-            });
-
-
-            if (
-                typeof successCallback ===
-                'function'
-            ) {
-
-                successCallback(
-                    result
-                );
-
-            }
-
-
-            // Refresh dashboard data so that
-            // filters and counts stay current.
-
-            setTimeout(
-                () => {
-
-                    if (
-                        typeof loadFullSiteData ===
-                        'function'
-                    ) {
-
-                        loadFullSiteData();
-
-                    }
-
-                },
-                300
-            );
-
-        }
-        else {
-
-            throw new Error(
-                result.message ||
-                'The server rejected the request.'
-            );
-
-        }
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'POST request failed:',
-            error
-        );
-
-
-        Swal.fire({
-
-            icon:
-                'error',
-
-            title:
-                'Request Failed',
-
-            text:
-                error.message ||
-                'Something went wrong while saving the changes.',
-
-            confirmButtonColor:
-                '#b30000'
-
-        });
-
-    });
-
-}
-
-
-// =============================================================
-// APPOINTMENT UPDATE
-// =============================================================
-
-function updateAppointmentStatus(
-    id,
-    status,
-    extraData = {}
-) {
-
-    postData(
-        'api/admin/update_appointment.php',
-        {
-
-            appointment_id:
-                Number(id),
-
-            status:
-                status,
-
-            ...extraData
-
-        },
-
-        () => {
-
-            loadFullSiteData();
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// APPOINTMENT STATUS BUTTON
-// =============================================================
-
-function confirmAppointment(
-    id
-) {
-
-    updateAppointmentStatus(
-        id,
-        'Confirmed'
-    );
-
-}
-
-
-function startAppointment(
-    id
-) {
-
-    updateAppointmentStatus(
-        id,
-        'In Progress'
-    );
-
-}
-
-
-function completeAppointment(
-    id
-) {
-
-    updateAppointmentStatus(
-        id,
-        'Completed'
-    );
-
-}
-
-
-// =============================================================
-// PART 4 END
-// =============================================================
-
-// =============================================================
-// PART 5 — APPOINTMENTS & MECHANIC ASSIGNMENT
-// =============================================================
-
-
-// =============================================================
-// LOAD APPOINTMENTS
-// =============================================================
-
-function loadAppointments() {
-
-    const tbody =
-        document.getElementById(
-            'appointmentTableBody'
-        );
-
-    if (!tbody) {
-        return;
-    }
-
-
-    fetch(
-        'api/admin/manage_appointments.php',
-        {
-            credentials: 'include',
-            headers: getAuthHeaders()
-        }
-    )
-
-    .then(response => {
-
-        if (!response.ok) {
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-        }
-
-        return response.json();
-
-    })
-
-    .then(data => {
-
-        if (
-            data.status !== 'success'
-        ) {
-
-            throw new Error(
-                data.message ||
-                'Unable to load appointments.'
-            );
-
-        }
-
-
-        appointmentsData =
-            Array.isArray(
-                data.appointments
-            )
-                ? data.appointments
-                : [];
-
-
-        // Keep the main data object updated.
-
-        if (
-            typeof masterData ===
-            'object'
-        ) {
-
-            masterData.appointments =
-                appointmentsData;
-
-        }
-
-
-        updateAppointmentBadge();
-
-        populateAppointmentFilters();
-
-        filterAndRenderAppointments();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Appointment loading error:',
-            error
-        );
-
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="10"
-                    class="
-                        text-center
-                        text-danger
-                        py-4
-                    "
-                >
-
-                    <i
-                        class="
-                            bi
-                            bi-exclamation-triangle
-                            fs-3
-                            d-block
-                            mb-2
-                        "
-                    ></i>
-
-                    Failed to load appointments.
-
-                    <div
-                        class="
-                            small
-                            text-muted
-                            mt-1
-                        "
-                    >
-
-                        ${escapeHtml(
-                            error.message
-                        )}
-
-                    </div>
-
-                </td>
-
-            </tr>
-            `;
-
-    });
-
-}
-
-
-// =============================================================
-// APPOINTMENT BADGE
-// =============================================================
-
-function updateAppointmentBadge() {
-
-    const badge =
-        document.getElementById(
-            'badgeAppointments'
-        );
-
-
-    if (!badge) {
-        return;
-    }
-
-
-    const pending =
-        appointmentsData.filter(
-            appointment => {
-
-                const status =
-                    appointmentStatusKey(
-                        appointment.status
-                    );
-
-
-                return (
-                    status ===
-                    'Pending'
-                );
-
-            }
-        ).length;
-
-
-    badge.textContent =
-        pending;
-
-
-}
-
-
-// =============================================================
-// APPOINTMENT FILTER DROPDOWNS
-// =============================================================
-
-function populateAppointmentFilters() {
-
-    const mechanicSelect =
-        document.getElementById(
-            'appointmentMechanicFilter'
-        );
-
-
-    if (
-        mechanicSelect
-    ) {
-
-        const current =
-            mechanicSelect.value;
-
-
-        const mechanics =
-            [
-                ...new Map(
-
-                    appointmentsData
-
-                        .filter(
-                            appointment =>
-                                appointment.mechanic_id ||
-                                appointment.mechanic_name
-                        )
-
-                        .map(
-                            appointment => [
-
-                                String(
-                                    appointment.mechanic_id ||
-                                    appointment.mechanic_name
-                                ),
-
-                                appointment.mechanic_name ||
-                                `Mechanic #${appointment.mechanic_id}`
-
-                            ]
-                        )
-
-                ).entries()
-            ];
-
-
-        mechanicSelect.innerHTML =
-            `
-            <option value="">
-                All Mechanics
-            </option>
-            `;
-
-
-        mechanics.forEach(
-            ([id, name]) => {
-
-                const option =
-                    document.createElement(
-                        'option'
-                    );
-
-
-                option.value =
-                    id;
-
-
-                option.textContent =
-                    name;
-
-
-                mechanicSelect.appendChild(
-                    option
-                );
-
-            }
-        );
-
-
-        mechanicSelect.value =
-            current;
-
-    }
-
-
-    const statusSelect =
-        document.getElementById(
-            'appointmentStatusFilter'
-        );
-
-
-    if (
-        statusSelect &&
-        statusSelect.options.length <= 1
-    ) {
-
-        const statuses = [
-
-            'Pending',
-
-            'Confirmed',
-
-            'In Progress',
-
-            'Completed',
-
-            'Cancelled'
-
-        ];
-
-
-        statuses.forEach(
-            status => {
-
-                const option =
-                    document.createElement(
-                        'option'
-                    );
-
-
-                option.value =
-                    status;
-
-
-                option.textContent =
-                    status;
-
-
-                statusSelect.appendChild(
-                    option
-                );
-
-            }
-        );
-
-    }
-
-}
-
-
-// =============================================================
-// FILTER APPOINTMENTS
-// =============================================================
-
-function filterAndRenderAppointments() {
-
-    const search =
-        globalSearchTerm;
-
-
-    const status =
-        document
-            .getElementById(
-                'appointmentStatusFilter'
-            )
-            ?.value || '';
-
-
-    const mechanic =
-        document
-            .getElementById(
-                'appointmentMechanicFilter'
-            )
-            ?.value || '';
-
-
-    const date =
-        document
-            .getElementById(
-                'appointmentDateFilter'
-            )
-            ?.value || '';
-
-
-    const filtered =
-        appointmentsData.filter(
-            appointment => {
-
-                const searchable = [
-
-                    appointment.id,
-
-                    appointment.customer_name,
-
-                    appointment.full_name,
-
-                    appointment.email,
-
-                    appointment.phone,
-
-                    appointment.plate_number,
-
-                    appointment.vehicle_plate,
-
-                    appointment.brand,
-
-                    appointment.model,
-
-                    appointment.service_name,
-
-                    appointment.service_type,
-
-                    appointment.mechanic_name,
-
-                    appointment.status,
-
-                    appointment.notes
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                const matchesSearch =
-                    !search ||
-                    searchable.includes(
-                        search
-                    );
-
-
-                const normalizedStatus =
-                    appointmentStatusKey(
-                        appointment.status
-                    );
-
-
-                const matchesStatus =
-                    !status ||
-                    normalizedStatus ===
-                    appointmentStatusKey(
-                        status
-                    );
-
-
-                const mechanicId =
-                    String(
-                        appointment.mechanic_id ||
-                        ''
-                    );
-
-
-                const mechanicName =
-                    String(
-                        appointment.mechanic_name ||
-                        ''
-                    );
-
-
-                const matchesMechanic =
-                    !mechanic ||
-
-                    mechanicId ===
-                    String(mechanic)
-
-                    ||
-
-                    mechanicName ===
-                    String(mechanic);
-
-
-                let matchesDate =
-                    true;
-
-
-                if (date) {
-
-                    const appointmentDate =
-                        String(
-                            appointment.appointment_date ||
-                            appointment.date ||
-                            appointment.scheduled_date ||
-                            ''
-                        ).substring(
-                            0,
-                            10
-                        );
-
-
-                    matchesDate =
-                        appointmentDate ===
-                        date;
-
-                }
-
-
-                return (
-
-                    matchesSearch &&
-
-                    matchesStatus &&
-
-                    matchesMechanic &&
-
-                    matchesDate
-
-                );
-
-            }
-        );
-
-
-    renderAppointments(
-        filtered
-    );
-
-}
-
-
-// =============================================================
-// RENDER APPOINTMENTS
-// =============================================================
-
-function renderAppointments(
-    appointments
-) {
-
-    const tbody =
-        document.getElementById(
-            'appointmentTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!appointments.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="10"
-                    class="
-                        text-center
-                        text-muted
-                        py-5
-                    "
-                >
-
-                    <i
-                        class="
-                            bi
-                            bi-calendar-x
-                            fs-2
-                            d-block
-                            mb-2
-                        "
-                    ></i>
-
-                    No appointments found.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        appointments.map(
-            appointment => {
-
-                const id =
-                    Number(
-                        appointment.id
-                    );
-
-
-                const status =
-                    appointmentStatusKey(
-                        appointment.status
-                    );
-
-
-                const customer =
-                    appointment.customer_name ||
-                    appointment.full_name ||
-                    '—';
-
-
-                const plate =
-                    appointment.plate_number ||
-                    appointment.vehicle_plate ||
-                    '—';
-
-
-                const vehicle =
-                    [
-
-                        appointment.brand,
-
-                        appointment.model,
-
-                        appointment.year_model
-
-                    ]
-
-                    .filter(Boolean)
-
-                    .join(' ') ||
-
-                    '—';
-
-
-                const service =
-                    appointment.service_name ||
-                    appointment.service_type ||
-                    appointment.service ||
-                    '—';
-
-
-                const mechanic =
-                    appointment.mechanic_name ||
-                    'Unassigned';
-
-
-                const appointmentDate =
-                    appointment.appointment_date ||
-                    appointment.date ||
-                    appointment.scheduled_date ||
-                    '';
-
-
-                const appointmentTime =
-                    appointment.appointment_time ||
-                    appointment.time ||
-                    appointment.scheduled_time ||
-                    '';
-
-
-                const formattedDate =
-                    formatAppointmentDate(
-                        appointmentDate
-                    );
-
-
-                const formattedTime =
-                    formatAppointmentTime(
-                        appointmentTime
-                    );
-
-
-                const locked =
-                    isAppointmentLocked(
-                        status
-                    );
-
-
-                const customerSafe =
-                    String(
-                        customer
-                    ).replace(
-                        /'/g,
-                        "\\'"
-                    );
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            <span
-                                class="
-                                    fw-bold
-                                    text-danger
-                                "
-                            >
-
-                                #${id}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="fw-semibold"
-                            >
-
-                                ${escapeHtml(
-                                    customer
-                                )}
-
-                            </div>
-
-
-                            ${
-                                appointment.email
-
-                                    ? `
-                                        <div
-                                            class="
-                                                small
-                                                text-muted
-                                            "
-                                        >
-                                            ${escapeHtml(
-                                                appointment.email
-                                            )}
-                                        </div>
-                                    `
-
-                                    : ''
-                            }
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="fw-semibold"
-                            >
-
-                                ${escapeHtml(
-                                    vehicle
-                                )}
-
-                            </div>
-
-
-                            <code
-                                class="
-                                    small
-                                    text-uppercase
-                                "
-                                style="
-                                    color:#b30000;
-                                "
-                            >
-
-                                ${escapeHtml(
-                                    plate
-                                )}
-
-                            </code>
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    small
-                                    fw-semibold
-                                "
-                            >
-
-                                ${escapeHtml(
-                                    service
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="
-                                    fw-semibold
-                                "
-                            >
-
-                                ${escapeHtml(
-                                    formattedDate
-                                )}
-
-                            </div>
-
-
-                            ${
-                                formattedTime
-
-                                    ? `
-                                        <div
-                                            class="
-                                                small
-                                                text-muted
-                                            "
-                                        >
-
-                                            <i
-                                                class="
-                                                    bi
-                                                    bi-clock
-                                                "
-                                            ></i>
-
-                                            ${escapeHtml(
-                                                formattedTime
-                                            )}
-
-                                        </div>
-                                    `
-
-                                    : ''
-                            }
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    mechanic-name
-                                    ${
-                                        mechanic ===
-                                        'Unassigned'
-                                            ? 'text-muted'
-                                            : ''
-                                    }
-                                "
-                            >
-
-                                ${
-                                    mechanic ===
-                                    'Unassigned'
-
-                                        ? `
-                                            <i
-                                                class="
-                                                    bi
-                                                    bi-person-x
-                                                "
-                                            ></i>
-                                          `
-
-                                        : `
-                                            <i
-                                                class="
-                                                    bi
-                                                    bi-person-check
-                                                "
-                                            ></i>
-                                          `
-                                }
-
-                                ${escapeHtml(
-                                    mechanic
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            ${statusBadge(
-                                status
-                            )}
-
-                        </td>
-
-
-                        <td
-                            class="
-                                appointment-notes-cell
-                            "
-                        >
-
-                            ${getAppointmentNotes(
-                                appointment
-                            )}
-
-                        </td>
-
-
-                        <td>
-
-                            <div
-                                class="
-                                    btn-group
-                                    btn-group-sm
-                                "
-                            >
-
-                                <button
-                                    type="button"
-                                    class="
-                                        btn
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        manageAppointment(
-                                            ${id}
-                                        )
-                                    "
-                                    title="Manage Appointment"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                ${
-                                    !locked
-
-                                        ? `
-                                            <button
-                                                type="button"
-                                                class="
-                                                    btn
-                                                    btn-outline-primary
-                                                "
-                                                onclick="
-                                                    assignAppointmentMechanic(
-                                                        ${id}
-                                                    )
-                                                "
-                                                title="Assign Mechanic"
-                                            >
-
-                                                <i
-                                                    class="
-                                                        bi
-                                                        bi-person-plus
-                                                    "
-                                                ></i>
-
-                                            </button>
-                                        `
-
-                                        : ''
-                                }
-
-
-                                ${
-                                    status ===
-                                    'Completed'
-
-                                        ? `
-                                            <a
-                                                href="
-                                                    api/admin/generate_receipt.php?id=${id}
-                                                "
-                                                target="_blank"
-                                                class="
-                                                    btn
-                                                    btn-outline-success
-                                                "
-                                                title="View Receipt"
-                                            >
-
-                                                <i
-                                                    class="
-                                                        bi
-                                                        bi-receipt
-                                                    "
-                                                ></i>
-
-                                            </a>
-                                        `
-
-                                        : ''
-                                }
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// APPOINTMENT DATE FORMAT
-// =============================================================
-
-function formatAppointmentDate(
-    value
-) {
-
-    if (!value) {
-        return '—';
-    }
-
-
-    const date =
-        new Date(
-            String(value)
-        );
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return String(
-            value
-        );
-
-    }
-
-
-    return date.toLocaleDateString(
-        'en-US',
-        {
-
-            month:
-                'short',
-
-            day:
-                'numeric',
-
-            year:
-                'numeric'
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// APPOINTMENT TIME FORMAT
-// =============================================================
-
-function formatAppointmentTime(
-    value
-) {
-
-    if (!value) {
-        return '';
-    }
-
-
-    const parts =
-        String(
-            value
-        ).split(':');
-
-
-    if (
-        parts.length <
-        2
-    ) {
-
-        return String(
-            value
-        );
-
-    }
-
-
-    let hours =
-        parseInt(
-            parts[0],
-            10
-        );
-
-
-    const minutes =
-        parts[1];
-
-
-    if (
-        Number.isNaN(hours)
-    ) {
-
-        return String(
-            value
-        );
-
-    }
-
-
-    const suffix =
-        hours >= 12
-            ? 'PM'
-            : 'AM';
-
-
-    hours =
-        hours % 12 ||
-        12;
-
-
-    return `${hours}:${minutes} ${suffix}`;
-
-}
-
-
-// =============================================================
-// MANAGE APPOINTMENT
-// =============================================================
-
-function manageAppointment(
-    id
-) {
-
-    const appointment =
-        appointmentsData.find(
-            item =>
-                Number(item.id) ===
-                Number(id)
-        );
-
-
-    if (!appointment) {
-
-        Swal.fire({
-
-            icon:
-                'error',
-
-            title:
-                'Appointment Not Found',
-
-            text:
-                'The appointment could not be found.'
-
-        });
-
-        return;
-
-    }
-
-
-    const currentStatus =
-        appointmentStatusKey(
-            appointment.status
-        );
-
-
-    const locked =
-        isAppointmentLocked(
-            currentStatus
-        );
-
-
-    const allowedStatuses =
-        getAllowedAppointmentStatuses(
-            currentStatus
-        );
-
-
-    const statusOptions =
-        allowedStatuses.length
-
-            ? allowedStatuses
-
-            : [currentStatus];
-
-
-    const selectedMechanic =
-        appointment.mechanic_id ||
-        '';
-
-
-    Swal.fire({
-
-        title:
-            `Appointment #${Number(id)}`,
-
-        width:
-            700,
-
-        html: `
-
-            <div
-                class="text-start"
-            >
-
-                <div
-                    class="
-                        alert
-                        alert-light
-                        border
-                        mb-3
-                    "
-                >
-
-                    <div
-                        class="fw-bold"
-                    >
-
-                        ${escapeHtml(
-                            appointment.customer_name ||
-                            appointment.full_name ||
-                            'Customer'
-                        )}
-
-                    </div>
-
-
-                    <div
-                        class="
-                            small
-                            text-muted
-                        "
-                    >
-
-                        ${escapeHtml(
-                            appointment.service_name ||
-                            appointment.service_type ||
-                            'Service'
-                        )}
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="
-                            form-label
-                            fw-semibold
-                        "
-                    >
-
-                        Appointment Status
-
-                    </label>
-
-
-                    <select
-                        id="manageAppointmentStatus"
-                        class="form-select"
-                        ${locked ? 'disabled' : ''}
-                    >
-
-                        ${statusOptions.map(
-                            option =>
-                                `
-                                <option
-                                    value="${escapeHtml(
-                                        option
-                                    )}"
-                                    ${
-                                        appointmentStatusKey(
-                                            option
-                                        ) ===
-                                        currentStatus
-                                            ? 'selected'
-                                            : ''
-                                    }
-                                >
-
-                                    ${escapeHtml(
-                                        option
-                                    )}
-
-                                </option>
-                                `
-                        ).join('')}
-
-                    </select>
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="
-                            form-label
-                            fw-semibold
-                        "
-                    >
-
-                        Assign Mechanic
-
-                    </label>
-
-
-                    <select
-                        id="manageAppointmentMechanic"
-                        class="form-select"
-                        ${locked ? 'disabled' : ''}
-                    >
-
-                        <option
-                            value=""
-                        >
-                            Unassigned
-                        </option>
-
-                        ${getMechanicOptions(
-                            selectedMechanic
-                        )}
-
-                    </select>
-
-                </div>
-
-
-                <div
-                    class="mb-3"
-                >
-
-                    <label
-                        class="
-                            form-label
-                            fw-semibold
-                        "
-                    >
-
-                        Notes
-
-                    </label>
-
-
-                    <textarea
-                        id="manageAppointmentNotes"
-                        class="form-control"
-                        rows="3"
-                        ${
-                            locked
-                                ? 'disabled'
-                                : ''
-                        }
-                    >${escapeHtml(
-                        appointment.notes ||
-                        ''
-                    )}</textarea>
-
-                </div>
-
-
-                ${
-                    locked
-
-                        ? `
-                            <div
-                                class="
-                                    alert
-                                    alert-secondary
-                                    mb-0
-                                "
-                            >
-
-                                <i
-                                    class="
-                                        bi
-                                        bi-lock-fill
-                                    "
-                                ></i>
-
-                                This appointment is
-                                <strong>
-                                    ${escapeHtml(
-                                        currentStatus
-                                    )}
-                                </strong>
-                                and can no longer be edited.
-
-                            </div>
-                          `
-
-                        : ''
-                }
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            locked
-                ? 'Close'
-                : 'Save Changes',
-
-        showConfirmButton:
-            !locked,
-
-        preConfirm: () => {
-
-            const newStatus =
-                document
-                    .getElementById(
-                        'manageAppointmentStatus'
-                    )
-                    ?.value;
-
-
-            const mechanic =
-                document
-                    .getElementById(
-                        'manageAppointmentMechanic'
-                    )
-                    ?.value || '';
-
-
-            const notes =
-                document
-                    .getElementById(
-                        'manageAppointmentNotes'
-                    )
-                    ?.value
-                    .trim() || '';
-
-
-            if (
-                !newStatus
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please select an appointment status.'
-                );
-
-                return false;
-
-            }
-
-
-            return {
-
-                status:
-                    newStatus,
-
-                mechanic_id:
-                    mechanic
-                        ? Number(mechanic)
-                        : null,
-
-                notes:
-                    notes
-
-            };
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value ||
-            locked
-        ) {
-
-            return;
-
-        }
-
-
-        updateAppointmentStatus(
-            id,
-            result.value.status,
-            {
-
-                mechanic_id:
-                    result.value
-                        .mechanic_id,
-
-                notes:
-                    result.value
-                        .notes
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// ASSIGN MECHANIC
-// =============================================================
-
-function assignAppointmentMechanic(
-    id
-) {
-
-    const appointment =
-        appointmentsData.find(
-            item =>
-                Number(item.id) ===
-                Number(id)
-        );
-
-
-    if (!appointment) {
-
-        return;
-
-    }
-
-
-    const currentMechanic =
-        appointment.mechanic_id ||
-        '';
-
-
-    Swal.fire({
-
-        title:
-            'Assign Mechanic',
-
-        html: `
-
-            <div
-                class="text-start"
-            >
-
-                <label
-                    class="
-                        form-label
-                        fw-semibold
-                    "
-                >
-
-                    Select Mechanic
-
-                </label>
-
-
-                <select
-                    id="assignMechanicSelect"
-                    class="form-select"
-                >
-
-                    <option
-                        value=""
-                    >
-                        Unassigned
-                    </option>
-
-                    ${getMechanicOptions(
-                        currentMechanic
-                    )}
-
-                </select>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Assign',
-
-        preConfirm: () => {
-
-            return document
-                .getElementById(
-                    'assignMechanicSelect'
-                )
-                ?.value || '';
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        updateAppointmentStatus(
-            id,
-            appointmentStatusKey(
-                appointment.status
-            ),
-            {
-
-                mechanic_id:
-                    result.value
-                        ? Number(
-                            result.value
-                        )
-                        : null
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// MECHANIC OPTIONS
-// =============================================================
-
-function getMechanicOptions(
-    selectedId = ''
-) {
-
-    if (
-        !Array.isArray(
-            mechanicsData
-        ) ||
-        !mechanicsData.length
-    ) {
-
-        return `
-            <option
-                value=""
-                disabled
-            >
-                No mechanics available
-            </option>
-        `;
-
-    }
-
-
-    return mechanicsData
-        .filter(
-            mechanic => {
-
-                const status =
-                    String(
-                        mechanic.status ||
-                        'active'
-                    ).toLowerCase();
-
-
-                return (
-                    status ===
-                    'active' ||
-                    !mechanic.status
-                );
-
-            }
-        )
-        .map(
-            mechanic => {
-
-                const id =
-                    mechanic.id;
-
-
-                const name =
-                    mechanic.full_name ||
-                    mechanic.name ||
-                    `Mechanic #${id}`;
-
-
-                return `
-
-                    <option
-                        value="${Number(id)}"
-                        ${
-                            String(id) ===
-                            String(selectedId)
-                                ? 'selected'
-                                : ''
-                        }
-                    >
-
-                        ${escapeHtml(
-                            name
-                        )}
-
-                    </option>
-
-                `;
-
-            }
-        )
-        .join('');
-
-}
-
-
-// =============================================================
-// APPOINTMENT STATUS NORMALIZATION
-// =============================================================
-
-function appointmentStatusKey(
-    value
-) {
-
-    if (!value) {
-        return 'Pending';
-    }
-
-
-    const raw =
-        String(
-            value
-        )
-        .trim()
-        .toLowerCase();
-
-
-    const map = {
-
-        pending:
-            'Pending',
-
-        confirmed:
-            'Confirmed',
-
-        accepted:
-            'Confirmed',
-
-        scheduled:
-            'Confirmed',
-
-        'in progress':
-            'In Progress',
-
-        in_progress:
-            'In Progress',
-
-        ongoing:
-            'In Progress',
-
-        completed:
-            'Completed',
-
-        complete:
-            'Completed',
-
-        cancelled:
-            'Cancelled',
-
-        canceled:
-            'Cancelled',
-
-        rejected:
-            'Cancelled'
-
-    };
-
-
-    return (
-        map[raw] ||
-        String(value)
-    );
-
-}
-
-
-// =============================================================
-// APPOINTMENT STATUS FLOW
-// =============================================================
-
-const APPOINTMENT_STATUS_FLOW = {
-
-    Pending: [
-
-        'Confirmed',
-
-        'Cancelled'
-
-    ],
-
-    Confirmed: [
-
-        'In Progress',
-
-        'Cancelled'
-
-    ],
-
-    'In Progress': [
-
-        'Completed',
-
-        'Cancelled'
-
-    ],
-
-    Completed: [],
-
-    Cancelled: []
-
-};
-
-
-// =============================================================
-// STATUS BADGE
-// =============================================================
-
-function statusBadge(
-    status
-) {
-
-    const normalized =
-        appointmentStatusKey(
-            status
-        );
-
-
-    let badgeClass =
-        'bg-secondary';
-
-
-    switch (
-        normalized
-    ) {
-
-        case 'Pending':
-
-            badgeClass =
-                'bg-warning text-dark';
-
-            break;
-
-
-        case 'Confirmed':
-
-            badgeClass =
-                'bg-primary';
-
-            break;
-
-
-        case 'In Progress':
-
-            badgeClass =
-                'bg-info text-dark';
-
-            break;
-
-
-        case 'Completed':
-
-            badgeClass =
-                'bg-success';
-
-            break;
-
-
-        case 'Cancelled':
-
-            badgeClass =
-                'bg-danger';
-
-            break;
-
-    }
-
-
-    return `
-
-        <span
-            class="
-                badge
-                ${badgeClass}
-            "
-        >
-
-            ${escapeHtml(
-                normalized
-            )}
-
-        </span>
-
-    `;
-
-}
-
-
-// =============================================================
-// QUICK APPOINTMENT ACTIONS
-// =============================================================
-
-function approveAppointment(
-    id
-) {
-
-    Swal.fire({
-
-        title:
-            'Confirm Appointment?',
-
-        text:
-            'The customer will see the appointment as confirmed.',
-
-        icon:
-            'question',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#198754',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Confirm Appointment'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        confirmAppointment(
-            id
-        );
-
-    });
-
-}
-
-
-function cancelAppointment(
-    id
-) {
-
-    Swal.fire({
-
-        title:
-            'Cancel Appointment',
-
-        input:
-            'textarea',
-
-        inputLabel:
-            'Cancellation Reason',
-
-        inputPlaceholder:
-            'Enter the reason for cancellation...',
-
-        inputAttributes: {
-
-            'aria-label':
-                'Cancellation reason'
-
-        },
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Cancel Appointment',
-
-        preConfirm: reason => {
-
-            if (
-                !reason ||
-                !reason.trim()
-            ) {
-
-                Swal.showValidationMessage(
-                    'Please provide a cancellation reason.'
-                );
-
-                return false;
-
-            }
-
-
-            return reason.trim();
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        updateAppointmentStatus(
-            id,
-            'Cancelled',
-            {
-
-                cancellation_reason:
-                    result.value
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// REFRESH APPOINTMENT DATA
-// =============================================================
-
-function refreshAppointmentData() {
-
-    loadAppointments();
-
-}
-
-
-// =============================================================
-// PART 5 END
-// =============================================================
-
-// =============================================================
-// PART 6 — USERS, VEHICLES & SERVICE HISTORY ACTIONS
-// =============================================================
-
-
-// =============================================================
-// USER MANAGEMENT
-// =============================================================
-
-function editUser(id) {
-
-    const user =
-        masterData.users.find(
-            item =>
-                Number(item.id) ===
-                Number(id)
-        );
-
-
-    if (!user) {
-
-        Swal.fire({
-
-            icon: 'error',
-
-            title: 'User Not Found',
-
-            text:
-                'The selected user could not be found.'
-
-        });
-
-        return;
-
-    }
-
-
-    Swal.fire({
-
-        title: 'Edit User',
-
-        width: 650,
-
-        html: `
-
             <div class="text-start">
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Full Name
-                    </label>
-
-                    <input
-                        id="editUserName"
-                        type="text"
-                        class="form-control"
-                        value="${escapeHtml(
-                            user.full_name || ''
-                        )}"
-                    >
-
-                </div>
-
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Email
-                    </label>
-
-                    <input
-                        id="editUserEmail"
-                        type="email"
-                        class="form-control"
-                        value="${escapeHtml(
-                            user.email || ''
-                        )}"
-                    >
-
-                </div>
-
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Phone
-                    </label>
-
-                    <input
-                        id="editUserPhone"
-                        type="text"
-                        class="form-control"
-                        value="${escapeHtml(
-                            user.phone || ''
-                        )}"
-                    >
-
-                </div>
-
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Role
-                    </label>
-
-                    <select
-                        id="editUserRole"
-                        class="form-select"
-                    >
-
-                        <option
-                            value="1"
-                            ${
-                                Number(user.role_id) === 1
-                                    ? 'selected'
-                                    : ''
-                            }
-                        >
-                            Customer
-                        </option>
-
-                        <option
-                            value="2"
-                            ${
-                                Number(user.role_id) === 2
-                                    ? 'selected'
-                                    : ''
-                            }
-                        >
-                            Admin
-                        </option>
-
-                        <option
-                            value="3"
-                            ${
-                                Number(user.role_id) === 3
-                                    ? 'selected'
-                                    : ''
-                            }
-                        >
-                            Mechanic
-                        </option>
-
-                    </select>
-
-                </div>
-
-            </div>
-
-        `,
-
+                <label class="form-label fw-semibold">Full Name *</label>
+                <input id="mName" class="form-control mb-3" placeholder="e.g. Juan Dela Cruz">
+                <label class="form-label fw-semibold">Specialty</label>
+                <input id="mSpec" class="form-control" placeholder="e.g. Engine, Electrical, etc.">
+            </div>`,
+        confirmButtonText: 'Add Mechanic',
+        confirmButtonColor: '#e62429',
         showCancelButton: true,
-
-        confirmButtonColor: '#b30000',
-
-        confirmButtonText: 'Save Changes',
-
         preConfirm: () => {
-
-            const name =
-                document
-                    .getElementById(
-                        'editUserName'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const email =
-                document
-                    .getElementById(
-                        'editUserEmail'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const phone =
-                document
-                    .getElementById(
-                        'editUserPhone'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const role =
-                document
-                    .getElementById(
-                        'editUserRole'
-                    )
-                    ?.value;
-
-
-            if (!name) {
-
-                Swal.showValidationMessage(
-                    'Full name is required.'
-                );
-
-                return false;
-
-            }
-
-
-            if (!email) {
-
-                Swal.showValidationMessage(
-                    'Email is required.'
-                );
-
-                return false;
-
-            }
-
-
-            return {
-
-                id:
-                    Number(id),
-
-                full_name:
-                    name,
-
-                email:
-                    email,
-
-                phone:
-                    phone,
-
-                role_id:
-                    Number(role)
-
-            };
-
+            const name = document.getElementById('mName').value.trim();
+            if (!name) { Swal.showValidationMessage('Name is required.'); return false; }
+            return { action: 'add', name, specialty: document.getElementById('mSpec').value.trim() };
         }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_users.php',
-            {
-
-                action:
-                    'update',
-
-                ...result.value
-
-            },
-
-            () => {
-
-                loadUsers();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// DELETE USER
-// =============================================================
-
-function deleteUser(
-    id,
-    name
-) {
-
-    Swal.fire({
-
-        title:
-            'Delete User?',
-
-        html:
-            `
-            Are you sure you want to delete
-            <strong>
-                ${escapeHtml(
-                    name ||
-                    'this user'
-                )}
-            </strong>?
-            <br><br>
-            <span class="text-danger">
-                This action cannot be undone.
-            </span>
-            `,
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Yes, Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_users.php',
-            {
-
-                action:
-                    'delete',
-
-                id:
-                    Number(id)
-
-            },
-
-            () => {
-
-                loadUsers();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// LOAD USERS
-// =============================================================
-
-function loadUsers() {
-
-    fetch(
-        'api/admin/manage_users.php?action=list',
-        {
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders()
-
-        }
-    )
-
-    .then(response => {
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        return response.json();
-
-    })
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            throw new Error(
-                data.message ||
-                'Unable to load users.'
-            );
-
-        }
-
-
-        masterData.users =
-            Array.isArray(
-                data.users
-            )
-                ? data.users
-                : [];
-
-
-        filterAndRenderUsers();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'User loading error:',
-            error
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// VEHICLE MANAGEMENT
-// =============================================================
-
-function editVehicle(
-    id,
-    userId,
-    brand,
-    model,
-    yearModel,
-    plateNumber,
-    fuelType,
-    transmission
-) {
-
-    Swal.fire({
-
-        title:
-            'Edit Vehicle',
-
-        width:
-            700,
-
-        html: `
-
-            <div class="text-start">
-
-                <div class="row">
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Brand
-                        </label>
-
-                        <input
-                            id="editVehicleBrand"
-                            class="form-control"
-                            value="${escapeHtml(
-                                brand || ''
-                            )}"
-                        >
-
-                    </div>
-
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Model
-                        </label>
-
-                        <input
-                            id="editVehicleModel"
-                            class="form-control"
-                            value="${escapeHtml(
-                                model || ''
-                            )}"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="row">
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Year Model
-                        </label>
-
-                        <input
-                            id="editVehicleYear"
-                            type="number"
-                            class="form-control"
-                            min="1900"
-                            max="2100"
-                            value="${escapeHtml(
-                                yearModel || ''
-                            )}"
-                        >
-
-                    </div>
-
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Plate Number
-                        </label>
-
-                        <input
-                            id="editVehiclePlate"
-                            class="form-control text-uppercase"
-                            value="${escapeHtml(
-                                plateNumber || ''
-                            )}"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="row">
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Fuel Type
-                        </label>
-
-                        <select
-                            id="editVehicleFuel"
-                            class="form-select"
-                        >
-
-                            <option
-                                value="Gasoline"
-                                ${
-                                    String(
-                                        fuelType
-                                    ).toLowerCase() ===
-                                    'gasoline'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Gasoline
-                            </option>
-
-                            <option
-                                value="Diesel"
-                                ${
-                                    String(
-                                        fuelType
-                                    ).toLowerCase() ===
-                                    'diesel'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Diesel
-                            </option>
-
-                            <option
-                                value="Electric"
-                                ${
-                                    String(
-                                        fuelType
-                                    ).toLowerCase() ===
-                                    'electric'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Electric
-                            </option>
-
-                            <option
-                                value="Hybrid"
-                                ${
-                                    String(
-                                        fuelType
-                                    ).toLowerCase() ===
-                                    'hybrid'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Hybrid
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <div class="col-md-6 mb-3">
-
-                        <label
-                            class="form-label fw-semibold"
-                        >
-                            Transmission
-                        </label>
-
-                        <select
-                            id="editVehicleTransmission"
-                            class="form-select"
-                        >
-
-                            <option
-                                value="Automatic"
-                                ${
-                                    String(
-                                        transmission
-                                    ).toLowerCase() ===
-                                    'automatic'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Automatic
-                            </option>
-
-                            <option
-                                value="Manual"
-                                ${
-                                    String(
-                                        transmission
-                                    ).toLowerCase() ===
-                                    'manual'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                Manual
-                            </option>
-
-                            <option
-                                value="CVT"
-                                ${
-                                    String(
-                                        transmission
-                                    ).toLowerCase() ===
-                                    'cvt'
-                                        ? 'selected'
-                                        : ''
-                                }
-                            >
-                                CVT
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Save Changes',
-
-        preConfirm: () => {
-
-            const newBrand =
-                document
-                    .getElementById(
-                        'editVehicleBrand'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newModel =
-                document
-                    .getElementById(
-                        'editVehicleModel'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newYear =
-                document
-                    .getElementById(
-                        'editVehicleYear'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newPlate =
-                document
-                    .getElementById(
-                        'editVehiclePlate'
-                    )
-                    ?.value
-                    .trim()
-                    .toUpperCase();
-
-
-            const newFuel =
-                document
-                    .getElementById(
-                        'editVehicleFuel'
-                    )
-                    ?.value;
-
-
-            const newTransmission =
-                document
-                    .getElementById(
-                        'editVehicleTransmission'
-                    )
-                    ?.value;
-
-
-            if (!newBrand) {
-
-                Swal.showValidationMessage(
-                    'Vehicle brand is required.'
-                );
-
-                return false;
-
-            }
-
-
-            if (!newModel) {
-
-                Swal.showValidationMessage(
-                    'Vehicle model is required.'
-                );
-
-                return false;
-
-            }
-
-
-            if (!newPlate) {
-
-                Swal.showValidationMessage(
-                    'Plate number is required.'
-                );
-
-                return false;
-
-            }
-
-
-            return {
-
-                id:
-                    Number(id),
-
-                user_id:
-                    Number(userId),
-
-                brand:
-                    newBrand,
-
-                model:
-                    newModel,
-
-                year_model:
-                    newYear
-                        ? Number(newYear)
-                        : null,
-
-                plate_number:
-                    newPlate,
-
-                fuel_type:
-                    newFuel,
-
-                transmission:
-                    newTransmission
-
-            };
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_vehicles.php',
-            {
-
-                action:
-                    'update',
-
-                ...result.value
-
-            },
-
-            () => {
-
-                loadVehicles();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// DELETE VEHICLE
-// =============================================================
-
-function deleteVehicle(
-    id,
-    plateNumber
-) {
-
-    Swal.fire({
-
-        title:
-            'Delete Vehicle?',
-
-        html:
-            `
-            Are you sure you want to delete
-            the vehicle with plate
-            <strong>
-                ${escapeHtml(
-                    plateNumber ||
-                    'this vehicle'
-                )}
-            </strong>?
-            `,
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Yes, Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_vehicles.php',
-            {
-
-                action:
-                    'delete',
-
-                id:
-                    Number(id)
-
-            },
-
-            () => {
-
-                loadVehicles();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// LOAD VEHICLES
-// =============================================================
-
-function loadVehicles() {
-
-    fetch(
-        'api/admin/manage_vehicles.php?action=list',
-        {
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders()
-
-        }
-    )
-
-    .then(response => {
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        return response.json();
-
-    })
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            throw new Error(
-                data.message ||
-                'Unable to load vehicles.'
-            );
-
-        }
-
-
-        masterData.vehicles =
-            Array.isArray(
-                data.vehicles
-            )
-                ? data.vehicles
-                : [];
-
-
-        filterAndRenderVehicles();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Vehicle loading error:',
-            error
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// SERVICE HISTORY
-// =============================================================
-
-function editHistory(
-    id,
-    service,
-    serviceDate
-) {
-
-    Swal.fire({
-
-        title:
-            'Edit Service History',
-
-        width:
-            600,
-
-        html: `
-
-            <div class="text-start">
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Service
-                    </label>
-
-                    <input
-                        id="editHistoryService"
-                        class="form-control"
-                        value="${escapeHtml(
-                            service || ''
-                        )}"
-                    >
-
-                </div>
-
-
-                <div class="mb-3">
-
-                    <label
-                        class="form-label fw-semibold"
-                    >
-                        Service Date
-                    </label>
-
-                    <input
-                        id="editHistoryDate"
-                        type="date"
-                        class="form-control"
-                        value="${escapeHtml(
-                            serviceDate || ''
-                        )}"
-                    >
-
-                </div>
-
-            </div>
-
-        `,
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        confirmButtonText:
-            'Save Changes',
-
-        preConfirm: () => {
-
-            const newService =
-                document
-                    .getElementById(
-                        'editHistoryService'
-                    )
-                    ?.value
-                    .trim();
-
-
-            const newDate =
-                document
-                    .getElementById(
-                        'editHistoryDate'
-                    )
-                    ?.value;
-
-
-            if (!newService) {
-
-                Swal.showValidationMessage(
-                    'Service is required.'
-                );
-
-                return false;
-
-            }
-
-
-            if (!newDate) {
-
-                Swal.showValidationMessage(
-                    'Service date is required.'
-                );
-
-                return false;
-
-            }
-
-
-            return {
-
-                id:
-                    Number(id),
-
-                service_type:
-                    newService,
-
-                service_date:
-                    newDate
-
-            };
-
-        }
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed ||
-            !result.value
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_service_history.php',
-            {
-
-                action:
-                    'update',
-
-                ...result.value
-
-            },
-
-            () => {
-
-                loadServiceHistory();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// DELETE SERVICE HISTORY
-// =============================================================
-
-function deleteHistory(
-    id,
-    customerName
-) {
-
-    Swal.fire({
-
-        title:
-            'Delete Service History?',
-
-        html:
-            `
-            Delete the service history
-            for
-            <strong>
-                ${escapeHtml(
-                    customerName ||
-                    'this customer'
-                )}
-            </strong>?
-            <br><br>
-            <span class="text-danger">
-                This action cannot be undone.
-            </span>
-            `,
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Yes, Delete'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/manage_service_history.php',
-            {
-
-                action:
-                    'delete',
-
-                id:
-                    Number(id)
-
-            },
-
-            () => {
-
-                loadServiceHistory();
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// LOAD SERVICE HISTORY
-// =============================================================
-
-function loadServiceHistory() {
-
-    fetch(
-        'api/admin/manage_service_history.php?action=list',
-        {
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders()
-
-        }
-    )
-
-    .then(response => {
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        return response.json();
-
-    })
-
-    .then(data => {
-
-        if (
-            data.status !==
-            'success'
-        ) {
-
-            throw new Error(
-                data.message ||
-                'Unable to load service history.'
-            );
-
-        }
-
-
-        historyData =
-            Array.isArray(
-                data.history
-            )
-                ? data.history
-                : [];
-
-
-        filterAndRenderHistory();
-
-    })
-
-    .catch(error => {
-
-        console.error(
-            'Service history loading error:',
-            error
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// SEND RECEIPT TO USER
-// =============================================================
-
-function sendReceiptToUser(
-    historyId,
-    customerName
-) {
-
-    Swal.fire({
-
-        title:
-            'Send Receipt?',
-
-        html:
-            `
-            Send the service receipt to
-            <strong>
-                ${escapeHtml(
-                    customerName ||
-                    'the customer'
-                )}
-            </strong>?
-            `,
-
-        icon:
-            'question',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#198754',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Send Receipt'
-
-    })
-
-    .then(result => {
-
-        if (
-            !result.isConfirmed
-        ) {
-
-            return;
-
-        }
-
-
-        postData(
-            'api/admin/send_receipt.php',
-            {
-
-                history_id:
-                    Number(
-                        historyId
-                    )
-
-            },
-
-            () => {
-
-                console.log(
-                    'Receipt sent successfully.'
-                );
-
-            }
-        );
-
-    });
-
-}
-
-
-// =============================================================
-// LOAD ALL BASIC ADMIN DATA
-// =============================================================
-
-function loadBasicAdminData() {
-
-    loadUsers();
-
-    loadVehicles();
-
-    loadServiceHistory();
-
-    loadAppointments();
-
-    loadParts();
-
-    loadInquiries();
-
-    loadOrders();
-
-    loadServices();
-
-    loadMechanics();
-
-}
-
-
-// =============================================================
-// REFRESH EVERYTHING
-// =============================================================
-
-function refreshDashboardData() {
-
-    if (
-        typeof loadFullSiteData ===
-        'function'
-    ) {
-
-        loadFullSiteData();
-
-    }
-    else {
-
-        loadBasicAdminData();
-
-    }
-
-}
-
-
-// =============================================================
-// PART 6 END
-// =============================================================
-
-// =============================================================
-// PART 7 — DASHBOARD SEARCH, FILTERING & REFRESH
-// =============================================================
-
-
-// =============================================================
-// GLOBAL SEARCH STATE
-// =============================================================
-
-if (typeof globalSearchTerm === 'undefined') {
-    var globalSearchTerm = '';
-}
-
-
-// =============================================================
-// SEARCH INPUT INITIALIZATION
-// =============================================================
-
-function initializeAdminSearch() {
-
-    const searchInput =
-        document.getElementById(
-            'adminSearch'
-        ) ||
-        document.getElementById(
-            'globalSearch'
-        ) ||
-        document.querySelector(
-            '[data-admin-search]'
-        );
-
-
-    if (!searchInput) {
-        return;
-    }
-
-
-    searchInput.addEventListener(
-        'input',
-        function () {
-
-            globalSearchTerm =
-                String(
-                    this.value || ''
-                )
-                .trim()
-                .toLowerCase();
-
-
-            refreshVisibleTables();
-
-        }
-    );
-
-
-    // Allow ESC to clear the search.
-
-    searchInput.addEventListener(
-        'keydown',
-        function (event) {
-
-            if (
-                event.key ===
-                'Escape'
-            ) {
-
-                this.value = '';
-
-                globalSearchTerm = '';
-
-                refreshVisibleTables();
-
-            }
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// CLEAR GLOBAL SEARCH
-// =============================================================
-
-function clearAdminSearch() {
-
-    const searchInput =
-        document.getElementById(
-            'adminSearch'
-        ) ||
-        document.getElementById(
-            'globalSearch'
-        ) ||
-        document.querySelector(
-            '[data-admin-search]'
-        );
-
-
-    if (searchInput) {
-
-        searchInput.value = '';
-
-    }
-
-
-    globalSearchTerm = '';
-
-
-    refreshVisibleTables();
-
-}
-
-
-// =============================================================
-// REFRESH VISIBLE TABLES
-// =============================================================
-
-function refreshVisibleTables() {
-
-    try {
-
-        if (
-            typeof filterAndRenderAppointments ===
-            'function'
-        ) {
-
-            filterAndRenderAppointments();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Appointment filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderOrders ===
-            'function'
-        ) {
-
-            filterAndRenderOrders();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Order filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderServices ===
-            'function'
-        ) {
-
-            filterAndRenderServices();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Service filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderMechanics ===
-            'function'
-        ) {
-
-            filterAndRenderMechanics();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Mechanic filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderUsers ===
-            'function'
-        ) {
-
-            filterAndRenderUsers();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'User filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderVehicles ===
-            'function'
-        ) {
-
-            filterAndRenderVehicles();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Vehicle filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderHistory ===
-            'function'
-        ) {
-
-            filterAndRenderHistory();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'History filter refresh failed:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        if (
-            typeof filterAndRenderInquiries ===
-            'function'
-        ) {
-
-            filterAndRenderInquiries();
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Inquiry filter refresh failed:',
-            error
-        );
-
-    }
-
-}
-
-
-// =============================================================
-// USER FILTERING
-// =============================================================
-
-function filterAndRenderUsers() {
-
-    const users =
-        Array.isArray(
-            masterData?.users
-        )
-            ? masterData.users
-            : [];
-
-
-    const filtered =
-        users.filter(
-            user => {
-
-                const searchable = [
-
-                    user.id,
-
-                    user.full_name,
-
-                    user.name,
-
-                    user.email,
-
-                    user.phone,
-
-                    user.role,
-
-                    user.role_name,
-
-                    user.status
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !globalSearchTerm ||
-                    searchable.includes(
-                        globalSearchTerm
-                    )
-                );
-
-            }
-        );
-
-
-    if (
-        typeof renderUsers ===
-        'function'
-    ) {
-
-        renderUsers(
-            filtered
-        );
-
-        return;
-
-    }
-
-
-    renderUsersFallback(
-        filtered
-    );
-
-}
-
-
-// =============================================================
-// USER FALLBACK RENDERER
-// =============================================================
-
-function renderUsersFallback(
-    users
-) {
-
-    const tbody =
-        document.getElementById(
-            'usersTableBody'
-        ) ||
-        document.getElementById(
-            'userTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!users.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="7"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No users match your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-
-    }
-
-
-    tbody.innerHTML =
-        users.map(
-            user => {
-
-                const role =
-                    user.role_name ||
-                    user.role ||
-                    getRoleName(
-                        user.role_id
-                    );
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-                            ${Number(
-                                user.id || 0
-                            )}
-                        </td>
-
-                        <td class="fw-semibold">
-
-                            ${escapeHtml(
-                                user.full_name ||
-                                user.name ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                user.email ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                user.phone ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                role
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${statusBadge(
-                                user.status ||
-                                'Active'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            <div
-                                class="btn-group btn-group-sm"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        editUser(
-                                            ${Number(
-                                                user.id
-                                            )}
-                                        )
-                                    "
-                                    title="Edit User"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteUser(
-                                            ${Number(
-                                                user.id
-                                            )},
-                                            '${String(
-                                                user.full_name ||
-                                                user.name ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete User"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// VEHICLE FILTERING
-// =============================================================
-
-function filterAndRenderVehicles() {
-
-    const vehicles =
-        Array.isArray(
-            masterData?.vehicles
-        )
-            ? masterData.vehicles
-            : [];
-
-
-    const filtered =
-        vehicles.filter(
-            vehicle => {
-
-                const searchable = [
-
-                    vehicle.id,
-
-                    vehicle.user_id,
-
-                    vehicle.owner_name,
-
-                    vehicle.customer_name,
-
-                    vehicle.brand,
-
-                    vehicle.model,
-
-                    vehicle.year_model,
-
-                    vehicle.plate_number,
-
-                    vehicle.license_plate,
-
-                    vehicle.fuel_type,
-
-                    vehicle.transmission
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !globalSearchTerm ||
-                    searchable.includes(
-                        globalSearchTerm
-                    )
-                );
-
-            }
-        );
-
-
-    if (
-        typeof renderVehicles ===
-        'function'
-    ) {
-
-        renderVehicles(
-            filtered
-        );
-
-        return;
-
-    }
-
-
-    renderVehiclesFallback(
-        filtered
-    );
-
-}
-
-
-// =============================================================
-// VEHICLE FALLBACK RENDERER
-// =============================================================
-
-function renderVehiclesFallback(
-    vehicles
-) {
-
-    const tbody =
-        document.getElementById(
-            'vehiclesTableBody'
-        ) ||
-        document.getElementById(
-            'vehicleTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!vehicles.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="8"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No vehicles match your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-
-    }
-
-
-    tbody.innerHTML =
-        vehicles.map(
-            vehicle => {
-
-                const owner =
-                    vehicle.owner_name ||
-                    vehicle.customer_name ||
-                    '—';
-
-
-                const plate =
-                    vehicle.plate_number ||
-                    vehicle.license_plate ||
-                    '—';
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            ${escapeHtml(
-                                owner
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                vehicle.brand ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                vehicle.model ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                vehicle.year_model ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            <code>
-                                ${escapeHtml(
-                                    plate
-                                )}
-                            </code>
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                vehicle.fuel_type ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                vehicle.transmission ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            <div
-                                class="btn-group btn-group-sm"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        editVehicle(
-                                            ${Number(
-                                                vehicle.id
-                                            )},
-                                            ${Number(
-                                                vehicle.user_id ||
-                                                0
-                                            )},
-                                            '${String(
-                                                vehicle.brand ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                vehicle.model ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                vehicle.year_model ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                plate
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                vehicle.fuel_type ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                vehicle.transmission ||
-                                                ''
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Edit Vehicle"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteVehicle(
-                                            ${Number(
-                                                vehicle.id
-                                            )},
-                                            '${String(
-                                                plate
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete Vehicle"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// SERVICE HISTORY FILTERING
-// =============================================================
-
-function filterAndRenderHistory() {
-
-    const history =
-        Array.isArray(
-            historyData
-        )
-            ? historyData
-            : [];
-
-
-    const filtered =
-        history.filter(
-            record => {
-
-                const searchable = [
-
-                    record.id,
-
-                    record.customer_name,
-
-                    record.full_name,
-
-                    record.email,
-
-                    record.plate_number,
-
-                    record.vehicle_plate,
-
-                    record.brand,
-
-                    record.model,
-
-                    record.service_type,
-
-                    record.service_name,
-
-                    record.mechanic_name,
-
-                    record.service_date,
-
-                    record.status,
-
-                    record.notes
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !globalSearchTerm ||
-                    searchable.includes(
-                        globalSearchTerm
-                    )
-                );
-
-            }
-        );
-
-
-    if (
-        typeof renderHistory ===
-        'function'
-    ) {
-
-        renderHistory(
-            filtered
-        );
-
-        return;
-
-    }
-
-
-    renderHistoryFallback(
-        filtered
-    );
-
-}
-
-
-// =============================================================
-// SERVICE HISTORY FALLBACK
-// =============================================================
-
-function renderHistoryFallback(
-    history
-) {
-
-    const tbody =
-        document.getElementById(
-            'historyTableBody'
-        ) ||
-        document.getElementById(
-            'serviceHistoryTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!history.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="8"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No service history matches your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-
-    }
-
-
-    tbody.innerHTML =
-        history.map(
-            record => {
-
-                const customer =
-                    record.customer_name ||
-                    record.full_name ||
-                    '—';
-
-
-                const plate =
-                    record.plate_number ||
-                    record.vehicle_plate ||
-                    '—';
-
-
-                const service =
-                    record.service_type ||
-                    record.service_name ||
-                    '—';
-
-
-                const date =
-                    record.service_date ||
-                    record.created_at ||
-                    '';
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            #${Number(
-                                record.id || 0
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                customer
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                record.brand ||
-                                '—'
-                            )}
-
-                            ${escapeHtml(
-                                record.model ||
-                                ''
-                            )}
-
-                            <div>
-
-                                <code>
-                                    ${escapeHtml(
-                                        plate
-                                    )}
-                                </code>
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                service
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                formatAppointmentDate(
-                                    date
-                                )
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                record.mechanic_name ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${statusBadge(
-                                record.status ||
-                                'Completed'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            <div
-                                class="btn-group btn-group-sm"
-                            >
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-dark
-                                    "
-                                    onclick="
-                                        editHistory(
-                                            ${Number(
-                                                record.id
-                                            )},
-                                            '${String(
-                                                service
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}',
-                                            '${String(
-                                                date
-                                            ).substring(
-                                                0,
-                                                10
-                                            )}'
-                                        )
-                                    "
-                                    title="Edit"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-pencil-square
-                                        "
-                                    ></i>
-
-                                </button>
-
-
-                                <button
-                                    class="
-                                        btn
-                                        btn-outline-danger
-                                    "
-                                    onclick="
-                                        deleteHistory(
-                                            ${Number(
-                                                record.id
-                                            )},
-                                            '${String(
-                                                customer
-                                            ).replace(
-                                                /'/g,
-                                                "\\'"
-                                            )}'
-                                        )
-                                    "
-                                    title="Delete"
-                                >
-
-                                    <i
-                                        class="
-                                            bi
-                                            bi-trash
-                                        "
-                                    ></i>
-
-                                </button>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// INQUIRY FILTERING
-// =============================================================
-
-function filterAndRenderInquiries() {
-
-    const inquiries =
-        Array.isArray(
-            inquiriesData
-        )
-            ? inquiriesData
-            : [];
-
-
-    const filtered =
-        inquiries.filter(
-            inquiry => {
-
-                const searchable = [
-
-                    inquiry.id,
-
-                    inquiry.name,
-
-                    inquiry.full_name,
-
-                    inquiry.email,
-
-                    inquiry.phone,
-
-                    inquiry.subject,
-
-                    inquiry.message,
-
-                    inquiry.status,
-
-                    inquiry.type
-
-                ]
-
-                .filter(Boolean)
-
-                .join(' ')
-
-                .toLowerCase();
-
-
-                return (
-                    !globalSearchTerm ||
-                    searchable.includes(
-                        globalSearchTerm
-                    )
-                );
-
-            }
-        );
-
-
-    if (
-        typeof renderInquiries ===
-        'function'
-    ) {
-
-        renderInquiries(
-            filtered
-        );
-
-        return;
-
-    }
-
-
-    renderInquiriesFallback(
-        filtered
-    );
-
-}
-
-
-// =============================================================
-// INQUIRY FALLBACK
-// =============================================================
-
-function renderInquiriesFallback(
-    inquiries
-) {
-
-    const tbody =
-        document.getElementById(
-            'inquiriesTableBody'
-        ) ||
-        document.getElementById(
-            'inquiryTableBody'
-        );
-
-
-    if (!tbody) {
-        return;
-    }
-
-
-    if (!inquiries.length) {
-
-        tbody.innerHTML =
-            `
-            <tr>
-
-                <td
-                    colspan="7"
-                    class="
-                        text-center
-                        text-muted
-                        py-4
-                    "
-                >
-
-                    No inquiries match your search.
-
-                </td>
-
-            </tr>
-            `;
-
-        return;
-
-    }
-
-
-    tbody.innerHTML =
-        inquiries.map(
-            inquiry => {
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            #${Number(
-                                inquiry.id || 0
-                            )}
-
-                        </td>
-
-                        <td class="fw-semibold">
-
-                            ${escapeHtml(
-                                inquiry.name ||
-                                inquiry.full_name ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                inquiry.email ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${escapeHtml(
-                                inquiry.subject ||
-                                inquiry.type ||
-                                'General Inquiry'
-                            )}
-
-                        </td>
-
-                        <td
-                            style="
-                                max-width:280px;
-                                white-space:nowrap;
-                                overflow:hidden;
-                                text-overflow:ellipsis;
-                            "
-                            title="${escapeHtml(
-                                inquiry.message ||
-                                ''
-                            )}"
-                        >
-
-                            ${escapeHtml(
-                                inquiry.message ||
-                                '—'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${statusBadge(
-                                inquiry.status ||
-                                'Pending'
-                            )}
-
-                        </td>
-
-                        <td>
-
-                            ${
-                                typeof viewInquiry ===
-                                'function'
-
-                                    ? `
-                                        <button
-                                            class="
-                                                btn
-                                                btn-sm
-                                                btn-outline-dark
-                                            "
-                                            onclick="
-                                                viewInquiry(
-                                                    ${Number(
-                                                        inquiry.id
-                                                    )}
-                                                )
-                                            "
-                                        >
-
-                                            <i
-                                                class="
-                                                    bi
-                                                    bi-eye
-                                                "
-                                            ></i>
-
-                                        </button>
-                                    `
-
-                                    : ''
-                            }
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
-}
-
-
-// =============================================================
-// ROLE NAME HELPER
-// =============================================================
-
-function getRoleName(
-    roleId
-) {
-
-    const roles = {
-
-        1:
-            'Customer',
-
-        2:
-            'Admin',
-
-        3:
-            'Mechanic'
-
-    };
-
-
-    return (
-        roles[
-            Number(roleId)
-        ] ||
-        'User'
-    );
-
-}
-
-
-// =============================================================
-// APPOINTMENT NOTES HELPER
-// =============================================================
-
-function getAppointmentNotes(
-    appointment
-) {
-
-    const notes =
-        appointment.notes ||
-        appointment.customer_notes ||
-        '';
-
-
-    if (!notes) {
-
-        return `
-            <span
-                class="
-                    text-muted
-                    small
-                "
-            >
-                —
-            </span>
-        `;
-
-    }
-
-
-    return `
-
-        <span
-            class="
-                small
-                d-inline-block
-            "
-            style="
-                max-width:180px;
-                white-space:nowrap;
-                overflow:hidden;
-                text-overflow:ellipsis;
-            "
-            title="${escapeHtml(
-                notes
-            )}"
-        >
-
-            ${escapeHtml(
-                notes
-            )}
-
-        </span>
-
-    `;
-
-}
-
-
-// =============================================================
-// LOCKED APPOINTMENT CHECK
-// =============================================================
-
-function isAppointmentLocked(
-    status
-) {
-
-    const normalized =
-        appointmentStatusKey(
-            status
-        );
-
-
-    return (
-
-        normalized ===
-        'Completed'
-
-        ||
-
-        normalized ===
-        'Cancelled'
-
-    );
-
-}
-
-
-// =============================================================
-// GET ALLOWED APPOINTMENT STATUSES
-// =============================================================
-
-function getAllowedAppointmentStatuses(
-    currentStatus
-) {
-
-    const normalized =
-        appointmentStatusKey(
-            currentStatus
-        );
-
-
-    return Array.isArray(
-        APPOINTMENT_STATUS_FLOW[
-            normalized
-        ]
-    )
-
-        ? APPOINTMENT_STATUS_FLOW[
-            normalized
-        ]
-
-        : [];
-
-}
-
-
-// =============================================================
-// DASHBOARD DATA REFRESH
-// =============================================================
-
-function loadFullSiteData() {
-
-    console.log(
-        'Refreshing admin dashboard data...'
-    );
-
-
-    const loaders = [];
-
-
-    if (
-        typeof loadAppointments ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadAppointments,
-                'appointments'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadUsers ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadUsers,
-                'users'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadVehicles ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadVehicles,
-                'vehicles'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadOrders ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadOrders,
-                'orders'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadServices ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadServices,
-                'services'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadMechanics ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadMechanics,
-                'mechanics'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadServiceHistory ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadServiceHistory,
-                'service history'
-            )
-        );
-
-    }
-
-
-    if (
-        typeof loadInquiries ===
-        'function'
-    ) {
-
-        loaders.push(
-            safeLoader(
-                loadInquiries,
-                'inquiries'
-            )
-        );
-
-    }
-
-
-    return Promise.allSettled(
-        loaders
-    );
-
-}
-
-
-// =============================================================
-// SAFE LOADER
-// =============================================================
-
-function safeLoader(
-    callback,
-    name
-) {
-
-    return Promise.resolve()
-
-        .then(
-            () => callback()
-        )
-
-        .catch(
-            error => {
-
-                console.error(
-                    `Failed to refresh ${name}:`,
-                    error
-                );
-
-            }
-        );
-
-}
-
-
-// =============================================================
-// AUTO REFRESH
-// =============================================================
-
-let dashboardRefreshTimer =
-    null;
-
-
-function startDashboardAutoRefresh() {
-
-    stopDashboardAutoRefresh();
-
-
-    dashboardRefreshTimer =
-        setInterval(
-            function () {
-
-                loadFullSiteData();
-
-            },
-            30000
-        );
-
-}
-
-
-// =============================================================
-// STOP AUTO REFRESH
-// =============================================================
-
-function stopDashboardAutoRefresh() {
-
-    if (
-        dashboardRefreshTimer
-    ) {
-
-        clearInterval(
-            dashboardRefreshTimer
-        );
-
-        dashboardRefreshTimer =
-            null;
-
-    }
-
-}
-
-
-// =============================================================
-// MANUAL REFRESH BUTTON
-// =============================================================
-
-function initializeRefreshButton() {
-
-    const buttons =
-        document.querySelectorAll(
-            '[data-admin-refresh]'
-        );
-
-
-    buttons.forEach(
-        button => {
-
-            button.addEventListener(
-                'click',
-                function () {
-
-                    const originalHTML =
-                        this.innerHTML;
-
-
-                    this.disabled =
-                        true;
-
-
-                    this.innerHTML =
-                        `
-                        <i
-                            class="
-                                bi
-                                bi-arrow-repeat
-                                spin
-                            "
-                        ></i>
-
-                        Refreshing...
-                        `;
-
-
-                    Promise.resolve(
-                        loadFullSiteData()
-                    )
-
-                    .finally(
-                        () => {
-
-                            this.disabled =
-                                false;
-
-
-                            this.innerHTML =
-                                originalHTML;
-
-                        }
-                    );
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// FILTER DROPDOWN EVENTS
-// =============================================================
-
-function initializeAdminFilters() {
-
-    const filterIds = [
-
-        'appointmentStatusFilter',
-
-        'appointmentMechanicFilter',
-
-        'appointmentDateFilter',
-
-        'ordersStatusFilter',
-
-        'userRoleFilter',
-
-        'userStatusFilter',
-
-        'serviceStatusFilter',
-
-        'mechanicStatusFilter'
-
-    ];
-
-
-    filterIds.forEach(
-        id => {
-
-            const element =
-                document.getElementById(
-                    id
-                );
-
-
-            if (!element) {
-                return;
-            }
-
-
-            element.addEventListener(
-                'change',
-                function () {
-
-                    refreshVisibleTables();
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// INITIALIZE ADMIN DASHBOARD
-// =============================================================
-
-function initializeAdminDashboard() {
-
-    initializeAdminSearch();
-
-    initializeAdminFilters();
-
-    initializeRefreshButton();
-
-    loadFullSiteData();
-
-    startDashboardAutoRefresh();
-
-}
-
-
-// =============================================================
-// CLEANUP WHEN LEAVING PAGE
-// =============================================================
-
-window.addEventListener(
-    'beforeunload',
-    function () {
-
-        stopDashboardAutoRefresh();
-
-    }
-);
-
-
-// =============================================================
-// DOM READY
-// =============================================================
-
-if (
-    document.readyState ===
-    'loading'
-) {
-
-    document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-
-            initializeAdminDashboard();
-
-        }
-    );
-
-}
-else {
-
-    initializeAdminDashboard();
-
-}
-
-
-// =============================================================
-// PART 7 END
-// =============================================================
-
-// =============================================================
-// PART 8 — FINAL HELPERS & DASHBOARD INITIALIZATION
-// =============================================================
-
-
-// =============================================================
-// HTML ESCAPE HELPER
-// =============================================================
-
-function escapeHtml(value) {
-
-    if (
-        value === null ||
-        value === undefined
-    ) {
-
-        return '';
-
-    }
-
-
-    return String(value)
-        .replace(
-            /&/g,
-            '&amp;'
-        )
-        .replace(
-            /</g,
-            '&lt;'
-        )
-        .replace(
-            />/g,
-            '&gt;'
-        )
-        .replace(
-            /"/g,
-            '&quot;'
-        )
-        .replace(
-            /'/g,
-            '&#039;'
-        );
-
-}
-
-
-// =============================================================
-// AUTHORIZATION HEADERS
-// =============================================================
-
-function getAuthHeaders() {
-
-    const headers = {
-
-        'Accept':
-            'application/json',
-
-        'Content-Type':
-            'application/json'
-
-    };
-
-
-    try {
-
-        const token =
-            localStorage.getItem(
-                'jwt_token'
-            );
-
-
-        if (token) {
-
-            headers[
-                'Authorization'
-            ] =
-                `Bearer ${token}`;
-
-        }
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Unable to read authentication token:',
-            error
-        );
-
-    }
-
-
-    return headers;
-
-}
-
-
-// =============================================================
-// POST DATA HELPER
-// =============================================================
-
-function postData(
-    url,
-    data,
-    onSuccess,
-    onError
-) {
-
-    fetch(
-        url,
-        {
-
-            method:
-                'POST',
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders(),
-
-            body:
-                JSON.stringify(
-                    data
-                )
-
-        }
-    )
-
-    .then(
-        async response => {
-
-            let result;
-
-
-            try {
-
-                result =
-                    await response.json();
-
-            }
-            catch (error) {
-
-                throw new Error(
-                    `Invalid server response (${response.status}).`
-                );
-
-            }
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    result.message ||
-                    `HTTP ${response.status}`
-                );
-
-            }
-
-
-            return result;
-
-        }
-    )
-
-    .then(
-        result => {
-
-            if (
-                result.status &&
-                result.status !==
-                    'success'
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    'The operation failed.'
-                );
-
-            }
-
-
-            if (
-                typeof onSuccess ===
-                'function'
-            ) {
-
-                onSuccess(
-                    result
-                );
-
-            }
-
-
-            if (
-                result.message
-            ) {
-
-                Swal.fire({
-
-                    icon:
-                        'success',
-
-                    title:
-                        'Success',
-
-                    text:
-                        result.message,
-
-                    timer:
-                        1800,
-
-                    showConfirmButton:
-                        false
-
+    }).then(result => {
+        if (result.isConfirmed) fetch('api/admin/manage_mechanics.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
+                .then(r=>r.json()).then(d=>{
+                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Done',showConfirmButton:false,timer:2000}); loadMechanics(); }
+                    else Swal.fire('Error', d.message, 'error');
                 });
+    });
+}
 
-            }
-
-        }
-    )
-
-    .catch(
-        error => {
-
-            console.error(
-                'POST request error:',
-                error
-            );
-
-
-            if (
-                typeof onError ===
-                'function'
-            ) {
-
-                onError(
-                    error
-                );
-
-                return;
-
-            }
-
-
+function editMechanic(id) {
+    fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+            const m = data.mechanics.find(x => x.id == id);
+            if (!m) return;
             Swal.fire({
-
-                icon:
-                    'error',
-
-                title:
-                    'Operation Failed',
-
-                text:
-                    error.message ||
-                    'Something went wrong.'
-
+                title: 'Edit Mechanic',
+                html: `
+                    <div class="text-start">
+                        <label class="form-label fw-semibold">Full Name *</label>
+                        <input id="mName" class="form-control mb-3" value="${m.name}">
+                        <label class="form-label fw-semibold">Specialty</label>
+                        <input id="mSpec" class="form-control mb-3" value="${m.specialty || ''}">
+                        <label class="form-label fw-semibold">Availability</label>
+                        <select id="mStatus" class="form-select">
+                            <option value="available" ${m.status === 'available' ? 'selected' : ''}>Available</option>
+                            <option value="on_break" ${m.status === 'on_break' ? 'selected' : ''}>On Leave</option>
+                            <option value="on_duty" ${m.status === 'on_duty' ? 'selected' : ''}>Busy</option>
+                            <option value="unavailable" ${m.status === 'unavailable' ? 'selected' : ''}>Unavailable</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">On Leave and Busy mechanics cannot be assigned jobs until set back to Available.</small>
+                    </div>`,
+                confirmButtonText: 'Save',
+                confirmButtonColor: '#e62429',
+                showCancelButton: true,
+                preConfirm: () => ({
+                    action: 'update', id,
+                    name: document.getElementById('mName').value.trim(),
+                    specialty: document.getElementById('mSpec').value.trim(),
+                    status: document.getElementById('mStatus').value
+                })
+            }).then(result => {
+                if (result.isConfirmed) fetch('api/admin/manage_mechanics.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
+                .then(r=>r.json()).then(d=>{
+                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Done',showConfirmButton:false,timer:2000}); loadMechanics(); }
+                    else Swal.fire('Error', d.message, 'error');
+                });
             });
-
-        }
-    );
-
+        });
 }
 
-
-// =============================================================
-// GET DATA HELPER
-// =============================================================
-
-function getData(
-    url
-) {
-
-    return fetch(
-        url,
-        {
-
-            method:
-                'GET',
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders()
-
-        }
-    )
-
-    .then(
-        async response => {
-
-            let result;
-
-
-            try {
-
-                result =
-                    await response.json();
-
-            }
-            catch (error) {
-
-                throw new Error(
-                    `Invalid server response (${response.status}).`
-                );
-
-            }
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    result.message ||
-                    `HTTP ${response.status}`
-                );
-
-            }
-
-
-            if (
-                result.status &&
-                result.status !==
-                    'success'
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    'Request failed.'
-                );
-
-            }
-
-
-            return result;
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// DELETE DATA HELPER
-// =============================================================
-
-function deleteData(
-    url,
-    id,
-    onSuccess
-) {
-
+function deleteMechanic(id, name) {
     Swal.fire({
+        title: 'Remove Mechanic?',
+        text: `Remove ${name} from the roster?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e62429',
+        confirmButtonText: 'Remove'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('api/admin/manage_mechanics.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'delete', id }) })
+                .then(r=>r.json()).then(d=>{ if(d.status==='success') loadMechanics(); else Swal.fire('Error', d.message, 'error'); });
+        }
+    });
+}
 
-        title:
-            'Are you sure?',
+// =============================================================
+// ASSIGN MECHANIC TO APPOINTMENT
+// =============================================================
 
-        text:
-            'This action cannot be undone.',
-
-        icon:
-            'warning',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#dc3545',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Yes, Delete'
-
-    })
-
-    .then(
-        result => {
-
-            if (
-                !result.isConfirmed
-            ) {
-
+function assignMechanic(appointmentId) {
+    // Load mechanics list then show assignment modal
+    fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.mechanics || !data.mechanics.length) {
+                Swal.fire('No Mechanics', 'Add mechanics in the Mechanics tab first.', 'info');
                 return;
-
             }
-
-
-            fetch(
-                url,
-                {
-
-                    method:
-                        'POST',
-
-                    credentials:
-                        'include',
-
-                    headers:
-                        getAuthHeaders(),
-
-                    body:
-                        JSON.stringify({
-
-                            action:
-                                'delete',
-
-                            id:
-                                Number(id)
-
-                        })
-
-                }
-            )
-
-            .then(
-                async response => {
-
-                    let data;
-
-
-                    try {
-
-                        data =
-                            await response.json();
-
-                    }
-                    catch (error) {
-
-                        throw new Error(
-                            'Invalid server response.'
-                        );
-
-                    }
-
-
-                    if (
-                        !response.ok ||
-                        (
-                            data.status &&
-                            data.status !==
-                                'success'
-                        )
-                    ) {
-
-                        throw new Error(
-                            data.message ||
-                            'Delete failed.'
-                        );
-
-                    }
-
-
-                    return data;
-
-                }
-            )
-
-            .then(
-                data => {
-
-                    Swal.fire({
-
-                        icon:
-                            'success',
-
-                        title:
-                            'Deleted',
-
-                        text:
-                            data.message ||
-                            'The record was deleted.',
-
-                        timer:
-                            1600,
-
-                        showConfirmButton:
-                            false
-
+            const options = data.mechanics
+                .map(m => `<option value="${m.id}" ${mechanicIsAssignable(m.status) ? '' : 'disabled'}>${m.name} (${m.specialty || 'General'}) — ${mechanicStatusLabel(m.status)}</option>`)
+                .join('');
+            Swal.fire({
+                title: 'Assign Mechanic',
+                html: `
+                    <div class="text-start">
+                        <label class="form-label fw-semibold">Select Technician</label>
+                        <select id="mechanicSelect" class="form-select">
+                            <option value="0">— Unassign —</option>
+                            ${options}
+                        </select>
+                        <small class="text-muted mt-1 d-block">Unavailable, On Leave, and Busy mechanics are greyed out.</small>
+                    </div>`,
+                confirmButtonText: 'Assign',
+                confirmButtonColor: '#e62429',
+                showCancelButton: true,
+                preConfirm: () => ({
+                    action: 'assign',
+                    appointment_id: appointmentId,
+                    mechanic_id: parseInt(document.getElementById('mechanicSelect').value)
+                })
+            }).then(result => {
+                if (result.isConfirmed) {
+                    fetch('api/admin/manage_mechanics.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
+                    .then(r=>r.json()).then(d=>{
+                        if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Assigned',showConfirmButton:false,timer:2000}); loadFullSiteData(); }
+                        else Swal.fire('Error', d.message, 'error');
                     });
-
-
-                    if (
-                        typeof onSuccess ===
-                        'function'
-                    ) {
-
-                        onSuccess(
-                            data
-                        );
-
-                    }
-
                 }
-            )
-
-            .catch(
-                error => {
-
-                    console.error(
-                        'Delete error:',
-                        error
-                    );
-
-
-                    Swal.fire({
-
-                        icon:
-                            'error',
-
-                        title:
-                            'Delete Failed',
-
-                        text:
-                            error.message ||
-                            'Unable to delete the record.'
-
-                    });
-
-                }
-            );
-
-        }
-    );
-
+            });
+        });
 }
-
-
-// =============================================================
-// DATE HELPER
-// =============================================================
-
-function formatDate(
-    value
-) {
-
-    if (!value) {
-
-        return '—';
-
-    }
-
-
-    const date =
-        new Date(
-            value
-        );
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return escapeHtml(
-            value
-        );
-
-    }
-
-
-    return date.toLocaleDateString(
-        'en-US',
-        {
-
-            year:
-                'numeric',
-
-            month:
-                'short',
-
-            day:
-                'numeric'
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// DATETIME HELPER
-// =============================================================
-
-function formatDateTime(
-    value
-) {
-
-    if (!value) {
-
-        return '—';
-
-    }
-
-
-    const date =
-        new Date(
-            value
-        );
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return escapeHtml(
-            value
-        );
-
-    }
-
-
-    return date.toLocaleString(
-        'en-US',
-        {
-
-            year:
-                'numeric',
-
-            month:
-                'short',
-
-            day:
-                'numeric',
-
-            hour:
-                'numeric',
-
-            minute:
-                '2-digit'
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// NUMBER FORMATTER
-// =============================================================
-
-function formatNumber(
-    value
-) {
-
-    const number =
-        Number(
-            value
-        );
-
-
-    if (
-        Number.isNaN(
-            number
-        )
-    ) {
-
-        return '0';
-
-    }
-
-
-    return number.toLocaleString(
-        'en-US'
-    );
-
-}
-
-
-// =============================================================
-// CURRENCY FORMATTER
-// =============================================================
-
-function formatCurrency(
-    value
-) {
-
-    const number =
-        Number(
-            value
-        );
-
-
-    if (
-        Number.isNaN(
-            number
-        )
-    ) {
-
-        return '₱0.00';
-
-    }
-
-
-    return number.toLocaleString(
-        'en-PH',
-        {
-
-            style:
-                'currency',
-
-            currency:
-                'PHP'
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// SAFE NUMBER
-// =============================================================
-
-function safeNumber(
-    value,
-    fallback = 0
-) {
-
-    const number =
-        Number(
-            value
-        );
-
-
-    return Number.isFinite(
-        number
-    )
-        ? number
-        : fallback;
-
-}
-
-
-// =============================================================
-// SHOW LOADING
-// =============================================================
-
-function showTableLoading(
-    elementId,
-    colspan = 6
-) {
-
-    const element =
-        document.getElementById(
-            elementId
-        );
-
-
-    if (!element) {
-
-        return;
-
-    }
-
-
-    element.innerHTML =
-        `
-        <tr>
-
-            <td
-                colspan="${Number(
-                    colspan
-                )}"
-                class="
-                    text-center
-                    py-5
-                "
-            >
-
-                <div
-                    class="
-                        spinner-border
-                        text-danger
-                    "
-                    role="status"
-                >
-
-                    <span
-                        class="visually-hidden"
-                    >
-                        Loading...
-                    </span>
-
-                </div>
-
-
-                <div
-                    class="
-                        small
-                        text-muted
-                        mt-2
-                    "
-                >
-
-                    Loading data...
-
-                </div>
-
-            </td>
-
-        </tr>
-        `;
-
-}
-
-
-// =============================================================
-// SHOW ERROR
-// =============================================================
-
-function showTableError(
-    elementId,
-    message,
-    colspan = 6
-) {
-
-    const element =
-        document.getElementById(
-            elementId
-        );
-
-
-    if (!element) {
-
-        return;
-
-    }
-
-
-    element.innerHTML =
-        `
-        <tr>
-
-            <td
-                colspan="${Number(
-                    colspan
-                )}"
-                class="
-                    text-center
-                    py-5
-                    text-danger
-                "
-            >
-
-                <i
-                    class="
-                        bi
-                        bi-exclamation-triangle
-                        fs-3
-                        d-block
-                        mb-2
-                    "
-                ></i>
-
-
-                ${escapeHtml(
-                    message ||
-                    'Unable to load data.'
-                )}
-
-            </td>
-
-        </tr>
-        `;
-
-}
-
-
-// =============================================================
-// EMPTY TABLE MESSAGE
-// =============================================================
-
-function showEmptyTable(
-    elementId,
-    message = 'No records found.',
-    colspan = 6
-) {
-
-    const element =
-        document.getElementById(
-            elementId
-        );
-
-
-    if (!element) {
-
-        return;
-
-    }
-
-
-    element.innerHTML =
-        `
-        <tr>
-
-            <td
-                colspan="${Number(
-                    colspan
-                )}"
-                class="
-                    text-center
-                    text-muted
-                    py-5
-                "
-            >
-
-                <i
-                    class="
-                        bi
-                        bi-inbox
-                        fs-3
-                        d-block
-                        mb-2
-                    "
-                ></i>
-
-
-                ${escapeHtml(
-                    message
-                )}
-
-            </td>
-
-        </tr>
-        `;
-
-}
-
-
-// =============================================================
-// CONFIRM LOGOUT
-// =============================================================
-
-function confirmLogout() {
-
-    Swal.fire({
-
-        title:
-            'Logout?',
-
-        text:
-            'You will be signed out of the admin panel.',
-
-        icon:
-            'question',
-
-        showCancelButton:
-            true,
-
-        confirmButtonColor:
-            '#b30000',
-
-        cancelButtonColor:
-            '#6c757d',
-
-        confirmButtonText:
-            'Logout'
-
-    })
-
-    .then(
-        result => {
-
-            if (
-                !result.isConfirmed
-            ) {
-
-                return;
-
-            }
-
-
-            performLogout();
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// LOGOUT
-// =============================================================
-
-function performLogout() {
-
-    try {
-
-        localStorage.removeItem(
-            'jwt_token'
-        );
-
-        localStorage.removeItem(
-            'user'
-        );
-
-        localStorage.removeItem(
-            'admin_user'
-        );
-
-    }
-    catch (error) {
-
-        console.warn(
-            'Unable to clear local storage:',
-            error
-        );
-
-    }
-
-
-    fetch(
-        'api/logout.php',
-        {
-
-            method:
-                'POST',
-
-            credentials:
-                'include',
-
-            headers:
-                getAuthHeaders()
-
-        }
-    )
-
-    .catch(
-        error => {
-
-            console.warn(
-                'Logout request failed:',
-                error
-            );
-
-        }
-    )
-
-    .finally(
-        () => {
-
-            window.location.href =
-                'account.php';
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// TAB HANDLER
-// =============================================================
-
-function switchAdminTab(
-    tabName
-) {
-
-    if (!tabName) {
-
-        return;
-
-    }
-
-
-    const tabButtons =
-        document.querySelectorAll(
-            '[data-admin-tab]'
-        );
-
-
-    tabButtons.forEach(
-        button => {
-
-            const isActive =
-                button.dataset.adminTab ===
-                tabName;
-
-
-            button.classList.toggle(
-                'active',
-                isActive
-            );
-
-        }
-    );
-
-
-    const tabPanels =
-        document.querySelectorAll(
-            '[data-admin-panel]'
-        );
-
-
-    tabPanels.forEach(
-        panel => {
-
-            const isActive =
-                panel.dataset.adminPanel ===
-                tabName;
-
-
-            panel.classList.toggle(
-                'active',
-                isActive
-            );
-
-
-            if (isActive) {
-
-                panel.style.display =
-                    '';
-
-            }
-            else {
-
-                panel.style.display =
-                    'none';
-
-            }
-
-        }
-    );
-
-
-    // Load data when a tab is opened.
-
-    switch (
-        String(tabName)
-            .toLowerCase()
-    ) {
-
-        case 'appointments':
-
-            if (
-                typeof loadAppointments ===
-                'function'
-            ) {
-
-                loadAppointments();
-
-            }
-
-            break;
-
-
-        case 'users':
-
-            if (
-                typeof loadUsers ===
-                'function'
-            ) {
-
-                loadUsers();
-
-            }
-
-            break;
-
-
-        case 'vehicles':
-
-            if (
-                typeof loadVehicles ===
-                'function'
-            ) {
-
-                loadVehicles();
-
-            }
-
-            break;
-
-
-        case 'history':
-
-        case 'service-history':
-
-            if (
-                typeof loadServiceHistory ===
-                'function'
-            ) {
-
-                loadServiceHistory();
-
-            }
-
-            break;
-
-
-        case 'mechanics':
-
-            if (
-                typeof loadMechanics ===
-                'function'
-            ) {
-
-                loadMechanics();
-
-            }
-
-            break;
-
-
-        case 'services':
-
-            if (
-                typeof loadServices ===
-                'function'
-            ) {
-
-                loadServices();
-
-            }
-
-            break;
-
-
-        case 'orders':
-
-            if (
-                typeof loadOrders ===
-                'function'
-            ) {
-
-                loadOrders();
-
-            }
-
-            break;
-
-
-        case 'inquiries':
-
-            if (
-                typeof loadInquiries ===
-                'function'
-            ) {
-
-                loadInquiries();
-
-            }
-
-            break;
-
-    }
-
-}
-
-
-// =============================================================
-// INITIALIZE TAB BUTTONS
-// =============================================================
-
-function initializeAdminTabs() {
-
-    const buttons =
-        document.querySelectorAll(
-            '[data-admin-tab]'
-        );
-
-
-    buttons.forEach(
-        button => {
-
-            button.addEventListener(
-                'click',
-                function (event) {
-
-                    event.preventDefault();
-
-
-                    switchAdminTab(
-                        this.dataset.adminTab
-                    );
-
-                }
-            );
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// KEYBOARD SHORTCUTS
-// =============================================================
-
-function initializeKeyboardShortcuts() {
-
-    document.addEventListener(
-        'keydown',
-        function (event) {
-
-            // Ctrl + K / Cmd + K
-            // focuses admin search.
-
-            if (
-                (
-                    event.ctrlKey ||
-                    event.metaKey
-                ) &&
-                event.key.toLowerCase() ===
-                    'k'
-            ) {
-
-                event.preventDefault();
-
-
-                const search =
-                    document.getElementById(
-                        'adminSearch'
-                    ) ||
-                    document.getElementById(
-                        'globalSearch'
-                    );
-
-
-                if (search) {
-
-                    search.focus();
-
-                    search.select();
-
-                }
-
-            }
-
-
-            // ESC closes SweetAlert.
-
-            if (
-                event.key ===
-                'Escape'
-            ) {
-
-                const popup =
-                    Swal.getPopup();
-
-
-                if (popup) {
-
-                    Swal.close();
-
-                }
-
-            }
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// SEARCH EMPTY STATE
-// =============================================================
-
-function updateSearchEmptyState() {
-
-    const search =
-        globalSearchTerm;
-
-
-    const clearButton =
-        document.getElementById(
-            'clearAdminSearch'
-        );
-
-
-    if (!clearButton) {
-
-        return;
-
-    }
-
-
-    if (search) {
-
-        clearButton.style.display =
-            '';
-
-    }
-    else {
-
-        clearButton.style.display =
-            'none';
-
-    }
-
-}
-
-
-// =============================================================
-// SEARCH CLEAR BUTTON
-// =============================================================
-
-function initializeSearchClearButton() {
-
-    const button =
-        document.getElementById(
-            'clearAdminSearch'
-        );
-
-
-    if (!button) {
-
-        return;
-
-    }
-
-
-    button.addEventListener(
-        'click',
-        function () {
-
-            clearAdminSearch();
-
-            updateSearchEmptyState();
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// WATCH SEARCH INPUT
-// =============================================================
-
-function initializeSearchWatcher() {
-
-    const search =
-        document.getElementById(
-            'adminSearch'
-        ) ||
-        document.getElementById(
-            'globalSearch'
-        );
-
-
-    if (!search) {
-
-        return;
-
-    }
-
-
-    search.addEventListener(
-        'input',
-        function () {
-
-            updateSearchEmptyState();
-
-        }
-    );
-
-
-    updateSearchEmptyState();
-
-}
-
-
-// =============================================================
-// DASHBOARD HEARTBEAT
-// =============================================================
-
-function startDashboardHeartbeat() {
-
-    window.adminDashboardAlive =
-        true;
-
-
-    document.addEventListener(
-        'visibilitychange',
-        function () {
-
-            if (
-                document.visibilityState ===
-                'visible'
-            ) {
-
-                window.adminDashboardAlive =
-                    true;
-
-            }
-
-        }
-    );
-
-}
-
-
-// =============================================================
-// STOP EVERYTHING
-// =============================================================
-
-function destroyAdminDashboard() {
-
-    stopDashboardAutoRefresh();
-
-
-    window.adminDashboardAlive =
-        false;
-
-}
-
-
-// =============================================================
-// FINAL INITIALIZATION
-// =============================================================
-
-function initializeAdminDashboardFinal() {
-
-    try {
-
-        initializeAdminTabs();
-
-    }
-    catch (error) {
-
-        console.error(
-            'Tab initialization error:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        initializeKeyboardShortcuts();
-
-    }
-    catch (error) {
-
-        console.error(
-            'Keyboard shortcut initialization error:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        initializeSearchClearButton();
-
-    }
-    catch (error) {
-
-        console.error(
-            'Search clear initialization error:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        initializeSearchWatcher();
-
-    }
-    catch (error) {
-
-        console.error(
-            'Search watcher initialization error:',
-            error
-        );
-
-    }
-
-
-    try {
-
-        startDashboardHeartbeat();
-
-    }
-    catch (error) {
-
-        console.error(
-            'Dashboard heartbeat error:',
-            error
-        );
-
-    }
-
-}
-
-
-// =============================================================
-// RUN FINAL INITIALIZATION
-// =============================================================
-
-if (
-    document.readyState ===
-    'loading'
-) {
-
-    document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-
-            initializeAdminDashboardFinal();
-
-        }
-    );
-
-}
-else {
-
-    initializeAdminDashboardFinal();
-
-}
-
-
-// =============================================================
-// GLOBAL EXPORTS
-// =============================================================
-//
-// These make the functions available to inline
-// onclick="..." handlers in admin_dashboard.php.
-//
-
-window.adminDashboard = {
-
-    loadAppointments:
-        loadAppointments,
-
-    loadUsers:
-        loadUsers,
-
-    loadVehicles:
-        loadVehicles,
-
-    loadServiceHistory:
-        loadServiceHistory,
-
-    filterAndRenderAppointments:
-        filterAndRenderAppointments,
-
-    filterAndRenderUsers:
-        filterAndRenderUsers,
-
-    filterAndRenderVehicles:
-        filterAndRenderVehicles,
-
-    filterAndRenderHistory:
-        filterAndRenderHistory,
-
-    clearSearch:
-        clearAdminSearch,
-
-    refresh:
-        loadFullSiteData,
-
-    logout:
-        confirmLogout
-
-};
-
-
-// =============================================================
-// PART 8 END
-// =============================================================
