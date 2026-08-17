@@ -136,24 +136,6 @@
     padding: 3px 10px;
     border-radius: 20px;
 }
-.part-brand {
-    display: inline-flex;
-    align-items: center;
-    width: fit-content;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    color: #495057;
-
-    background: #f8f9fa;
-
-    border: 1px solid #dee2e6;
-
-    border-radius: 20px;
-
-    padding: 4px 9px;
-}
 @media (max-width: 576px) {
     .part-card img { height: 110px; }
     .part-card .card-body {
@@ -259,31 +241,8 @@ function renderParts(parts) {
                     <span class="part-badge">${p.category}</span>
                 </div>
                 <div class="card-body d-flex flex-column p-3">
-
-    <!-- PART NAME -->
-    <h6 class="fw-bold mb-1">
-        ${p.name}
-    </h6>
-
-    <!-- BRAND -->
-    ${
-        p.brand
-            ? `
-                <div class="part-brand mb-2">
-                    <i class="bi bi-tag-fill me-1"></i>
-                    ${p.brand}
-                </div>
-              `
-            : ''
-    }
-
-    <!-- DESCRIPTION -->
-    <p
-        class="text-muted small mb-2"
-        style="flex:1;"
-    >
-        ${p.description || ''}
-    </p>
+                    <h6 class="fw-bold mb-1">${p.name}</h6>
+                    <p class="text-muted small mb-2" style="flex:1;">${p.description || ''}</p>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="fw-bold text-danger fs-6">₱${parseFloat(p.price).toLocaleString('en-PH', {minimumFractionDigits:2})}</span>
                         <span class="stock-badge ${p.stock > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">
@@ -292,15 +251,10 @@ function renderParts(parts) {
                     </div>
                     ${p.stock > 0 ? `
                     <div class="d-flex gap-2">
-                        <button
-    class="btn btn-dark btn-sm fw-bold flex-fill add-cart-btn"
-    data-id="${p.id}"
-    data-name="${p.name}"
-    data-brand="${p.brand || ''}"
-    data-price="${p.price}"
->
-    <i class="bi bi-cart-plus me-1"></i>Add to Cart
-</button>
+                        <button class="btn btn-dark btn-sm fw-bold flex-fill add-cart-btn"
+                                data-id="${p.id}" data-name="${p.name}" data-price="${p.price}">
+                            <i class="bi bi-cart-plus me-1"></i>Add to Cart
+                        </button>
                         <button class="btn btn-outline-danger btn-sm fw-bold inquire-btn"
                                 data-id="${p.id}" data-name="${p.name}" title="Inquire">
                             <i class="bi bi-chat-dots"></i>
@@ -314,95 +268,28 @@ function renderParts(parts) {
         </div>`).join('');
 
     // ── Inquire button ────────────────────────────────────────
-    // ── Add to Cart button ────────────────────────────────────
-document.querySelectorAll('.add-cart-btn').forEach(btn => {
+    document.querySelectorAll('.inquire-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (!isLoggedIn()) { requireLogin('submit an inquiry'); return; }
 
-    btn.addEventListener('click', function () {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-        if (!isLoggedIn()) {
-            requireLogin('add items to cart');
-            return;
-        }
-
-
-        // Get part information from the button
-        const id = this.dataset.id;
-
-        const name = this.dataset.name;
-
-        const brand = this.dataset.brand || '';
-
-        const price = parseFloat(
-            this.dataset.price
-        );
-
-
-        // Check if this part already exists in cart
-        const existing = cart.find(
-            item => item.id === id
-        );
-
-
-        if (existing) {
-
-            // Increase quantity
-            existing.qty += 1;
-
-            // Make sure older cart items get brand
-            if (!existing.brand) {
-                existing.brand = brand;
+            let fullName = '';
+            if (user.full_name) {
+                const nameParts = user.full_name.trim().split(' ');
+                const lastName  = nameParts.length > 1 ? nameParts.pop() : '';
+                const firstName = nameParts.join(' ');
+                fullName = firstName + (lastName ? ' ' + lastName : '');
             }
 
-        } else {
-
-            // Add new item
-            cart.push({
-                id: id,
-                name: name,
-                brand: brand,
-                price: price,
-                qty: 1
-            });
-
-        }
-
-
-        // Save cart
-        localStorage.setItem(
-            'ejr_cart',
-            JSON.stringify(cart)
-        );
-
-
-        // Update cart counter
-        updateCartBadge();
-
-
-        // Button feedback
-        this.innerHTML =
-            '<i class="bi bi-check-lg me-1"></i>Added!';
-
-        this.classList.replace(
-            'btn-dark',
-            'btn-success'
-        );
-
-
-        setTimeout(() => {
-
-            this.innerHTML =
-                '<i class="bi bi-cart-plus me-1"></i>Add to Cart';
-
-            this.classList.replace(
-                'btn-success',
-                'btn-dark'
-            );
-
-        }, 1200);
-
+            document.getElementById('partId').value       = this.dataset.id;
+            document.getElementById('partName').value     = this.dataset.name;
+            document.getElementById('customerName').value = fullName;
+            document.getElementById('contact').value      = user.phone || '';
+            document.getElementById('message').value      = '';
+            new bootstrap.Modal(document.getElementById('inquireModal')).show();
+        });
     });
-
-});
 
     // ── Add to Cart button ────────────────────────────────────
     document.querySelectorAll('.add-cart-btn').forEach(btn => {
