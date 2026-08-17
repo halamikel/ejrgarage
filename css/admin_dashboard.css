@@ -20,6 +20,7 @@
 }
 
 /* ── BODY ──────────────────────────────────────────────────── */
+
 body {
     font-family: 'DM Sans', sans-serif;
     background: var(--ejr-body-bg);
@@ -27,6 +28,7 @@ body {
 }
 
 /* ── HERO HEADER ───────────────────────────────────────────── */
+
 .ejr-admin-header {
     background: linear-gradient(135deg, #0f1117 0%, #1a0505 50%, #2d0808 100%);
     padding: 36px 0 40px;
@@ -46,26 +48,43 @@ body {
 .ejr-admin-header::after {
     content: '';
     position: absolute;
-    bottom: 0; left: 0; right: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(230,36,41,0.6), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(230,36,41,0.6),
+        transparent
+    );
 }
 
 .ejr-header-glow {
     position: absolute;
-    top: -60px; left: 50%;
+    top: -60px;
+    left: 50%;
     transform: translateX(-50%);
-    width: 500px; height: 200px;
-    background: radial-gradient(ellipse, rgba(230,36,41,0.2), transparent 70%);
+    width: 500px;
+    height: 200px;
+    background: radial-gradient(
+        ellipse,
+        rgba(230,36,41,0.2),
+        transparent 70%
+    );
     pointer-events: none;
 }
 
 .ejr-avatar-shield {
-    width: 56px; height: 56px;
+    width: 56px;
+    height: 56px;
     background: linear-gradient(135deg, #e62429, #b30000);
     border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
     box-shadow: 0 4px 20px rgba(230,36,41,0.4);
     flex-shrink: 0;
 }
@@ -109,6 +128,7 @@ body {
     transition: all 0.25s;
     backdrop-filter: blur(8px);
 }
+
 .ejr-back-btn:hover {
     background: rgba(230,36,41,0.2);
     border-color: rgba(230,36,41,0.4);
@@ -116,12 +136,14 @@ body {
 }
 
 /* ── MAIN BODY ─────────────────────────────────────────────── */
+
 .ejr-admin-body {
     padding: 40px 0 60px;
     min-height: calc(100vh - 200px);
 }
 
 /* ── STAT CARDS ────────────────────────────────────────────── */
+
 .ejr-stat-card {
     background: var(--ejr-card-bg);
     border-radius: var(--ejr-radius);
@@ -132,15 +154,19 @@ body {
     position: relative;
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .ejr-stat-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--ejr-shadow-lg);
 }
 
 .ejr-stat-icon {
-    width: 44px; height: 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.2rem;
     margin-bottom: 14px;
 }
@@ -168,17 +194,21 @@ body {
 }
 
 /* ── SEARCH ────────────────────────────────────────────────── */
+
 .ejr-search-wrap {
     position: relative;
     max-width: 480px;
 }
+
 .ejr-search-icon {
     position: absolute;
-    left: 14px; top: 50%;
+    left: 14px;
+    top: 50%;
     transform: translateY(-50%);
     color: var(--ejr-red);
     font-size: 15px;
 }
+
 .ejr-search-input {
     width: 100%;
     padding: 11px 16px 11px 40px;
@@ -191,13 +221,16 @@ body {
     box-shadow: var(--ejr-shadow);
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
+    box-sizing: border-box;
 }
+
 .ejr-search-input:focus {
     border-color: var(--ejr-red);
     box-shadow: 0 0 0 3px rgba(230,36,41,0.1);
 }
 
 /* ── TAB NAV ───────────────────────────────────────────────── */
+
 .ejr-tab-nav {
     display: flex;
     flex-wrap: wrap;
@@ -221,12 +254,17 @@ body {
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     white-space: nowrap;
 }
-.ejr-tab-btn i { font-size: 14px; }
+
+.ejr-tab-btn i {
+    font-size: 14px;
+}
+
 .ejr-tab-btn:hover {
     border-color: var(--ejr-red);
     color: var(--ejr-red);
     background: rgba(230,36,41,0.04);
 }
+
 .ejr-tab-btn.active {
     background: var(--ejr-red);
     border-color: var(--ejr-red);
@@ -244,19 +282,23 @@ body {
     min-width: 20px;
     text-align: center;
 }
+
 .ejr-tab-btn.active .ejr-tab-badge {
     background: rgba(255,255,255,0.25);
     color: #fff;
 }
+
 .ejr-tab-badge--red {
     background: var(--ejr-red) !important;
     color: #fff !important;
 }
+
 .ejr-tab-btn.active .ejr-tab-badge--red {
     background: rgba(255,255,255,0.25) !important;
 }
 
 /* ── CARDS ─────────────────────────────────────────────────── */
+
 .ejr-card {
     background: var(--ejr-card-bg);
     border-radius: var(--ejr-radius);
@@ -264,6 +306,8 @@ body {
     box-shadow: var(--ejr-shadow);
     padding: 28px;
     margin-bottom: 20px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .ejr-card-header {
@@ -286,14 +330,18 @@ body {
 }
 
 .ejr-card-icon {
-    width: 36px; height: 36px;
+    width: 36px;
+    height: 36px;
     border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
     flex-shrink: 0;
 }
 
 /* ── BUTTONS ───────────────────────────────────────────────── */
+
 .ejr-btn {
     display: inline-flex;
     align-items: center;
@@ -308,73 +356,87 @@ body {
     text-decoration: none;
     white-space: nowrap;
 }
+
 .ejr-btn--red {
     background: var(--ejr-red);
     color: #fff;
     box-shadow: 0 2px 8px rgba(230,36,41,0.3);
 }
+
 .ejr-btn--red:hover {
     background: var(--ejr-red-dark);
     box-shadow: 0 4px 12px rgba(230,36,41,0.4);
     color: #fff;
 }
+
 .ejr-btn--outline {
     background: transparent;
     border: 1.5px solid var(--ejr-border);
     color: var(--ejr-muted);
 }
+
 .ejr-btn--outline:hover {
     border-color: var(--ejr-red);
     color: var(--ejr-red);
 }
+
 .ejr-btn--warn {
     background: #f59e0b;
     color: #fff;
 }
-.ejr-btn--warn:hover { background: #d97706; }
+
+.ejr-btn--warn:hover {
+    background: #d97706;
+}
 
 /* ── TABLE ─────────────────────────────────────────────────── */
+
 .ejr-table {
     width: 100%;
+    max-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 13.5px;
 }
 
-/* Scrollable data area — keeps every admin table/list capped at a
-   fixed height instead of growing the whole page as more rows are
-   added (appointments, users, vehicles, history, parts, inquiries,
-   orders, busy dates, services, mechanics all share .table-responsive). */
+/* Scrollable data area */
 .table-responsive {
+    width: 100%;
+    max-width: 100%;
     max-height: 520px;
     overflow-y: auto;
     overflow-x: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--ejr-border) transparent;
+    box-sizing: border-box;
 }
+
 .table-responsive::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
+
 .table-responsive::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .table-responsive::-webkit-scrollbar-thumb {
     background: var(--ejr-border);
     border-radius: 8px;
 }
+
 .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #c7cbd4;
 }
 
-/* Sticky header so column labels stay visible while scrolling a
-   long list, instead of scrolling out of view immediately. */
+/* Sticky header */
 .ejr-table thead tr {
     background: #f8f9fb;
     position: sticky;
     top: 0;
     z-index: 1;
 }
+
 .ejr-table thead th {
     padding: 11px 16px;
     font-family: 'Syne', sans-serif;
@@ -386,34 +448,203 @@ body {
     border-bottom: 1.5px solid var(--ejr-border);
     white-space: nowrap;
 }
+
 .ejr-table tbody tr {
     transition: background 0.15s;
 }
+
 .ejr-table tbody tr:hover {
     background: rgba(230,36,41,0.03);
 }
+
 .ejr-table tbody td {
     padding: 13px 16px;
     border-bottom: 1px solid #f1f3f7;
     vertical-align: middle;
     color: var(--ejr-text);
 }
+
 .ejr-table tbody tr:last-child td {
     border-bottom: none;
 }
+
 .ejr-loading {
     text-align: center;
     padding: 32px !important;
     color: var(--ejr-muted);
 }
 
+
+/* =============================================================
+   APPOINTMENTS TABLE
+   Fits completely inside the appointment container.
+   Prevents horizontal scrolling.
+   ============================================================= */
+
+#tab-appointments {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#tab-appointments .ejr-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#tab-appointments .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Force appointment table to stay within container */
+#tab-appointments .ejr-table {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Appointment headers */
+#tab-appointments .ejr-table thead th {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    padding: 10px 8px;
+    font-size: 10px;
+    line-height: 1.25;
+}
+
+/* Appointment cells */
+#tab-appointments .ejr-table tbody td {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    padding: 11px 8px;
+    vertical-align: middle;
+    max-width: 0;
+    line-height: 1.35;
+}
+
+/* -------------------------------------------------------------
+   APPOINTMENT COLUMN WIDTHS
+   ------------------------------------------------------------- */
+
+/* Customer */
+#tab-appointments .ejr-table th:nth-child(1),
+#tab-appointments .ejr-table td:nth-child(1) {
+    width: 17%;
+}
+
+/* Service */
+#tab-appointments .ejr-table th:nth-child(2),
+#tab-appointments .ejr-table td:nth-child(2) {
+    width: 17%;
+}
+
+/* Vehicle */
+#tab-appointments .ejr-table th:nth-child(3),
+#tab-appointments .ejr-table td:nth-child(3) {
+    width: 16%;
+}
+
+/* Date */
+#tab-appointments .ejr-table th:nth-child(4),
+#tab-appointments .ejr-table td:nth-child(4) {
+    width: 14%;
+}
+
+/* Mechanic */
+#tab-appointments .ejr-table th:nth-child(5),
+#tab-appointments .ejr-table td:nth-child(5) {
+    width: 14%;
+}
+
+/* Status */
+#tab-appointments .ejr-table th:nth-child(6),
+#tab-appointments .ejr-table td:nth-child(6) {
+    width: 11%;
+}
+
+/* Action */
+#tab-appointments .ejr-table th:nth-child(7),
+#tab-appointments .ejr-table td:nth-child(7) {
+    width: 11%;
+}
+
+/* -------------------------------------------------------------
+   APPOINTMENT ACTION BUTTONS
+   ------------------------------------------------------------- */
+
+#tab-appointments .ejr-table td:last-child {
+    text-align: center;
+}
+
+#tab-appointments .ejr-table td:last-child .ejr-btn,
+#tab-appointments .ejr-table td:last-child button {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------
+   APPOINTMENT STATUS BADGES
+   ------------------------------------------------------------- */
+
+#tab-appointments .ejr-table .badge,
+#tab-appointments .ejr-table .status-badge {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------
+   APPOINTMENT TEXT
+   ------------------------------------------------------------- */
+
+#tab-appointments .ejr-table td strong,
+#tab-appointments .ejr-table td span,
+#tab-appointments .ejr-table td div {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* -------------------------------------------------------------
+   APPOINTMENT CARD HEADER
+   ------------------------------------------------------------- */
+
+#tab-appointments .ejr-card-header {
+    min-width: 0;
+    max-width: 100%;
+}
+
+#tab-appointments .ejr-card-header > * {
+    min-width: 0;
+}
+
 /* ── FILTER BAR ────────────────────────────────────────────── */
+
 .ejr-filter-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
 }
+
 .ejr-filter-input {
     padding: 8px 12px;
     border: 1.5px solid var(--ejr-border);
@@ -424,8 +655,12 @@ body {
     transition: border-color 0.2s;
     flex: 1;
     min-width: 160px;
+    box-sizing: border-box;
 }
-.ejr-filter-input:focus { border-color: var(--ejr-red); }
+
+.ejr-filter-input:focus {
+    border-color: var(--ejr-red);
+}
 
 .ejr-filter-select {
     padding: 8px 12px;
@@ -437,21 +672,29 @@ body {
     background: #fff;
     min-width: 160px;
     transition: border-color 0.2s;
+    box-sizing: border-box;
 }
-.ejr-filter-select:focus { border-color: var(--ejr-red); }
+
+.ejr-filter-select:focus {
+    border-color: var(--ejr-red);
+}
 
 /* ── LIVE CHAT ─────────────────────────────────────────────── */
+
 .ejr-chat-sidebar {
     background: #f8f9fb;
 }
+
 .ejr-chat-body {
     background: #f1f3f7;
 }
+
 .ejr-chat-footer {
     padding: 16px 20px;
     border-top: 1.5px solid var(--ejr-border);
     background: #fff;
 }
+
 .ejr-chat-input {
     border: 1.5px solid var(--ejr-border) !important;
     border-right: none !important;
@@ -460,11 +703,17 @@ body {
     font-size: 14px;
     padding: 10px 14px !important;
 }
+
 .ejr-chat-input:focus {
     border-color: var(--ejr-red) !important;
     box-shadow: none !important;
-}/* Mobile: stack sidebar on top, chat below */
+}
+
+
+/* ── MOBILE CHAT ───────────────────────────────────────────── */
+
 @media (max-width: 767px) {
+
     #tab-live-chat .d-flex.flex-column.flex-md-row {
         height: auto !important;
         flex-direction: column !important;
@@ -495,12 +744,15 @@ body {
     }
 
     .ejr-chat-input {
-        font-size: 16px !important; /* prevents iOS zoom on focus */
+        font-size: 16px !important;
     }
 }
 
-/* Desktop: side by side */
+
+/* ── DESKTOP CHAT ──────────────────────────────────────────── */
+
 @media (min-width: 768px) {
+
     #tab-live-chat .d-flex.flex-column.flex-md-row {
         height: 600px !important;
     }
@@ -526,28 +778,152 @@ body {
     }
 }
 
+
 /* ── ACTIVE CHAT HIGHLIGHT ─────────────────────────────────── */
+
 .active-chat {
     background: rgba(230,36,41,0.06) !important;
     border-left: 3px solid var(--ejr-red) !important;
 }
 
+
 /* ── SWEETALERT OVERRIDE ───────────────────────────────────── */
-.swal2-container { z-index: 99999999 !important; }
-.swal2-popup { border-radius: 16px !important; font-family: 'DM Sans', sans-serif !important; }
-.swal2-title { font-family: 'Syne', sans-serif !important; }
+
+.swal2-container {
+    z-index: 99999999 !important;
+}
+
+.swal2-popup {
+    border-radius: 16px !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+.swal2-title {
+    font-family: 'Syne', sans-serif !important;
+}
+
 
 /* ── SCROLLBAR ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #b30000; }
 
-/* ── RESPONSIVE ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #b30000;
+}
+
+
+/* =============================================================
+   APPOINTMENTS — TABLET
+   ============================================================= */
+
+@media (max-width: 992px) {
+
+    #tab-appointments .ejr-table th,
+    #tab-appointments .ejr-table td {
+        padding: 9px 6px;
+        font-size: 11px;
+    }
+
+    #tab-appointments .ejr-table th {
+        font-size: 9px;
+    }
+
+    #tab-appointments .ejr-table td:last-child .ejr-btn,
+    #tab-appointments .ejr-table td:last-child button {
+        font-size: 10px;
+        padding: 5px 6px;
+    }
+}
+
+
+/* =============================================================
+   APPOINTMENTS — MOBILE
+   ============================================================= */
+
 @media (max-width: 768px) {
-    .ejr-admin-title { font-size: 1.4rem; }
-    .ejr-card { padding: 18px; }
-    .ejr-tab-btn span:not(.ejr-tab-badge) { display: none; }
-    .ejr-tab-btn { padding: 9px 12px; }
-    .ejr-stat-num { font-size: 1.6rem; }
+
+    .ejr-admin-title {
+        font-size: 1.4rem;
+    }
+
+    .ejr-card {
+        padding: 18px;
+    }
+
+    .ejr-tab-btn span:not(.ejr-tab-badge) {
+        display: none;
+    }
+
+    .ejr-tab-btn {
+        padding: 9px 12px;
+    }
+
+    .ejr-stat-num {
+        font-size: 1.6rem;
+    }
+
+    /* Appointment table */
+    #tab-appointments .ejr-table th,
+    #tab-appointments .ejr-table td {
+        padding: 8px 5px;
+        font-size: 10px;
+    }
+
+    #tab-appointments .ejr-table th {
+        font-size: 8px;
+        letter-spacing: 0.3px;
+    }
+
+    #tab-appointments .ejr-table td:last-child .ejr-btn,
+    #tab-appointments .ejr-table td:last-child button {
+        font-size: 9px;
+        padding: 4px 5px;
+    }
+}
+
+
+/* =============================================================
+   VERY SMALL SCREENS
+   ============================================================= */
+
+@media (max-width: 576px) {
+
+    #tab-appointments .ejr-card {
+        padding: 12px;
+    }
+
+    #tab-appointments .table-responsive {
+        max-height: 500px;
+    }
+
+    #tab-appointments .ejr-table {
+        font-size: 9px;
+    }
+
+    #tab-appointments .ejr-table th,
+    #tab-appointments .ejr-table td {
+        padding: 7px 3px;
+    }
+
+    #tab-appointments .ejr-table th {
+        font-size: 7px;
+    }
+
+    #tab-appointments .ejr-table td:last-child .ejr-btn,
+    #tab-appointments .ejr-table td:last-child button {
+        font-size: 8px;
+        padding: 3px 4px;
+    }
 }
