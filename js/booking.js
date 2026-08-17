@@ -1,580 +1,977 @@
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+document.addEventListener("DOMContentLoaded", function () {
 
+    // ============================================================
+// FUEL / TRANSMISSION DEPENDENCY
+//
+// Hybrid and Electric vehicles use CVT only.
+// Gasoline and Diesel allow all transmission options.
+// ============================================================
 
-        // ============================================================
-        // ELEMENTS
-        // ============================================================
+const fuelSelect = document.getElementById("fuel");
+const transmissionSelect = document.getElementById("transmission");
 
-        const vehicleForm =
-            document.getElementById(
-                "vehicleForm"
-            );
+function updateTransmissionOptions() {
 
+    if (!fuelSelect || !transmissionSelect) {
+        return;
+    }
 
-        const savedSection =
-            document.getElementById(
-                "savedVehicleSection"
-            );
+    const selectedFuel = fuelSelect.value;
 
+    const isHybridOrElectric =
+        selectedFuel === "Hybrid" ||
+        selectedFuel === "Electric";
 
-        const manualForm =
-            document.getElementById(
-                "manualVehicleForm"
-            );
+    const transmissionOptions =
+        Array.from(transmissionSelect.options);
 
+    if (isHybridOrElectric) {
 
-        const savedSelect =
-            document.getElementById(
-                "savedVehicle"
-            );
+        // Hybrid/Electric = CVT only
+        transmissionOptions.forEach(function (option) {
 
+            if (option.value === "CVT") {
 
-        const brandSelect =
-            document.getElementById(
-                "brand"
-            );
+                option.hidden = false;
+                option.disabled = false;
 
+            } else {
 
-        const modelSelect =
-            document.getElementById(
-                "model"
-            );
-
-
-        const yearSelect =
-            document.getElementById(
-                "year"
-            );
-
-
-        const fuelSelect =
-            document.getElementById(
-                "fuel"
-            );
-
-
-        const transmissionSelect =
-            document.getElementById(
-                "transmission"
-            );
-
-
-        // ============================================================
-        // FUEL / TRANSMISSION DEPENDENCY
-        //
-        // Hybrid and Electric vehicles use CVT only.
-        // Gasoline and Diesel allow all transmission options.
-        // ============================================================
-
-        function updateTransmissionOptions() {
-
-            if (
-                !fuelSelect ||
-                !transmissionSelect
-            ) {
-
-                return;
+                option.hidden = true;
+                option.disabled = true;
 
             }
 
+        });
 
-            const selectedFuel =
-                fuelSelect.value;
+        // Automatically select CVT
+        transmissionSelect.value = "CVT";
+
+    } else {
+
+        // Gasoline/Diesel = restore all options
+        transmissionOptions.forEach(function (option) {
+
+            option.hidden = false;
+            option.disabled = false;
+
+        });
+
+    }
+}
 
 
-            const isHybridOrElectric =
-                selectedFuel === "Hybrid" ||
-                selectedFuel === "Electric";
+// Run whenever the fuel type changes
+if (fuelSelect) {
+
+    fuelSelect.addEventListener(
+        "change",
+        updateTransmissionOptions
+    );
+
+    // Also apply it when the page initially loads
+    updateTransmissionOptions();
+}
+
+    // ============================================================
+    // LOGIN CHECK
+    // ============================================================
+
+    function isLoggedIn() {
+
+        return (
+            typeof userLoggedIn !== "undefined" &&
+            userLoggedIn === true
+        );
+
+    }
 
 
-            const transmissionOptions =
-                Array.from(
-                    transmissionSelect.options
-                );
+    // ============================================================
+    // SERVICE SELECTION
+    // ============================================================
+
+    const nextBtn =
+        document.querySelector(".btn-next");
+
+    const serviceError =
+        document.getElementById("serviceError");
+
+    const serviceLimitError =
+        document.getElementById("serviceLimitError");
+
+    let selectedServices = [];
+
+    let authModal = null;
+
+    let step1Initialized = false;
 
 
-            if (isHybridOrElectric) {
+    function initServiceSelection() {
 
-                // ====================================================
-                // HYBRID / ELECTRIC
-                // CVT IS THE ONLY AVAILABLE OPTION
-                // ====================================================
+        const services =
+            document.querySelectorAll(".service-item");
 
-                transmissionOptions.forEach(
-                    function (option) {
+
+        if (
+            services.length === 0 ||
+            !nextBtn ||
+            document.getElementById("vehicleForm")
+        ) {
+
+            return;
+
+        }
+
+
+        // ========================================================
+        // LOGIN MODAL
+        // ========================================================
+
+        if (!authModal) {
+
+            authModal =
+                document.createElement("div");
+
+            authModal.id =
+                "authModal";
+
+
+            authModal.style.cssText =
+                "display:none;" +
+                "position:fixed;" +
+                "z-index:9999;" +
+                "left:0;" +
+                "top:0;" +
+                "width:100%;" +
+                "height:100%;" +
+                "background:rgba(0,0,0,0.7);" +
+                "align-items:center;" +
+                "justify-content:center;";
+
+
+            authModal.innerHTML = `
+
+                <div
+                    style="
+                        background:#ffffff;
+                        border-radius:16px;
+                        width:90%;
+                        max-width:420px;
+                        box-shadow:0 15px 40px rgba(0,0,0,0.3);
+                        overflow:hidden;
+                        position:relative;
+                        border:1px solid #e3e8ef;
+                        text-align:center;
+                        padding:40px 30px;
+                    "
+                >
+
+                    <button
+                        onclick="
+                            document.getElementById('authModal').style.display='none'
+                        "
+                        style="
+                            position:absolute;
+                            top:15px;
+                            right:20px;
+                            background:none;
+                            border:none;
+                            font-size:28px;
+                            cursor:pointer;
+                            color:#a0aab5;
+                        "
+                    >
+                        &times;
+                    </button>
+
+
+                    <div
+                        style="
+                            width:70px;
+                            height:70px;
+                            border-radius:50%;
+                            background:rgba(230,36,41,0.1);
+                            color:#e62429;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            margin:0 auto 20px auto;
+                            font-size:32px;
+                        "
+                    >
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+
+
+                    <h3
+                        style="
+                            font-family:'Rajdhani',sans-serif;
+                            font-weight:700;
+                            color:#1e2a36;
+                            margin-bottom:10px;
+                            font-size:1.8rem;
+                            text-transform:uppercase;
+                        "
+                    >
+                        Login Required
+                    </h3>
+
+
+                    <p
+                        style="
+                            color:#5f6b7a;
+                            margin-bottom:30px;
+                            font-size:0.95rem;
+                            line-height:1.6;
+                        "
+                    >
+                        You must be logged in to book an appointment
+                        with EJR Garage.
+                    </p>
+
+
+                    <div
+                        style="
+                            display:flex;
+                            gap:12px;
+                            flex-direction:column;
+                        "
+                    >
+
+                        <a
+                            href="login.php"
+                            style="
+                                width:100%;
+                                background:linear-gradient(45deg,#e62429,#ff6b00);
+                                color:#fff;
+                                padding:12px;
+                                border-radius:8px;
+                                font-family:'Rajdhani',sans-serif;
+                                font-weight:700;
+                                text-decoration:none;
+                                text-transform:uppercase;
+                            "
+                        >
+                            Log In Here
+                        </a>
+
+
+                        <a
+                            href="registration.php"
+                            style="
+                                width:100%;
+                                padding:12px;
+                                border:1px solid #e3e8ef;
+                                border-radius:8px;
+                                color:#1e2a36;
+                                font-family:'Rajdhani',sans-serif;
+                                font-weight:700;
+                                text-decoration:none;
+                                text-transform:uppercase;
+                            "
+                        >
+                            Register Now
+                        </a>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            document.body.appendChild(
+                authModal
+            );
+
+
+            window.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target === authModal
+                    ) {
+
+                        authModal.style.display =
+                            "none";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        // ========================================================
+        // SERVICE CLICK EVENTS
+        // ========================================================
+
+        services.forEach(
+            function (service) {
+
+                service.addEventListener(
+                    "click",
+                    function () {
+
+                        const serviceName =
+                            this.textContent.trim();
+
+
+                        if (serviceError) {
+
+                            serviceError.style.display =
+                                "none";
+
+                        }
+
+
+                        if (serviceLimitError) {
+
+                            serviceLimitError.style.display =
+                                "none";
+
+                        }
+
 
                         if (
-                            option.value ===
-                            "CVT"
+                            this.classList.contains(
+                                "selected"
+                            )
                         ) {
 
-                            option.hidden =
-                                false;
+                            this.classList.remove(
+                                "selected"
+                            );
 
-                            option.disabled =
-                                false;
+
+                            selectedServices =
+                                selectedServices.filter(
+                                    function (service) {
+
+                                        return (
+                                            service !==
+                                            serviceName
+                                        );
+
+                                    }
+                                );
 
                         }
 
                         else {
 
-                            option.hidden =
-                                true;
+                            if (
+                                selectedServices.length >= 5
+                            ) {
 
-                            option.disabled =
-                                true;
+                                if (serviceLimitError) {
 
-                        }
+                                    serviceLimitError.style.display =
+                                        "block";
 
-                    }
-                );
+                                }
 
-
-                // Automatically select CVT
-
-                transmissionSelect.value =
-                    "CVT";
-
-            }
-
-            else {
-
-                // ====================================================
-                // GASOLINE / DIESEL
-                // RESTORE ALL TRANSMISSION OPTIONS
-                // ====================================================
-
-                transmissionOptions.forEach(
-                    function (option) {
-
-                        option.hidden =
-                            false;
-
-                        option.disabled =
-                            false;
-
-                    }
-                );
-
-            }
-
-        }
-
-
-        // ============================================================
-        // WATCH FOR FUEL TYPE CHANGES
-        // ============================================================
-
-        if (fuelSelect) {
-
-            fuelSelect.addEventListener(
-                "change",
-                updateTransmissionOptions
-            );
-
-
-            // Run once when page loads
-
-            updateTransmissionOptions();
-
-        }
-
-
-
-        // ============================================================
-        // MODEL DATA
-        // ============================================================
-
-        const vehicleModels = {
-
-            Toyota: [
-                "Vios",
-                "Wigo",
-                "Avanza",
-                "Innova",
-                "Fortuner",
-                "Hilux",
-                "Rush",
-                "Corolla Altis",
-                "Camry",
-                "Raize",
-                "Yaris Cross",
-                "RAV4",
-                "Land Cruiser",
-                "Hiace"
-            ],
-
-            Honda: [
-                "City",
-                "Civic",
-                "CR-V",
-                "HR-V",
-                "Br-V",
-                "Jazz",
-                "Mobilio",
-                "Odyssey"
-            ],
-
-            Mitsubishi: [
-                "Mirage",
-                "Mirage G4",
-                "Xpander",
-                "Montero Sport",
-                "Triton",
-                "Outlander"
-            ],
-
-            Nissan: [
-                "Almera",
-                "Navara",
-                "Terra",
-                "Kicks",
-                "X-Trail",
-                "Patrol"
-            ],
-
-            Ford: [
-                "Ranger",
-                "Everest",
-                "Territory",
-                "Mustang",
-                "Explorer"
-            ],
-
-            Hyundai: [
-                "Accent",
-                "Elantra",
-                "Tucson",
-                "Santa Fe",
-                "Stargazer",
-                "Staria"
-            ],
-
-            Kia: [
-                "Picanto",
-                "Soluto",
-                "Seltos",
-                "Sportage",
-                "Sorento",
-                "Carnival"
-            ],
-
-            Suzuki: [
-                "Celerio",
-                "Dzire",
-                "Ertiga",
-                "Jimny",
-                "Swift",
-                "Vitara"
-            ],
-
-            Isuzu: [
-                "D-Max",
-                "mu-X"
-            ],
-
-            Chevrolet: [
-                "Spark",
-                "Cruze",
-                "Trailblazer",
-                "Colorado"
-            ],
-
-            Mazda: [
-                "Mazda 2",
-                "Mazda 3",
-                "CX-3",
-                "CX-5",
-                "CX-8",
-                "CX-9"
-            ],
-
-            Volkswagen: [
-                "Polo",
-                "Golf",
-                "Tiguan",
-                "Teramont"
-            ],
-
-            Subaru: [
-                "Impreza",
-                "Forester",
-                "Outback",
-                "XV"
-            ],
-
-            Geely: [
-                "Coolray",
-                "Azkarra",
-                "Okavango",
-                "Emgrand"
-            ],
-
-            MG: [
-                "MG 3",
-                "MG 5",
-                "MG ZS",
-                "MG HS"
-            ],
-
-            BYD: [
-                "Dolphin",
-                "Atto 3",
-                "Seal",
-                "Tang"
-            ],
-
-            Tesla: [
-                "Model 3",
-                "Model Y",
-                "Model S",
-                "Model X"
-            ]
-
-        };
-
-
-
-        // ============================================================
-        // CUSTOM MODEL
-        // ============================================================
-
-        const customModelContainer =
-            document.getElementById(
-                "customModelContainer"
-            );
-
-
-        const customModelInput =
-            document.getElementById(
-                "modelOther"
-            );
-
-
-        function showCustomModelInput() {
-
-            if (
-                customModelContainer
-            ) {
-
-                customModelContainer.style.display =
-                    "block";
-
-            }
-
-
-            if (
-                modelSelect
-            ) {
-
-                modelSelect.style.display =
-                    "none";
-
-            }
-
-        }
-
-
-
-        function showNormalModelDropdown() {
-
-            if (
-                customModelContainer
-            ) {
-
-                customModelContainer.style.display =
-                    "none";
-
-            }
-
-
-            if (
-                modelSelect
-            ) {
-
-                modelSelect.style.display =
-                    "block";
-
-            }
-
-        }
-
-
-
-        // ============================================================
-        // BRAND CHANGE
-        // ============================================================
-
-        if (brandSelect) {
-
-            brandSelect.addEventListener(
-                "change",
-                function () {
-
-                    const selectedBrand =
-                        this.value;
-
-
-                    if (
-                        selectedBrand ===
-                        "Other"
-                    ) {
-
-                        showCustomModelInput();
-
-                        return;
-
-                    }
-
-
-                    showNormalModelDropdown();
-
-
-                    if (
-                        !modelSelect
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    modelSelect.innerHTML =
-                        '<option value="">Select Model</option>';
-
-
-                    if (
-                        vehicleModels[
-                            selectedBrand
-                        ]
-                    ) {
-
-                        vehicleModels[
-                            selectedBrand
-                        ].forEach(
-                            function (model) {
-
-                                const option =
-                                    document.createElement(
-                                        "option"
-                                    );
-
-
-                                option.value =
-                                    model;
-
-
-                                option.textContent =
-                                    model;
-
-
-                                modelSelect.appendChild(
-                                    option
-                                );
+                                return;
 
                             }
-                        );
-
-                    }
 
 
-                    const otherOption =
-                        document.createElement(
-                            "option"
-                        );
+                            this.classList.add(
+                                "selected"
+                            );
 
 
-                    otherOption.value =
-                        "Other";
-
-
-                    otherOption.textContent =
-                        "Other";
-
-
-                    modelSelect.appendChild(
-                        otherOption
-                    );
-
-                }
-            );
-
-        }
-
-
-
-        // ============================================================
-        // MODEL CHANGE
-        // ============================================================
-
-        if (modelSelect) {
-
-            modelSelect.addEventListener(
-                "change",
-                function () {
-
-                    const selectedModel =
-                        this.value;
-
-
-                    // ==================================================
-                    // OTHER MODEL
-                    // ==================================================
-
-                    if (
-                        selectedModel ===
-                        "Other"
-                    ) {
-
-                        showCustomModelInput();
-
-                    }
-
-
-                    // ==================================================
-                    // NORMAL MODEL
-                    // ==================================================
-
-                    else {
-
-                        showNormalModelDropdown();
-
-
-                        if (
-                            selectedModel
-                        ) {
-
-                            modelSelect.value =
-                                selectedModel;
+                            selectedServices.push(
+                                serviceName
+                            );
 
                         }
 
                     }
+                );
+
+            }
+        );
+
+
+        // ========================================================
+        // NEXT BUTTON
+        // ========================================================
+
+        if (!step1Initialized) {
+
+            nextBtn.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+
+                    if (
+                        selectedServices.length === 0
+                    ) {
+
+                        if (serviceError) {
+
+                            serviceError.style.display =
+                                "block";
+
+                        }
+
+                        return;
+
+                    }
+
+
+                    if (!isLoggedIn()) {
+
+                        if (authModal) {
+
+                            authModal.style.display =
+                                "flex";
+
+                        }
+
+                        return;
+
+                    }
+
+
+                    localStorage.setItem(
+                        "selectedServices",
+                        JSON.stringify(
+                            selectedServices
+                        )
+                    );
+
+
+                    window.location.href =
+                        "booking-confirmation.php";
 
                 }
             );
 
+
+            step1Initialized = true;
+
+        }
+
+    }
+
+
+    initServiceSelection();
+
+
+    document.addEventListener(
+        "ejrServicesLoaded",
+        initServiceSelection
+    );
+
+
+
+    // ============================================================
+    // VEHICLE DETAILS
+    // ============================================================
+
+    const vehicleForm =
+        document.getElementById(
+            "vehicleForm"
+        );
+
+
+    const yearSelect =
+        document.getElementById(
+            "year"
+        );
+
+
+    const savedSection =
+        document.getElementById(
+            "savedVehiclesSection"
+        );
+
+
+    const manualForm =
+        document.getElementById(
+            "manualVehicleForm"
+        );
+
+
+    const savedSelect =
+        document.getElementById(
+            "savedVehicleSelect"
+        );
+
+
+    const brandSelect =
+        document.getElementById(
+            "brand"
+        );
+
+
+    const modelSelect =
+        document.getElementById(
+            "model"
+        );
+
+
+    const modelOtherInput =
+        document.getElementById(
+            "modelOther"
+        );
+
+
+    const modelHelpText =
+        document.getElementById(
+            "modelHelpText"
+        );
+
+
+
+    // ============================================================
+    // PHILIPPINE CAR BRANDS AND MODELS
+    // ============================================================
+
+    const philippineCarModels = {
+
+        Toyota: [
+
+            "86 / GR86",
+            "Alphard",
+            "Avanza",
+            "Camry",
+            "Coaster",
+            "Corolla Altis",
+            "Corolla Cross",
+            "FJ Cruiser",
+            "Fortuner",
+            "GR Supra",
+            "GR Yaris",
+            "Hiace",
+            "Hilux",
+            "Innova",
+            "Land Cruiser",
+            "Land Cruiser Prado",
+            "Lite Ace",
+            "RAV4",
+            "Raize",
+            "Rush",
+            "Tamaraw",
+            "Veloz",
+            "Vios",
+            "Wigo",
+            "Yaris",
+            "Yaris Cross",
+            "Zenix"
+
+        ],
+
+
+        Honda: [
+
+            "Accord",
+            "Brio",
+            "BR-V",
+            "City",
+            "City Hatchback",
+            "Civic",
+            "CR-V",
+            "HR-V",
+            "Jazz",
+            "Mobilio",
+            "Odyssey"
+
+        ],
+
+
+        Mitsubishi: [
+
+            "Adventure",
+            "ASX",
+            "Eclipse Cross",
+            "Lancer",
+            "Lancer EX",
+            "Lancer Evolution",
+            "L300",
+            "Mirage",
+            "Mirage G4",
+            "Montero",
+            "Montero Sport",
+            "Outlander",
+            "Outlander PHEV",
+            "Triton",
+            "Xpander",
+            "Xpander Cross"
+
+        ],
+
+
+        Nissan: [
+
+            "Almera",
+            "Juke",
+            "Kicks",
+            "Livina",
+            "Navara",
+            "Patrol",
+            "Sentra",
+            "Serena",
+            "Terra",
+            "Urvan",
+            "X-Trail"
+
+        ],
+
+
+        Ford: [
+
+            "EcoSport",
+            "Everest",
+            "Explorer",
+            "Expedition",
+            "Fiesta",
+            "Focus",
+            "Mustang",
+            "Ranger",
+            "Territory",
+            "Transit"
+
+        ],
+
+
+        Suzuki: [
+
+            "APV",
+            "Alto",
+            "Celerio",
+            "Dzire",
+            "Ertiga",
+            "Ignis",
+            "Jimny",
+            "S-Presso",
+            "Swift",
+            "Vitara",
+            "XL7",
+            "Carry"
+
+        ],
+
+
+        Isuzu: [
+
+            "Crosswind",
+            "D-Max",
+            "mu-X",
+            "Traviz",
+            "Alterra",
+            "Trooper"
+
+        ],
+
+
+        Hyundai: [
+
+            "Accent",
+            "Avante",
+            "Creta",
+            "Eon",
+            "Elantra",
+            "Getz",
+            "H-100",
+            "i10",
+            "Ioniq",
+            "Ioniq 5",
+            "Ioniq 6",
+            "Kona",
+            "Santa Fe",
+            "Sonata",
+            "Stargazer",
+            "Staria",
+            "Tucson",
+            "Veloster"
+
+        ],
+
+
+        Kia: [
+
+            "Carens",
+            "Carnival",
+            "EV6",
+            "EV9",
+            "K3",
+            "K5",
+            "Picanto",
+            "Rio",
+            "Seltos",
+            "Soluto",
+            "Sorento",
+            "Sportage",
+            "Stonic"
+
+        ],
+
+
+        Mazda: [
+
+            "2",
+            "3",
+            "6",
+            "BT-50",
+            "CX-3",
+            "CX-30",
+            "CX-5",
+            "CX-8",
+            "CX-9",
+            "CX-60",
+            "CX-90",
+            "MX-5"
+
+        ]
+
+    };
+
+
+
+    // ============================================================
+    // SHOW CUSTOM MODEL INPUT
+    // ============================================================
+
+    function showCustomModelInput() {
+
+        if (!modelSelect) {
+            return;
         }
 
 
+        // Hide dropdown
 
-        // ============================================================
-        // YEAR DROPDOWN
-        // ============================================================
+        modelSelect.style.display =
+            "none";
 
-        if (yearSelect) {
-
-            const currentYear =
-                new Date().getFullYear();
+        modelSelect.disabled =
+            true;
 
 
-            for (
-                let year = currentYear;
-                year >= 1990;
-                year--
-            ) {
+        // Show textbox
+
+        if (modelOtherInput) {
+
+            modelOtherInput.style.display =
+                "block";
+
+            modelOtherInput.disabled =
+                false;
+
+            modelOtherInput.value = "";
+
+            modelOtherInput.focus();
+
+        }
+
+
+        // Update help text
+
+        if (modelHelpText) {
+
+            modelHelpText.textContent =
+                "Please enter your vehicle's model.";
+
+        }
+
+    }
+
+
+
+    // ============================================================
+    // SHOW NORMAL MODEL DROPDOWN
+    // ============================================================
+
+    function showNormalModelDropdown() {
+
+        if (!modelSelect) {
+            return;
+        }
+
+
+        modelSelect.style.display =
+            "block";
+
+        modelSelect.disabled =
+            false;
+
+
+        if (modelOtherInput) {
+
+            modelOtherInput.style.display =
+                "none";
+
+            modelOtherInput.disabled =
+                true;
+
+            modelOtherInput.value = "";
+
+        }
+
+
+        if (modelHelpText) {
+
+            modelHelpText.textContent =
+                "Can't find your model? Select Other and enter it manually.";
+
+        }
+
+    }
+
+
+
+    // ============================================================
+    // UPDATE CAR MODEL FIELD
+    //
+    // IMPORTANT:
+    //
+    // Every brand gets an "Other" option.
+    //
+    // Example:
+    //
+    // Toyota
+    //   ↓
+    // Vios
+    // Fortuner
+    // Wigo
+    // Other
+    //
+    // Selecting Other changes the dropdown into a textbox.
+    // ============================================================
+
+    function updateModelDropdown() {
+
+        if (
+            !brandSelect ||
+            !modelSelect
+        ) {
+
+            return;
+
+        }
+
+
+        const selectedBrand =
+            brandSelect.value;
+
+
+        // ========================================================
+        // RESET
+        // ========================================================
+
+        showNormalModelDropdown();
+
+
+        modelSelect.innerHTML = "";
+
+
+        // ========================================================
+        // NO BRAND SELECTED
+        // ========================================================
+
+        if (!selectedBrand) {
+
+            modelSelect.disabled =
+                true;
+
+
+            modelSelect.innerHTML =
+                '<option value="">Select a brand first</option>';
+
+
+            if (modelHelpText) {
+
+                modelHelpText.textContent =
+                    "Models are based on vehicles commonly sold/registered in the Philippines.";
+
+            }
+
+
+            return;
+
+        }
+
+
+        // ========================================================
+        // BRAND = OTHER
+        //
+        // If brand itself is Other, there is no model dropdown.
+        // The user enters the model manually.
+        // ========================================================
+
+        if (
+            selectedBrand === "Other"
+        ) {
+
+            showCustomModelInput();
+
+
+            if (modelHelpText) {
+
+                modelHelpText.textContent =
+                    "Please enter your vehicle's model.";
+
+            }
+
+
+            return;
+
+        }
+
+
+        // ========================================================
+        // NORMAL BRAND
+        // ========================================================
+
+        modelSelect.disabled =
+            false;
+
+
+        // Placeholder
+
+        const placeholder =
+            document.createElement(
+                "option"
+            );
+
+
+        placeholder.value =
+            "";
+
+
+        placeholder.textContent =
+            "Select model";
+
+
+        modelSelect.appendChild(
+            placeholder
+        );
+
+
+        // ========================================================
+        // GET MODELS
+        // ========================================================
+
+        const models =
+            philippineCarModels[
+                selectedBrand
+            ] || [];
+
+
+        // ========================================================
+        // ADD MODELS
+        // ========================================================
+
+        models.forEach(
+            function (model) {
 
                 const option =
                     document.createElement(
@@ -583,354 +980,541 @@ document.addEventListener(
 
 
                 option.value =
-                    year;
+                    model;
 
 
                 option.textContent =
-                    year;
+                    model;
 
 
-                yearSelect.appendChild(
+                modelSelect.appendChild(
                     option
                 );
 
             }
+        );
+
+
+        // ========================================================
+        // ADD "OTHER"
+        //
+        // THIS IS THE IMPORTANT NEW PART.
+        // ========================================================
+
+        const otherOption =
+            document.createElement(
+                "option"
+            );
+
+
+        otherOption.value =
+            "Other";
+
+
+        otherOption.textContent =
+            "Other";
+
+
+        modelSelect.appendChild(
+            otherOption
+        );
+
+
+        // ========================================================
+        // HELP TEXT
+        // ========================================================
+
+        if (modelHelpText) {
+
+            modelHelpText.textContent =
+                "Can't find your model? Select Other and enter it manually.";
 
         }
 
+    }
 
 
-        // ============================================================
-        // LOAD SAVED VEHICLES
-        // ============================================================
 
-        async function loadUserGarage() {
+    // ============================================================
+    // BRAND CHANGE EVENT
+    // ============================================================
 
-            if (
-                !savedSelect
-            ) {
+    if (brandSelect) {
 
-                return;
-
-            }
+        brandSelect.addEventListener(
+            "change",
+            updateModelDropdown
+        );
 
 
-            const token =
-                localStorage.getItem(
-                    "jwt_token"
-                );
+        // Initialize model dropdown
+
+        updateModelDropdown();
+
+    }
 
 
-            try {
 
-                const response =
-                    await fetch(
-                        "api/get_vehicles.php",
-                        {
-                            headers: {
-                                "Authorization":
-                                    "Bearer " +
-                                    token
-                            }
-                        }
-                    );
+    // ============================================================
+    // MODEL CHANGE EVENT
+    //
+    // Detects:
+    //
+    // Model = Other
+    //
+    // and changes the dropdown into a textbox.
+    // ============================================================
+
+    if (modelSelect) {
+
+        modelSelect.addEventListener(
+            "change",
+            function () {
+
+                const selectedModel =
+                    modelSelect.value;
 
 
-                const data =
-                    await response.json();
-
+                // ==================================================
+                // OTHER MODEL
+                // ==================================================
 
                 if (
-                    data.status ===
-                        "success" &&
-                    data.vehicles &&
-                    data.vehicles.length >
-                        0
+                    selectedModel === "Other"
                 ) {
 
-                    savedSection.style.display =
-                        "block";
+                    showCustomModelInput();
+
+                }
 
 
-                    manualForm.style.display =
-                        "none";
+                // ==================================================
+                // NORMAL MODEL
+                // ==================================================
+
+                else {
+
+                    showNormalModelDropdown();
 
 
-                    const backToSavedContainer =
-                        document.getElementById(
-                            "backToSavedContainer"
-                        );
+                    // Keep the selected normal model
 
+                    if (selectedModel) {
 
-                    if (
-                        backToSavedContainer
-                    ) {
-
-                        backToSavedContainer.style.display =
-                            "block";
+                        modelSelect.value =
+                            selectedModel;
 
                     }
 
-
-                    savedSelect.innerHTML =
-                        '<option value="">-- Select Saved Vehicle --</option>';
-
-
-                    data.vehicles.forEach(
-                        function (vehicle) {
-
-                            const option =
-                                document.createElement(
-                                    "option"
-                                );
-
-
-                            option.value =
-                                JSON.stringify(
-                                    vehicle
-                                );
-
-
-                            option.textContent =
-                                vehicle.brand +
-                                " " +
-                                vehicle.model +
-                                " (" +
-                                vehicle.plate_number +
-                                ")";
-
-
-                            savedSelect.appendChild(
-                                option
-                            );
-
-                        }
-                    );
-
                 }
 
             }
+        );
 
-            catch (error) {
+    }
 
-                console.error(
-                    "Garage load failed:",
-                    error
+
+
+    // ============================================================
+    // YEAR DROPDOWN
+    // ============================================================
+
+    if (yearSelect) {
+
+        const currentYear =
+            new Date().getFullYear();
+
+
+        for (
+            let year = currentYear;
+            year >= 1990;
+            year--
+        ) {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                year;
+
+
+            option.textContent =
+                year;
+
+
+            yearSelect.appendChild(
+                option
+            );
+
+        }
+
+    }
+
+
+
+    // ============================================================
+    // LOAD SAVED VEHICLES
+    // ============================================================
+
+    async function loadUserGarage() {
+
+        if (!savedSelect) {
+
+            return;
+
+        }
+
+
+        const token =
+            localStorage.getItem(
+                "jwt_token"
+            );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "api/get_vehicles.php",
+                    {
+                        headers: {
+                            "Authorization":
+                                "Bearer " + token
+                        }
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data.status === "success" &&
+                data.vehicles &&
+                data.vehicles.length > 0
+            ) {
+
+                savedSection.style.display =
+                    "block";
+
+
+                manualForm.style.display =
+                    "none";
+
+
+                const backToSavedContainer =
+                    document.getElementById(
+                        "backToSavedContainer"
+                    );
+
+
+                if (
+                    backToSavedContainer
+                ) {
+
+                    backToSavedContainer.style.display =
+                        "block";
+
+                }
+
+
+                savedSelect.innerHTML =
+                    '<option value="">-- Select Saved Vehicle --</option>';
+
+
+                data.vehicles.forEach(
+                    function (vehicle) {
+
+                        const option =
+                            document.createElement(
+                                "option"
+                            );
+
+
+                        option.value =
+                            JSON.stringify(
+                                vehicle
+                            );
+
+
+                        option.textContent =
+                            vehicle.brand +
+                            " " +
+                            vehicle.model +
+                            " (" +
+                            vehicle.plate_number +
+                            ")";
+
+
+                        savedSelect.appendChild(
+                            option
+                        );
+
+                    }
                 );
 
             }
 
         }
 
+        catch (error) {
+
+            console.error(
+                "Garage load failed:",
+                error
+            );
+
+        }
+
+    }
 
 
-        // ============================================================
-        // CALENDAR
-        // ============================================================
 
-        async function initCalendar() {
+    // ============================================================
+    // CALENDAR
+    // ============================================================
 
-            let busyDates = [];
+    async function initCalendar() {
 
-
-            try {
-
-                const response =
-                    await fetch(
-                        "api/get_busy_dates.php"
-                    );
+        let busyDates = [];
 
 
-                const data =
-                    await response.json();
+        try {
 
-
-                if (
-                    data.status ===
-                    "success"
-                ) {
-
-                    busyDates =
-                        data.busy_dates ||
-                        [];
-
-                }
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "Failed to load busy dates:",
-                    error
+            const response =
+                await fetch(
+                    "api/get_busy_dates.php"
                 );
 
-            }
+
+            const data =
+                await response.json();
 
 
             if (
-                typeof flatpickr ===
-                "undefined"
+                data.status === "success"
             ) {
 
-                console.error(
-                    "Flatpickr is not loaded."
-                );
-
-                return;
+                busyDates =
+                    data.busy_dates || [];
 
             }
 
+        }
 
-            const disableDates =
-                busyDates.map(
-                    function (dateString) {
+        catch (error) {
 
-                        const parts =
-                            dateString.split(
-                                "-"
-                            );
+            console.error(
+                "Failed to load busy dates:",
+                error
+            );
+
+        }
+
+
+        if (
+            typeof flatpickr ===
+            "undefined"
+        ) {
+
+            console.error(
+                "Flatpickr is not loaded."
+            );
+
+            return;
+
+        }
+
+
+        const disableDates =
+            busyDates.map(
+                function (dateString) {
+
+                    const parts =
+                        dateString.split("-");
+
+
+                    const year =
+                        Number(parts[0]);
+
+
+                    const month =
+                        Number(parts[1]);
+
+
+                    const day =
+                        Number(parts[2]);
+
+
+                    return new Date(
+                        year,
+                        month - 1,
+                        day
+                    );
+
+                }
+            );
+
+
+        const appointmentDate =
+            document.getElementById(
+                "appointmentDate"
+            );
+
+
+        if (!appointmentDate) {
+
+            return;
+
+        }
+
+
+        flatpickr(
+            appointmentDate,
+            {
+
+                minDate: "today",
+
+                dateFormat: "Y-m-d",
+
+                disableMobile: true,
+
+                disable: disableDates,
+
+
+                onDayCreate:
+                    function (
+                        selectedDates,
+                        dateString,
+                        instance,
+                        dayElement
+                    ) {
+
+                        const date =
+                            dayElement.dateObj;
 
 
                         const year =
-                            Number(
-                                parts[0]
-                            );
+                            date.getFullYear();
 
 
                         const month =
-                            Number(
-                                parts[1]
+                            String(
+                                date.getMonth() + 1
+                            ).padStart(
+                                2,
+                                "0"
                             );
 
 
                         const day =
-                            Number(
-                                parts[2]
+                            String(
+                                date.getDate()
+                            ).padStart(
+                                2,
+                                "0"
                             );
 
 
-                        return new Date(
-                            year,
-                            month - 1,
-                            day
-                        );
-
-                    }
-                );
+                        const formattedDate =
+                            year +
+                            "-" +
+                            month +
+                            "-" +
+                            day;
 
 
-            const appointmentDate =
-                document.getElementById(
-                    "appointmentDate"
-                );
-
-
-            if (
-                !appointmentDate
-            ) {
-
-                return;
-
-            }
-
-
-            flatpickr(
-                appointmentDate,
-                {
-
-                    minDate:
-                        "today",
-
-                    dateFormat:
-                        "Y-m-d",
-
-                    disableMobile:
-                        true,
-
-                    disable:
-                        disableDates,
-
-
-                    onDayCreate:
-                        function (
-                            selectedDates,
-                            dateString,
-                            instance,
-                            dayElement
+                        if (
+                            busyDates.includes(
+                                formattedDate
+                            )
                         ) {
 
-                            const date =
-                                dayElement.dateObj;
+                            dayElement.style.backgroundColor =
+                                "#e62429";
 
 
-                            const year =
-                                date.getFullYear();
+                            dayElement.style.color =
+                                "#ffffff";
 
 
-                            const month =
-                                String(
-                                    date.getMonth() +
-                                    1
-                                ).padStart(
-                                    2,
-                                    "0"
-                                );
+                            dayElement.style.borderRadius =
+                                "50%";
 
 
-                            const day =
-                                String(
-                                    date.getDate()
-                                ).padStart(
-                                    2,
-                                    "0"
-                                );
+                            dayElement.style.opacity =
+                                "1";
 
 
-                            const formattedDate =
-                                year +
-                                "-" +
-                                month +
-                                "-" +
-                                day;
+                            dayElement.style.pointerEvents =
+                                "none";
 
 
-                            if (
-                                busyDates.includes(
-                                    formattedDate
-                                )
-                            ) {
-
-                                dayElement.style.backgroundColor =
-                                    "#e62429";
+                            dayElement.style.cursor =
+                                "not-allowed";
 
 
-                                dayElement.style.color =
-                                    "#ffffff";
-
-
-                                dayElement.style.borderRadius =
-                                    "50%";
-
-
-                                dayElement.style.opacity =
-                                    "1";
-
-
-                                dayElement.style.pointerEvents =
-                                    "none";
-
-
-                                dayElement.style.cursor =
-                                    "not-allowed";
-
-
-                                dayElement.title =
-                                    "Fully booked";
-
-                            }
+                            dayElement.title =
+                                "Fully booked";
 
                         }
+
+                    }
+
+            }
+        );
+
+    }
+
+
+
+    // ============================================================
+    // VEHICLE FORM
+    // ============================================================
+
+    if (vehicleForm) {
+
+        loadUserGarage();
+
+        initCalendar();
+
+
+        // ========================================================
+        // USE DIFFERENT VEHICLE
+        // ========================================================
+
+        const addNewManualButton =
+            document.getElementById(
+                "btnAddNewManual"
+            );
+
+
+        if (
+            addNewManualButton
+        ) {
+
+            addNewManualButton.addEventListener(
+                "click",
+                function () {
+
+                    manualForm.style.display =
+                        "block";
+
+
+                    savedSection.style.display =
+                        "none";
+
+
+                    if (savedSelect) {
+
+                        savedSelect.value =
+                            "";
+
+                    }
 
                 }
             );
@@ -938,355 +1522,247 @@ document.addEventListener(
         }
 
 
+        // ========================================================
+        // BACK TO SAVED VEHICLES
+        // ========================================================
 
-        // ============================================================
-        // VEHICLE FORM
-        // ============================================================
-
-        if (vehicleForm) {
-
-            loadUserGarage();
-
-            initCalendar();
+        const backToSavedButton =
+            document.getElementById(
+                "btnBackToSaved"
+            );
 
 
-            // ========================================================
-            // USE DIFFERENT VEHICLE
-            // ========================================================
+        if (
+            backToSavedButton
+        ) {
 
-            const addNewManualButton =
-                document.getElementById(
-                    "btnAddNewManual"
-                );
+            backToSavedButton.addEventListener(
+                "click",
+                function () {
 
-
-            if (
-                addNewManualButton
-            ) {
-
-                addNewManualButton.addEventListener(
-                    "click",
-                    function () {
-
-                        manualForm.style.display =
-                            "block";
+                    manualForm.style.display =
+                        "none";
 
 
-                        savedSection.style.display =
-                            "none";
+                    savedSection.style.display =
+                        "block";
+
+                }
+            );
+
+        }
 
 
-                        if (
-                            savedSelect
-                        ) {
+        // ========================================================
+        // VEHICLE FORM SUBMISSION
+        // ========================================================
 
-                            savedSelect.value =
-                                "";
+        vehicleForm.addEventListener(
+            "submit",
+            function (event) {
 
-                        }
-
-                    }
-                );
-
-            }
+                event.preventDefault();
 
 
-            // ========================================================
-            // BACK TO SAVED VEHICLES
-            // ========================================================
-
-            const backToSavedButton =
-                document.getElementById(
-                    "btnBackToSaved"
-                );
+                let vehicleDetails = {};
 
 
-            if (
-                backToSavedButton
-            ) {
+                // ==================================================
+                // CHECK SAVED VEHICLE
+                // ==================================================
 
-                backToSavedButton.addEventListener(
-                    "click",
-                    function () {
-
-                        manualForm.style.display =
-                            "none";
-
-
-                        savedSection.style.display =
-                            "block";
-
-                    }
-                );
-
-            }
+                const isUsingSavedVehicle =
+                    savedSection &&
+                    savedSection.style.display !==
+                        "none" &&
+                    savedSelect &&
+                    savedSelect.value !== "";
 
 
-            // ========================================================
-            // VEHICLE FORM SUBMISSION
-            // ========================================================
+                // ==================================================
+                // SAVED VEHICLE
+                // ==================================================
 
-            vehicleForm.addEventListener(
-                "submit",
-                function (event) {
+                if (
+                    isUsingSavedVehicle
+                ) {
 
-                    event.preventDefault();
-
-
-                    let vehicleDetails =
-                        {};
-
-
-                    // ==================================================
-                    // CHECK SAVED VEHICLE
-                    // ==================================================
-
-                    const isUsingSavedVehicle =
-                        savedSection &&
-                        savedSection.style.display !==
-                            "none" &&
-                        savedSelect &&
-                        savedSelect.value !==
-                            "";
+                    const vehicle =
+                        JSON.parse(
+                            savedSelect.value
+                        );
 
 
-                    // ==================================================
-                    // SAVED VEHICLE
-                    // ==================================================
+                    vehicleDetails = {
+
+                        brand:
+                            vehicle.brand ||
+                            "",
+
+                        model:
+                            vehicle.model ||
+                            "",
+
+                        year:
+                            vehicle.year_model ||
+                            "",
+
+                        plate:
+                            vehicle.plate_number ||
+                            "",
+
+                        transmission:
+                            vehicle.transmission ||
+                            "",
+
+                        fuel:
+                            vehicle.fuel_type ||
+                            "",
+
+                        vehicle_id:
+                            vehicle.id ||
+                            ""
+
+                    };
+
+                }
+
+
+                // ==================================================
+                // MANUAL VEHICLE
+                // ==================================================
+
+                else {
+
+                    const selectedBrand =
+                        document
+                            .getElementById(
+                                "brand"
+                            )
+                            .value;
+
+
+                    let selectedModel =
+                        "";
+
+
+                    const modelDropdown =
+                        document.getElementById(
+                            "model"
+                        );
+
+
+                    const customModelInput =
+                        document.getElementById(
+                            "modelOther"
+                        );
+
+
+                    // ==============================================
+                    // BRAND = OTHER
+                    // ==============================================
 
                     if (
-                        isUsingSavedVehicle
+                        selectedBrand ===
+                        "Other"
                     ) {
 
-                        const vehicle =
-                            JSON.parse(
-                                savedSelect.value
-                            );
-
-
-                        vehicleDetails = {
-
-                            brand:
-                                vehicle.brand ||
-                                "",
-
-                            model:
-                                vehicle.model ||
-                                "",
-
-                            year:
-                                vehicle.year_model ||
-                                "",
-
-                            plate:
-                                vehicle.plate_number ||
-                                "",
-
-                            transmission:
-                                vehicle.transmission ||
-                                "",
-
-                            fuel:
-                                vehicle.fuel_type ||
-                                "",
-
-                            vehicle_id:
-                                vehicle.id ||
-                                ""
-
-                        };
+                        selectedModel =
+                            customModelInput
+                                ? customModelInput.value.trim()
+                                : "";
 
                     }
 
 
-                    // ==================================================
-                    // MANUAL VEHICLE
-                    // ==================================================
+                    // ==============================================
+                    // MODEL = OTHER
+                    // ==============================================
+
+                    else if (
+                        modelDropdown &&
+                        modelDropdown.value ===
+                            "Other"
+                    ) {
+
+                        selectedModel =
+                            customModelInput
+                                ? customModelInput.value.trim()
+                                : "";
+
+                    }
+
+
+                    // ==============================================
+                    // NORMAL MODEL
+                    // ==============================================
 
                     else {
 
-                        const selectedBrand =
+                        selectedModel =
+                            modelDropdown
+                                ? modelDropdown.value
+                                : "";
+
+                    }
+
+
+                    // =================================================
+                    // BUILD VEHICLE DETAILS
+                    // =================================================
+
+                    vehicleDetails = {
+
+                        brand:
+                            selectedBrand,
+
+                        model:
+                            selectedModel,
+
+                        year:
                             document
                                 .getElementById(
-                                    "brand"
+                                    "year"
                                 )
-                                .value;
+                                .value,
+
+                        plate:
+                            document
+                                .getElementById(
+                                    "plate"
+                                )
+                                .value
+                                .trim(),
+
+                        transmission:
+                            document
+                                .getElementById(
+                                    "transmission"
+                                )
+                                .value,
+
+                        fuel:
+                            document
+                                .getElementById(
+                                    "fuel"
+                                )
+                                .value
+
+                    };
 
 
-                        let selectedModel =
-                            "";
+                    // =================================================
+                    // VALIDATION
+                    // =================================================
 
-
-                        const modelDropdown =
-                            document.getElementById(
-                                "model"
-                            );
-
-
-                        const customModelInput =
-                            document.getElementById(
-                                "modelOther"
-                            );
-
-
-                        // ==============================================
-                        // BRAND = OTHER
-                        // ==============================================
-
-                        if (
-                            selectedBrand ===
-                            "Other"
-                        ) {
-
-                            selectedModel =
-                                customModelInput
-                                    ? customModelInput.value.trim()
-                                    : "";
-
-                        }
-
-
-                        // ==============================================
-                        // MODEL = OTHER
-                        // ==============================================
-
-                        else if (
-                            modelDropdown &&
-                            modelDropdown.value ===
-                                "Other"
-                        ) {
-
-                            selectedModel =
-                                customModelInput
-                                    ? customModelInput.value.trim()
-                                    : "";
-
-                        }
-
-
-                        // ==============================================
-                        // NORMAL MODEL
-                        // ==============================================
-
-                        else {
-
-                            selectedModel =
-                                modelDropdown
-                                    ? modelDropdown.value
-                                    : "";
-
-                        }
-
-
-                        // =================================================
-                        // BUILD VEHICLE DETAILS
-                        // =================================================
-
-                        vehicleDetails = {
-
-                            brand:
-                                selectedBrand,
-
-                            model:
-                                selectedModel,
-
-                            year:
-                                document
-                                    .getElementById(
-                                        "year"
-                                    )
-                                    .value,
-
-                            plate:
-                                document
-                                    .getElementById(
-                                        "plate"
-                                    )
-                                    .value
-                                    .trim(),
-
-                            transmission:
-                                document
-                                    .getElementById(
-                                        "transmission"
-                                    )
-                                    .value,
-
-                            fuel:
-                                document
-                                    .getElementById(
-                                        "fuel"
-                                    )
-                                    .value
-
-                        };
-
-
-                        // =================================================
-                        // VALIDATION
-                        // =================================================
-
-                        if (
-                            !vehicleDetails.brand ||
-                            !vehicleDetails.model ||
-                            !vehicleDetails.year ||
-                            !vehicleDetails.plate ||
-                            !vehicleDetails.transmission ||
-                            !vehicleDetails.fuel
-                        ) {
-
-                            const errorMessage =
-                                document.getElementById(
-                                    "errorMsg"
-                                );
-
-
-                            if (
-                                errorMessage
-                            ) {
-
-                                errorMessage.style.display =
-                                    "block";
-
-                            }
-
-
-                            // If the custom model textbox
-                            // is being used, focus it.
-
-                            if (
-                                (
-                                    selectedBrand ===
-                                    "Other"
-                                ||
-                                    (
-                                        modelDropdown &&
-                                        modelDropdown.value ===
-                                            "Other"
-                                    )
-                                ) &&
-                                !selectedModel
-                            ) {
-
-                                if (
-                                    customModelInput
-                                ) {
-
-                                    customModelInput.focus();
-
-                                }
-
-                            }
-
-
-                            return;
-
-                        }
-
-
-                        // =================================================
-                        // HIDE ERROR
-                        // =================================================
+                    if (
+                        !vehicleDetails.brand ||
+                        !vehicleDetails.model ||
+                        !vehicleDetails.year ||
+                        !vehicleDetails.plate ||
+                        !vehicleDetails.transmission ||
+                        !vehicleDetails.fuel
+                    ) {
 
                         const errorMessage =
                             document.getElementById(
@@ -1299,85 +1775,137 @@ document.addEventListener(
                         ) {
 
                             errorMessage.style.display =
-                                "none";
+                                "block";
 
                         }
 
-                    }
 
+                        // If the custom model textbox
+                        // is being used, focus it.
 
-                    // ==================================================
-                    // APPOINTMENT DATE
-                    // ==================================================
+                        if (
+                            (
+                                selectedBrand ===
+                                "Other"
+                            ||
+                                (
+                                    modelDropdown &&
+                                    modelDropdown.value ===
+                                        "Other"
+                                )
+                            ) &&
+                            !selectedModel
+                        ) {
 
-                    const appointmentDate =
-                        document.getElementById(
-                            "appointmentDate"
-                        );
+                            if (
+                                customModelInput
+                            ) {
 
+                                customModelInput.focus();
 
-                    vehicleDetails.appointmentDate =
-                        appointmentDate
-                            ? appointmentDate.value
-                            : "";
+                            }
 
+                        }
 
-                    // ==================================================
-                    // NOTES
-                    // ==================================================
-
-                    const notes =
-                        document.getElementById(
-                            "notes"
-                        );
-
-
-                    vehicleDetails.notes =
-                        notes
-                            ? notes.value.trim()
-                            : "";
-
-
-                    // ==================================================
-                    // APPOINTMENT DATE VALIDATION
-                    // ==================================================
-
-                    if (
-                        !vehicleDetails.appointmentDate
-                    ) {
-
-                        alert(
-                            "Please select an appointment date."
-                        );
 
                         return;
 
                     }
 
 
-                    // ==================================================
-                    // SAVE VEHICLE DETAILS
-                    // ==================================================
+                    // =================================================
+                    // HIDE ERROR
+                    // =================================================
 
-                    localStorage.setItem(
-                        "vehicleDetails",
-                        JSON.stringify(
-                            vehicleDetails
-                        )
+                    const errorMessage =
+                        document.getElementById(
+                            "errorMsg"
+                        );
+
+
+                    if (
+                        errorMessage
+                    ) {
+
+                        errorMessage.style.display =
+                            "none";
+
+                    }
+
+                }
+
+
+                // ==================================================
+                // APPOINTMENT DATE
+                // ==================================================
+
+                const appointmentDate =
+                    document.getElementById(
+                        "appointmentDate"
                     );
 
 
-                    // ==================================================
-                    // GO TO SERVICE SELECTION
-                    // ==================================================
+                vehicleDetails.appointmentDate =
+                    appointmentDate
+                        ? appointmentDate.value
+                        : "";
 
-                    window.location.href =
-                        "booking.php";
+
+                // ==================================================
+                // NOTES
+                // ==================================================
+
+                const notes =
+                    document.getElementById(
+                        "notes"
+                    );
+
+
+                vehicleDetails.notes =
+                    notes
+                        ? notes.value.trim()
+                        : "";
+
+
+                // ==================================================
+                // APPOINTMENT DATE VALIDATION
+                // ==================================================
+
+                if (
+                    !vehicleDetails.appointmentDate
+                ) {
+
+                    alert(
+                        "Please select an appointment date."
+                    );
+
+                    return;
 
                 }
-            );
 
-        }
+
+                // ==================================================
+                // SAVE VEHICLE DETAILS
+                // ==================================================
+
+                localStorage.setItem(
+                    "vehicleDetails",
+                    JSON.stringify(
+                        vehicleDetails
+                    )
+                );
+
+
+                // ==================================================
+                // GO TO SERVICE SELECTION
+                // ==================================================
+
+                window.location.href =
+                    "booking.php";
+
+            }
+        );
 
     }
-);
+
+});
