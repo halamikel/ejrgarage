@@ -574,94 +574,26 @@ function renderHistory(data) {
 // =============================================================
 
 function manageApp(id, currentStatus) {
-
-    // =========================================================
-    // FINAL STATUS PROTECTION
-    // =========================================================
-    //
-    // Completed and Cancelled are permanent.
-    // Do not even open the status selector for them.
-    //
-    // The backend also enforces this rule, so this UI check
-    // is only an additional layer of protection.
-    //
-
-    if (currentStatus === 'Completed') {
-
-        Swal.fire({
-            icon: 'info',
-            title: 'Appointment Completed',
-            text: 'This appointment is already completed and cannot be changed.',
-            confirmButtonColor: '#b30000'
-        });
-
-        return;
-    }
-
-    if (currentStatus === 'Cancelled') {
-
-        Swal.fire({
-            icon: 'info',
-            title: 'Appointment Cancelled',
-            text: 'This appointment is already cancelled and cannot be changed.',
-            confirmButtonColor: '#b30000'
-        });
-
-        return;
-    }
-
-    // =========================================================
-    // NORMAL STATUS UPDATE
-    // =========================================================
-
     Swal.fire({
-
         title: 'Update Appointment Status',
-
         input: 'select',
-
         inputOptions: {
-
-            'Pending':
-                'Pending',
-
-            'Confirmed':
-                'Confirmed',
-
-            'In Progress':
-                'In Progress',
-
-            'Completed':
-                'Completed',
-
-            'Cancelled':
-                'Cancelled'
+            'Pending':   'Pending',
+            'Confirmed': 'Confirmed',
+            'Completed': 'Completed',
+            'Cancelled': 'Cancelled'
         },
-
         inputValue: currentStatus,
-
         showCancelButton: true,
-
         confirmButtonColor: '#b30000',
-
-        confirmButtonText: 'Update',
-
-        cancelButtonText: 'Cancel'
-
+        confirmButtonText: 'Update'
     }).then(result => {
-
-        if (!result.isConfirmed || !result.value) {
-            return;
-        }
-
-        postData(
-            'api/admin/update_appointment.php',
-            {
+        if (result.isConfirmed && result.value) {
+            postData('api/admin/update_appointment.php', {
                 appointment_id: id,
                 status: result.value
-            }
-        );
-
+            });
+        }
     });
 }
 
