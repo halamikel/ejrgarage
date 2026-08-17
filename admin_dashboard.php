@@ -782,7 +782,7 @@ include 'includes/header.php';
 
                             </span>
 
-                            Registered Customers
+                            Registered Users
 
                         </div>
 
