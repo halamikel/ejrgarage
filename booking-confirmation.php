@@ -143,35 +143,10 @@
       btnFinalize.addEventListener("click", async () => {
         const token = localStorage.getItem("jwt_token");
 
-        // ============================================================
-// SELECTED MECHANIC
-// ============================================================
-
-const selectedMechanicId =
-    localStorage.getItem(
-        "selectedMechanicId"
-    );
-
-
-// ============================================================
-// BOOKING PAYLOAD
-// ============================================================
-
-const bookingPayload = {
-
-    services: services,
-
-    vehicle: details,
-
-    mechanic_id:
-        selectedMechanicId
-            ? parseInt(
-                selectedMechanicId,
-                10
-            )
-            : null
-
-};
+        const bookingPayload = {
+          services: services,
+          vehicle: details
+        };
 
         try {
           // Set UI to loading state
@@ -201,17 +176,8 @@ const bookingPayload = {
                 timer: 2500,
                 timerProgressBar: true,
                 willClose: () => {
-                    localStorage.removeItem(
-    "selectedServices"
-);
-
-localStorage.removeItem(
-    "vehicleDetails"
-);
-
-localStorage.removeItem(
-    "selectedMechanicId"
-);
+                    localStorage.removeItem("selectedServices");
+                    localStorage.removeItem("vehicleDetails");
                     window.location.href = "my_appointments.php"; 
                 }
             });
