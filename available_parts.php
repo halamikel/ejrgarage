@@ -314,98 +314,93 @@ function renderParts(parts) {
         </div>`).join('');
 
     // ── Inquire button ────────────────────────────────────────
-    // ── Add to Cart button ─────────────────────────────────────
-document.addEventListener('click', function (e) {
+    // ── Add to Cart button ────────────────────────────────────
+document.querySelectorAll('.add-cart-btn').forEach(btn => {
 
-    const btn = e.target.closest('.add-cart-btn');
+    btn.addEventListener('click', function () {
 
-    // Click was not on an Add to Cart button
-    if (!btn) {
-        return;
-    }
-
-    // Prevent the same click from triggering another handler
-    e.preventDefault();
-    e.stopPropagation();
-
-
-    // Login check
-    if (!isLoggedIn()) {
-        requireLogin('add items to cart');
-        return;
-    }
-
-
-    // Get part information
-    const id = String(btn.dataset.id);
-
-    const name = btn.dataset.name || '';
-
-    const brand = btn.dataset.brand || '';
-
-    const price = parseFloat(
-        btn.dataset.price
-    ) || 0;
-
-
-    // Find existing cart item
-    const existing = cart.find(
-        item => String(item.id) === id
-    );
-
-
-    if (existing) {
-
-        // Add ONLY ONE quantity
-        existing.qty = (parseInt(existing.qty) || 0) + 1;
-
-        // Add brand to older cart items
-        if (!existing.brand && brand) {
-            existing.brand = brand;
+        if (!isLoggedIn()) {
+            requireLogin('add items to cart');
+            return;
         }
 
-    } else {
 
-        // New item starts at exactly 1
-        cart.push({
-            id: id,
-            name: name,
-            brand: brand,
-            price: price,
-            qty: 1
-        });
+        // Get part information from the button
+        const id = this.dataset.id;
 
-    }
+        const name = this.dataset.name;
 
+        const brand = this.dataset.brand || '';
 
-    // Save cart
-    localStorage.setItem(
-        'ejr_cart',
-        JSON.stringify(cart)
-    );
+        const price = parseFloat(
+            this.dataset.price
+        );
 
 
-    // Update cart badge
-    updateCartBadge();
+        // Check if this part already exists in cart
+        const existing = cart.find(
+            item => item.id === id
+        );
 
 
-    // Button feedback
-    btn.innerHTML =
-        '<i class="bi bi-check-lg me-1"></i>Added!';
+        if (existing) {
 
-    btn.classList.remove('btn-dark');
-    btn.classList.add('btn-success');
+            // Increase quantity
+            existing.qty += 1;
+
+            // Make sure older cart items get brand
+            if (!existing.brand) {
+                existing.brand = brand;
+            }
+
+        } else {
+
+            // Add new item
+            cart.push({
+                id: id,
+                name: name,
+                brand: brand,
+                price: price,
+                qty: 1
+            });
+
+        }
 
 
-    setTimeout(() => {
+        // Save cart
+        localStorage.setItem(
+            'ejr_cart',
+            JSON.stringify(cart)
+        );
 
-        btn.innerHTML =
-            '<i class="bi bi-cart-plus me-1"></i>Add to Cart';
 
-        btn.classList.remove('btn-success');
-        btn.classList.add('btn-dark');
+        // Update cart counter
+        updateCartBadge();
 
-    }, 1200);
+
+        // Button feedback
+        this.innerHTML =
+            '<i class="bi bi-check-lg me-1"></i>Added!';
+
+        this.classList.replace(
+            'btn-dark',
+            'btn-success'
+        );
+
+
+        setTimeout(() => {
+
+            this.innerHTML =
+                '<i class="bi bi-cart-plus me-1"></i>Add to Cart';
+
+            this.classList.replace(
+                'btn-success',
+                'btn-dark'
+            );
+
+        }, 1200);
+
+    });
 
 });
 
