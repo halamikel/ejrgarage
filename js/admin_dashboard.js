@@ -154,126 +154,173 @@ function renderParts(parts) {
 
     if (!tbody) return;
 
-    if (!parts.length) {
-        tbody.innerHTML =
-            '<tr><td colspan="7" class="text-center text-muted py-4">No parts match your search.</td></tr>';
-
+    if (!parts || parts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    No parts found.
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    tbody.innerHTML = parts.map(p => `
+    tbody.innerHTML = parts.map(p => {
 
-        <tr>
+        const id = Number(p.id) || 0;
 
-            <!-- IMAGE -->
-            <td>
-                <img
-                    src="${p.image_url || ''}"
-                    style="
-                        width:50px;
-                        height:40px;
-                        object-fit:cover;
-                        border-radius:6px;
-                    "
-                    onerror="this.style.display='none'"
-                >
-            </td>
+        const name = String(p.name || '')
+            .replace(/'/g, "\\'");
 
+        const brand = String(p.brand || '')
+            .replace(/'/g, "\\'");
 
-            <!-- NAME -->
-            <td class="fw-bold">
-                ${p.name}
-            </td>
+        const description = String(p.description || '')
+            .replace(/'/g, "\\'")
+            .replace(/\n/g, '\\n');
 
+        const category = String(p.category || '')
+            .replace(/'/g, "\\'");
 
-            <!-- BRAND -->
-            <td>
-                ${
-                    p.brand
-                        ? `<span class="badge bg-light text-dark border">
-                            ${p.brand}
-                           </span>`
-                        : '<span class="text-muted">—</span>'
-                }
-            </td>
+        const imageUrl = String(p.image_url || '')
+            .replace(/'/g, "\\'");
 
+        const price = parseFloat(p.price) || 0;
 
-            <!-- CATEGORY -->
-            <td>
-                <span class="badge bg-light text-dark border">
-                    ${p.category}
-                </span>
-            </td>
+        const stock = parseInt(p.stock) || 0;
 
+        return `
+            <tr>
 
-            <!-- PRICE -->
-            <td>
-                ₱${parseFloat(p.price).toLocaleString(
-                    'en-PH',
-                    {
-                        minimumFractionDigits: 2
+                <!-- IMAGE -->
+                <td>
+                    ${
+                        p.image_url
+                            ? `
+                                <img
+                                    src="${p.image_url}"
+                                    alt="${p.name || 'Part'}"
+                                    style="
+                                        width: 50px;
+                                        height: 50px;
+                                        object-fit: contain;
+                                        border-radius: 8px;
+                                    "
+                                    onerror="this.style.display='none';"
+                                >
+                            `
+                            : `
+                                <span class="text-muted">
+                                    No image
+                                </span>
+                            `
                     }
-                )}
-            </td>
+                </td>
 
 
-            <!-- STOCK -->
-            <td>
-                <span
-                    class="badge ${
-                        p.stock > 0
-                            ? 'bg-success'
-                            : 'bg-danger'
-                    }"
-                >
-                    ${p.stock}
-                </span>
-            </td>
+                <!-- NAME -->
+                <td>
+                    <strong>
+                        ${p.name || 'Unnamed Part'}
+                    </strong>
+                </td>
 
 
-            <!-- ACTIONS -->
-            <td>
+                <!-- BRAND -->
+                <td>
+                    ${
+                        p.brand
+                            ? `
+                                <span class="badge bg-light text-dark border">
+                                    ${p.brand}
+                                </span>
+                            `
+                            : `
+                                <span class="text-muted">
+                                    —
+                                </span>
+                            `
+                    }
+                </td>
 
-                <div class="btn-group">
 
-                    <button
-                        class="btn btn-sm btn-outline-dark"
-                        onclick="
-                            openEditPart(
-                                ${p.id},
-                                '${(p.name || '').replace(/'/g, "\\'")}',
-                                '${(p.brand || '').replace(/'/g, "\\'")}',
-                                '${(p.description || '').replace(/'/g, "\\'")}',
-                                ${p.price},
-                                '${(p.category || '').replace(/'/g, "\\'")}',
-                                '${(p.image_url || '').replace(/'/g, "\\'")}',
-                                ${p.stock}
-                            )
-                        "
+                <!-- CATEGORY -->
+                <td>
+                    <span class="badge bg-light text-dark border">
+                        ${p.category || '—'}
+                    </span>
+                </td>
+
+
+                <!-- PRICE -->
+                <td>
+                    ₱${price.toLocaleString('en-PH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}
+                </td>
+
+
+                <!-- STOCK -->
+                <td>
+                    <span
+                        class="badge ${
+                            stock > 0
+                                ? 'bg-success'
+                                : 'bg-danger'
+                        }"
                     >
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
+                        ${stock}
+                    </span>
+                </td>
 
 
-                    <button
-                        class="btn btn-sm btn-outline-danger"
-                        onclick="
-                            deletePart(
-                                ${p.id},
-                                '${(p.name || '').replace(/'/g, "\\'")}'
-                            )
-                        "
-                    >
-                        <i class="bi bi-trash"></i>
-                    </button>
+                <!-- ACTIONS -->
+                <td>
+                    <div class="btn-group" role="group">
 
-                </div>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-dark"
+                            title="Edit Part"
+                            onclick="
+                                openEditPart(
+                                    ${id},
+                                    '${name}',
+                                    '${brand}',
+                                    '${description}',
+                                    ${price},
+                                    '${category}',
+                                    '${imageUrl}',
+                                    ${stock}
+                                )
+                            "
+                        >
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
 
-            </td>
 
-        </tr>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            title="Delete Part"
+                            onclick="
+                                deletePart(
+                                    ${id},
+                                    '${name}'
+                                )
+                            "
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
 
-    `).join('');
+                    </div>
+                </td>
+
+            </tr>
+        `;
+
+    }).join('');
 }
 
 function loadInquiries() {
@@ -1080,6 +1127,7 @@ function openEditPart(
     image_url,
     stock
 ) {
+
     Swal.fire({
 
         title: 'Edit Part',
@@ -1100,13 +1148,28 @@ function openEditPart(
 
         confirmButtonText: 'Save Changes',
 
-        preConfirm: () =>
-            getPartFormValues('edit', id)
+        cancelButtonText: 'Cancel',
 
-    }).then(result => {
+        preConfirm: function () {
 
-        if (result.isConfirmed) {
-            postPartData(result.value);
+            return getPartFormValues(
+                'edit',
+                id
+            );
+
+        }
+
+    }).then(function (result) {
+
+        if (
+            result.isConfirmed &&
+            result.value
+        ) {
+
+            postPartData(
+                result.value
+            );
+
         }
 
     });
@@ -1118,79 +1181,97 @@ function partForm(v = {}) {
         <div class="text-start">
 
             <!-- NAME -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-name"
+                    class="form-label fw-semibold"
+                >
                     Name
                 </label>
 
                 <input
+                    type="text"
                     id="sp-name"
                     class="form-control"
                     value="${v.name || ''}"
-                    placeholder="e.g. Brake Pad"
+                    placeholder="e.g. Brake Pads"
                 >
 
             </div>
 
 
             <!-- BRAND -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-brand"
+                    class="form-label fw-semibold"
+                >
                     Brand
                 </label>
 
                 <input
+                    type="text"
                     id="sp-brand"
                     class="form-control"
                     value="${v.brand || ''}"
-                    placeholder="e.g. Bosch"
+                    placeholder="e.g. Bosch, Brembo, Toyota"
                 >
 
             </div>
 
 
             <!-- DESCRIPTION -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-desc"
+                    class="form-label fw-semibold"
+                >
                     Description
                 </label>
 
                 <textarea
                     id="sp-desc"
                     class="form-control"
-                    rows="2"
-                    placeholder="Part description"
-                >${v.desc || ''}</textarea>
+                    rows="3"
+                    placeholder="Enter part description"
+                >${v.desc || v.description || ''}</textarea>
 
             </div>
 
 
             <!-- PRICE -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-price"
+                    class="form-label fw-semibold"
+                >
                     Price (₱)
                 </label>
 
                 <input
-                    id="sp-price"
                     type="number"
+                    id="sp-price"
                     class="form-control"
                     value="${v.price || ''}"
                     min="0"
                     step="0.01"
+                    placeholder="0.00"
                 >
 
             </div>
 
 
             <!-- CATEGORY -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-cat"
+                    class="form-label fw-semibold"
+                >
                     Category
                 </label>
 
@@ -1232,36 +1313,44 @@ function partForm(v = {}) {
             </div>
 
 
-            <!-- IMAGE -->
-            <div class="mb-2">
+            <!-- IMAGE URL -->
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-img"
+                    class="form-label fw-semibold"
+                >
                     Image URL
                 </label>
 
                 <input
+                    type="url"
                     id="sp-img"
                     class="form-control"
                     value="${v.image_url || ''}"
-                    placeholder="https://..."
+                    placeholder="https://example.com/image.jpg"
                 >
 
             </div>
 
 
             <!-- STOCK -->
-            <div class="mb-2">
+            <div class="mb-3">
 
-                <label class="form-label fw-semibold small">
+                <label
+                    for="sp-stock"
+                    class="form-label fw-semibold"
+                >
                     Stock
                 </label>
 
                 <input
-                    id="sp-stock"
                     type="number"
+                    id="sp-stock"
                     class="form-control"
-                    value="${v.stock || 0}"
+                    value="${v.stock ?? 0}"
                     min="0"
+                    step="1"
                 >
 
             </div>
@@ -1272,61 +1361,65 @@ function partForm(v = {}) {
 
 function getPartFormValues(action, id = null) {
 
-    const val = {
+    const nameElement =
+        document.getElementById('sp-name');
 
-        action,
+    const brandElement =
+        document.getElementById('sp-brand');
 
-        name:
-            document
-                .getElementById('sp-name')
-                .value
-                .trim(),
+    const descriptionElement =
+        document.getElementById('sp-desc');
 
-        brand:
-            document
-                .getElementById('sp-brand')
-                .value
-                .trim(),
+    const priceElement =
+        document.getElementById('sp-price');
 
-        description:
-            document
-                .getElementById('sp-desc')
-                .value
-                .trim(),
+    const categoryElement =
+        document.getElementById('sp-cat');
 
-        price:
-            parseFloat(
-                document
-                    .getElementById('sp-price')
-                    .value
-            ),
+    const imageElement =
+        document.getElementById('sp-img');
 
-        category:
-            document
-                .getElementById('sp-cat')
-                .value,
-
-        image_url:
-            document
-                .getElementById('sp-img')
-                .value
-                .trim(),
-
-        stock:
-            parseInt(
-                document
-                    .getElementById('sp-stock')
-                    .value
-            )
-    };
+    const stockElement =
+        document.getElementById('sp-stock');
 
 
-    if (id) {
-        val.id = id;
-    }
+    const name =
+        nameElement
+            ? nameElement.value.trim()
+            : '';
+
+    const brand =
+        brandElement
+            ? brandElement.value.trim()
+            : '';
+
+    const description =
+        descriptionElement
+            ? descriptionElement.value.trim()
+            : '';
+
+    const price =
+        priceElement
+            ? parseFloat(priceElement.value)
+            : 0;
+
+    const category =
+        categoryElement
+            ? categoryElement.value
+            : '';
+
+    const image_url =
+        imageElement
+            ? imageElement.value.trim()
+            : '';
+
+    const stock =
+        stockElement
+            ? parseInt(stockElement.value, 10)
+            : 0;
 
 
-    if (!val.name) {
+    if (!name) {
 
         Swal.showValidationMessage(
             'Part name is required.'
@@ -1336,17 +1429,52 @@ function getPartFormValues(action, id = null) {
     }
 
 
-    if (!val.price || val.price < 0) {
+    if (isNaN(price) || price < 0) {
 
         Swal.showValidationMessage(
-            'A valid price is required.'
+            'Please enter a valid price.'
         );
 
         return false;
     }
 
 
-    return val;
+    if (isNaN(stock) || stock < 0) {
+
+        Swal.showValidationMessage(
+            'Please enter a valid stock quantity.'
+        );
+
+        return false;
+    }
+
+
+    const values = {
+
+        action: action,
+
+        name: name,
+
+        brand: brand,
+
+        description: description,
+
+        price: price,
+
+        category: category,
+
+        image_url: image_url,
+
+        stock: stock
+    };
+
+
+    if (id !== null) {
+        values.id = id;
+    }
+
+
+    return values;
 }
 
 function postPartData(payload) {
