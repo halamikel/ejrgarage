@@ -70,6 +70,37 @@ if ($action === 'update_info') {
         exit;
     }
 
+    // ============================================================
+// MAKE SURE MECHANICS CAN BE LINKED TO USERS
+// ============================================================
+
+$conn->query("CREATE TABLE IF NOT EXISTS mechanics (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(150) DEFAULT '',
+    status ENUM(
+        'available',
+        'unavailable',
+        'on_break',
+        'on_duty'
+    ) DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$mechanicUserCol = $conn->query(
+    "SHOW COLUMNS FROM mechanics LIKE 'user_id'"
+);
+
+if (
+    $mechanicUserCol &&
+    $mechanicUserCol->num_rows === 0
+) {
+    $conn->query(
+        "ALTER TABLE mechanics ADD COLUMN user_id INT NULL AFTER id"
+    );
+}
+
     // Check email duplicate excluding current user
     $emailStmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
     $emailStmt->bind_param("si", $email, $user_id);
@@ -79,30 +110,144 @@ if ($action === 'update_info') {
         exit;
     }
 
+    // Get the old name before changing the user.
+// This allows us to connect older mechanic records
+// that were created before user_id existed.
+
+$oldName = '';
+
+$oldStmt = $conn->prepare(
+    "SELECT full_name
+     FROM users
+     WHERE id = ?
+     LIMIT 1"
+);
+
+$oldStmt->bind_param("i", $user_id);
+$oldStmt->execute();
+
+$oldRow = $oldStmt->get_result()->fetch_assoc();
+
+if ($oldRow) {
+    $oldName = trim((string)$oldRow['full_name']);
+}
+
     $stmt = $conn->prepare("UPDATE users SET full_name = ?, email = ?, role_id = ?, is_verified = ?, is_phone_verified = ? WHERE id = ?");
     $stmt->bind_param("ssiiii", $full_name, $email, $role_id, $is_verified, $is_phone_verified, $user_id);
 
     if ($stmt->execute()) {
-        // If the user is promoted to mechanic, keep the mechanics roster in sync.
-        if ((int)$role_id === 3) {
-            $mechanicName = trim($full_name);
-            $check = $conn->prepare("SELECT id FROM mechanics WHERE name = ? LIMIT 1");
-            $check->bind_param("s", $mechanicName);
-            $check->execute();
-            $check->store_result();
-            if ($check->num_rows === 0) {
-                $insert = $conn->prepare("INSERT INTO mechanics (name, specialty, status) VALUES (?, '', 'available')");
-                $insert->bind_param("s", $mechanicName);
+
+    // ========================================================
+    // KEEP MECHANICS IN SYNC WITH THE USER ACCOUNT
+    // ========================================================
+
+    if ((int)$role_id === 3) {
+
+        $mechanicName = trim($full_name);
+
+        // First check if this user already has a mechanic record.
+        $find = $conn->prepare(
+            "SELECT id
+             FROM mechanics
+             WHERE user_id = ?
+             LIMIT 1"
+        );
+
+        $find->bind_param("i", $user_id);
+        $find->execute();
+
+        $linked = $find->get_result()->fetch_assoc();
+
+        if ($linked) {
+
+            // Existing linked mechanic:
+            // simply update the name.
+            $updateMech = $conn->prepare(
+                "UPDATE mechanics
+                 SET name = ?
+                 WHERE id = ?"
+            );
+
+            $updateMech->bind_param(
+                "si",
+                $mechanicName,
+                $linked['id']
+            );
+
+            $updateMech->execute();
+
+        } else {
+
+            // Try to find an older mechanic record
+            // using the user's previous name.
+            $match = $conn->prepare(
+                "SELECT id
+                 FROM mechanics
+                 WHERE name = ?
+                 AND (user_id IS NULL OR user_id = 0)
+                 LIMIT 1"
+            );
+
+            $match->bind_param("s", $oldName);
+            $match->execute();
+
+            $matched = $match->get_result()->fetch_assoc();
+
+            if ($matched) {
+
+                // Attach the old mechanic record to this user.
+                $updateMech = $conn->prepare(
+                    "UPDATE mechanics
+                     SET user_id = ?,
+                         name = ?
+                     WHERE id = ?"
+                );
+
+                $updateMech->bind_param(
+                    "isi",
+                    $user_id,
+                    $mechanicName,
+                    $matched['id']
+                );
+
+                $updateMech->execute();
+
+            } else {
+
+                // No existing mechanic record.
+                // Create one linked directly to this user.
+                $insert = $conn->prepare(
+                    "INSERT INTO mechanics
+                        (user_id, name, specialty, status)
+                     VALUES
+                        (?, ?, '', 'available')"
+                );
+
+                $insert->bind_param(
+                    "is",
+                    $user_id,
+                    $mechanicName
+                );
+
                 $insert->execute();
             }
-            $check->close();
         }
-        echo json_encode(['status' => 'success', 'message' => 'User updated successfully.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update user.']);
     }
-    exit;
+
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'User updated successfully.'
+    ]);
+
+} else {
+
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Failed to update user.'
+    ]);
 }
+
+exit;
 
 if ($action === 'delete') {
     $user_id = (int)($data['user_id'] ?? 0);

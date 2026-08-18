@@ -2341,9 +2341,16 @@ function postData(endpoint, payload) {
             Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message || 'Updated successfully', showConfirmButton: false, timer: 2500 });
             // ✅ Wrapped separately so errors here don't trigger the catch above
             try {
-                loadFullSiteData();
-                historyData = [];
-                loadServiceHistory();
+                // Refresh every dashboard dataset after a user update.
+// This keeps all tabs synchronized with the latest user data.
+loadFullSiteData();
+
+historyData = [];
+loadServiceHistory();
+
+loadInquiries();
+loadOrders();
+loadMechanics();
             } catch (reloadErr) {
                 console.warn('Reload error (non-critical):', reloadErr.message);
             }
@@ -2368,9 +2375,11 @@ function startRealtime() {
             loadFullSiteData();
             loadAdminChatUsers();
             loadParts();
-            loadInquiries();
-            loadOrders();
-            loadBusyDates();
+loadInquiries();
+loadOrders();
+loadServiceHistory();
+loadMechanics();
+loadBusyDates();
         } catch (e) {
             console.error("Realtime error:", e);
         }

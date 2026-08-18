@@ -90,14 +90,19 @@ switch ($action) {
 
         // 2. Query
         $sql = "
-            SELECT
-                pi.*,
-                p.name AS part_name
-            FROM part_inquiries pi
-            JOIN parts p
-                ON pi.part_id = p.id
-            ORDER BY pi.created_at DESC
-        ";
+    SELECT
+        pi.*,
+        p.name AS part_name,
+        u.full_name AS customer_name,
+        u.email AS customer_email,
+        u.phone AS contact
+    FROM part_inquiries pi
+    JOIN parts p
+        ON pi.part_id = p.id
+    LEFT JOIN users u
+        ON u.id = pi.user_id
+    ORDER BY pi.created_at DESC
+";
 
         $result = $conn->query($sql);
 

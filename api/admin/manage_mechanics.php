@@ -23,11 +23,21 @@ if (!$isAdmin) { http_response_code(403); echo json_encode(['status'=>'error','m
 // ── Auto-create mechanics table ────────────────────────────────
 $conn->query("CREATE TABLE IF NOT EXISTS mechanics (
     id         INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT NULL,
     name       VARCHAR(100) NOT NULL,
     specialty  VARCHAR(150) DEFAULT '',
     status     ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// Make sure older databases also have the user_id column.
+$userIdCol = $conn->query("SHOW COLUMNS FROM mechanics LIKE 'user_id'");
+
+if ($userIdCol && $userIdCol->num_rows === 0) {
+    $conn->query(
+        "ALTER TABLE mechanics ADD COLUMN user_id INT NULL AFTER id"
+    );
+}
 
 // Widen the status ENUM for DBs created before on_break/on_duty existed.
 $statusCol = $conn->query("SHOW COLUMNS FROM mechanics LIKE 'status'")->fetch_assoc();
@@ -41,11 +51,28 @@ $action = $input['action'] ?? $_GET['action'] ?? 'list';
 
 if ($method === 'GET') {
     if ($action === 'list') {
-        $result = $conn->query("SELECT * FROM mechanics ORDER BY name ASC");
+        $result = $conn->query("
+    SELECT
+        m.*,
+        u.full_name AS user_full_name,
+        u.email AS user_email
+    FROM mechanics m
+    LEFT JOIN users u
+        ON u.id = m.user_id
+    ORDER BY COALESCE(u.full_name, m.name) ASC
+");
         $rows = [];
-        while ($r = $result->fetch_assoc()) $rows[] = $r;
-        echo json_encode(['status'=>'success','mechanics'=>$rows]);
+
+while ($r = $result->fetch_assoc()) {
+
+    // If this mechanic is linked to a user account,
+    // always display the user's current name.
+    if (!empty($r['user_full_name'])) {
+        $r['name'] = $r['user_full_name'];
     }
+
+    $rows[] = $r;
+}
     exit;
 }
 

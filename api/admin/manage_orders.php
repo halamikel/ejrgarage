@@ -48,18 +48,39 @@ if ($method === 'GET') {
     // once acted on. The Orders tab's status filter dropdown lets admins
     // narrow the view back down to just Pending, etc. when they want to.
     $result = $conn->query("
-        SELECT o.*, u.email, u.full_name as user_full_name, u.notif_email
-        FROM part_orders o
-        JOIN users u ON u.id = o.user_id
-        ORDER BY o.created_at DESC
-    ");
+    SELECT
+        o.*,
+        u.email,
+        u.full_name AS user_full_name,
+        u.phone AS current_phone,
+        u.notif_email
+    FROM part_orders o
+    LEFT JOIN users u
+        ON u.id = o.user_id
+    ORDER BY o.created_at DESC
+");
     $orders = [];
-    while ($row = $result->fetch_assoc()) {
-        $row['items'] = json_decode($row['items'], true);
-        $orders[] = $row;
+
+while ($row = $result->fetch_assoc()) {
+
+    // Always use the user's CURRENT profile information.
+    // This prevents old order data from being displayed
+    // after the customer updates their account.
+
+    if (!empty($row['user_full_name'])) {
+        $row['customer_name'] = $row['user_full_name'];
     }
-    echo json_encode(['status' => 'success', 'orders' => $orders]);
-    exit;
+
+    if (
+        isset($row['current_phone']) &&
+        trim((string)$row['current_phone']) !== ''
+    ) {
+        $row['contact'] = $row['current_phone'];
+    }
+
+    $row['items'] = json_decode($row['items'], true);
+
+    $orders[] = $row;
 }
 
 // ── POST ACTIONS ──────────────────────────────────────────────
