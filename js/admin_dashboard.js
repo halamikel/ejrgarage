@@ -21,6 +21,7 @@ let inquiriesData = [];
 let ordersData = [];
 let servicesData = [];
 let mechanicsData = [];
+let leaveRequestsData = [];
 let globalSearchTerm = '';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -34,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadBusyDates();
     loadServices();
     loadMechanics();
+    loadLeaveRequests();
 
     updateLiveChatBadge();
     setInterval(updateLiveChatBadge, 20000);
@@ -127,200 +129,46 @@ function filterAndRenderParts() {
     const stock = document.getElementById('partsStockFilter')?.value || '';
 
     const filtered = partsData.filter(p => {
-
         const matchesTerm = !term ||
             (p.name && p.name.toLowerCase().includes(term)) ||
-            (p.brand && p.brand.toLowerCase().includes(term)) ||
             (p.category && p.category.toLowerCase().includes(term));
-
-        const matchesCategory =
-            !category || p.category === category;
-
-        const matchesStock =
-            !stock ||
+        const matchesCategory = !category || p.category === category;
+        const matchesStock = !stock ||
             (stock === 'in' && p.stock > 0) ||
             (stock === 'out' && p.stock <= 0);
-
-        return matchesTerm &&
-               matchesCategory &&
-               matchesStock;
+        return matchesTerm && matchesCategory && matchesStock;
     });
-
     renderParts(filtered);
 }
 
 function renderParts(parts) {
     const tbody = document.getElementById('partsTableBody');
-
     if (!tbody) return;
-
-    if (!parts || parts.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted py-4">
-                    No parts found.
-                </td>
-            </tr>
-        `;
+    if (!parts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
         return;
     }
-
-    tbody.innerHTML = parts.map(p => {
-
-        const id = Number(p.id) || 0;
-
-        const name = String(p.name || '')
-            .replace(/'/g, "\\'");
-
-        const brand = String(p.brand || '')
-            .replace(/'/g, "\\'");
-
-        const description = String(p.description || '')
-            .replace(/'/g, "\\'")
-            .replace(/\n/g, '\\n');
-
-        const category = String(p.category || '')
-            .replace(/'/g, "\\'");
-
-        const imageUrl = String(p.image_url || '')
-            .replace(/'/g, "\\'");
-
-        const price = parseFloat(p.price) || 0;
-
-        const stock = parseInt(p.stock) || 0;
-
-        return `
-            <tr>
-
-                <!-- IMAGE -->
-                <td>
-                    ${
-                        p.image_url
-                            ? `
-                                <img
-                                    src="${p.image_url}"
-                                    alt="${p.name || 'Part'}"
-                                    style="
-                                        width: 50px;
-                                        height: 50px;
-                                        object-fit: contain;
-                                        border-radius: 8px;
-                                    "
-                                    onerror="this.style.display='none';"
-                                >
-                            `
-                            : `
-                                <span class="text-muted">
-                                    No image
-                                </span>
-                            `
-                    }
-                </td>
-
-
-                <!-- NAME -->
-                <td>
-                    <strong>
-                        ${p.name || 'Unnamed Part'}
-                    </strong>
-                </td>
-
-
-                <!-- BRAND -->
-                <td>
-                    ${
-                        p.brand
-                            ? `
-                                <span class="badge bg-light text-dark border">
-                                    ${p.brand}
-                                </span>
-                            `
-                            : `
-                                <span class="text-muted">
-                                    —
-                                </span>
-                            `
-                    }
-                </td>
-
-
-                <!-- CATEGORY -->
-                <td>
-                    <span class="badge bg-light text-dark border">
-                        ${p.category || '—'}
-                    </span>
-                </td>
-
-
-                <!-- PRICE -->
-                <td>
-                    ₱${price.toLocaleString('en-PH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}
-                </td>
-
-
-                <!-- STOCK -->
-                <td>
-                    <span
-                        class="badge ${
-                            stock > 0
-                                ? 'bg-success'
-                                : 'bg-danger'
-                        }"
-                    >
-                        ${stock}
-                    </span>
-                </td>
-
-
-                <!-- ACTIONS -->
-                <td>
-                    <div class="btn-group" role="group">
-
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-dark"
-                            title="Edit Part"
-                            onclick="
-                                openEditPart(
-                                    ${id},
-                                    '${name}',
-                                    '${brand}',
-                                    '${description}',
-                                    ${price},
-                                    '${category}',
-                                    '${imageUrl}',
-                                    ${stock}
-                                )
-                            "
-                        >
-                            <i class="bi bi-pencil-square"></i>
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-danger"
-                            title="Delete Part"
-                            onclick="
-                                deletePart(
-                                    ${id},
-                                    '${name}'
-                                )
-                            "
-                        >
-                            <i class="bi bi-trash"></i>
-                        </button>
-
-                    </div>
-                </td>
-
-            </tr>
-        `;
-
-    }).join('');
+    tbody.innerHTML = parts.map(p => `
+        <tr>
+            <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
+                     onerror="this.style.display='none'"></td>
+            <td class="fw-bold">${p.name}</td>
+            <td><span class="badge bg-light text-dark border">${p.category}</span></td>
+            <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+            <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-dark"
+                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('');
 }
 
 function loadInquiries() {
@@ -336,49 +184,19 @@ function loadInquiries() {
 }
 
 function filterAndRenderInquiries() {
-
     const term = globalSearchTerm;
-
-    // Default to ALL so previous/responded inquiries remain visible.
-    const statusFilter =
-        document.getElementById('inquiriesStatusFilter')?.value || 'all';
+    const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
 
     const filtered = inquiriesData.filter(i => {
-
-        const matchesTerm =
-            !term ||
-
-            (i.customer_name &&
-                i.customer_name.toLowerCase().includes(term)) ||
-
-            (i.part_name &&
-                i.part_name.toLowerCase().includes(term)) ||
-
-            (i.contact &&
-                i.contact.toLowerCase().includes(term)) ||
-
-            (i.message &&
-                i.message.toLowerCase().includes(term)) ||
-
-            (i.reply_message &&
-                i.reply_message.toLowerCase().includes(term));
-
-        const matchesStatus =
-            statusFilter === 'all' ||
-
-            (
-                statusFilter === 'pending' &&
-                i.status !== 'responded'
-            ) ||
-
-            (
-                statusFilter === 'responded' &&
-                i.status === 'responded'
-            );
-
+        const matchesTerm = !term ||
+            (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
+            (i.part_name && i.part_name.toLowerCase().includes(term)) ||
+            (i.contact && i.contact.toLowerCase().includes(term));
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'pending' && i.status !== 'responded') ||
+            (statusFilter === 'responded' && i.status === 'responded');
         return matchesTerm && matchesStatus;
     });
-
     renderInquiries(filtered);
 }
 
@@ -593,6 +411,7 @@ function applyAllFilters() {
     filterAndRenderOrders();
     filterAndRenderServices();
     filterAndRenderMechanics();
+    filterAndRenderLeaveRequests();
     if (typeof applyBusyFilter === 'function') applyBusyFilter();
 }
 
@@ -1117,364 +936,58 @@ function openAddPart() {
     });
 }
 
-function openEditPart(
-    id,
-    name,
-    brand,
-    desc,
-    price,
-    category,
-    image_url,
-    stock
-) {
-
+function openEditPart(id, name, desc, price, category, image_url, stock) {
     Swal.fire({
-
         title: 'Edit Part',
-
-        html: partForm({
-            name: name,
-            brand: brand,
-            desc: desc,
-            price: price,
-            category: category,
-            image_url: image_url,
-            stock: stock
-        }),
-
+        html: partForm({ name, desc, price, category, image_url, stock }),
         showCancelButton: true,
-
         confirmButtonColor: '#b30000',
-
         confirmButtonText: 'Save Changes',
-
-        cancelButtonText: 'Cancel',
-
-        preConfirm: function () {
-
-            return getPartFormValues(
-                'edit',
-                id
-            );
-
-        }
-
-    }).then(function (result) {
-
-        if (
-            result.isConfirmed &&
-            result.value
-        ) {
-
-            postPartData(
-                result.value
-            );
-
-        }
-
+        preConfirm: () => getPartFormValues('edit', id)
+    }).then(result => {
+        if (result.isConfirmed) postPartData(result.value);
     });
 }
 
 function partForm(v = {}) {
-
     return `
         <div class="text-start">
-
-            <!-- NAME -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-name"
-                    class="form-label fw-semibold"
-                >
-                    Name
-                </label>
-
-                <input
-                    type="text"
-                    id="sp-name"
-                    class="form-control"
-                    value="${v.name || ''}"
-                    placeholder="e.g. Brake Pads"
-                >
-
-            </div>
-
-
-            <!-- BRAND -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-brand"
-                    class="form-label fw-semibold"
-                >
-                    Brand
-                </label>
-
-                <input
-                    type="text"
-                    id="sp-brand"
-                    class="form-control"
-                    value="${v.brand || ''}"
-                    placeholder="e.g. Bosch, Brembo, Toyota"
-                >
-
-            </div>
-
-
-            <!-- DESCRIPTION -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-desc"
-                    class="form-label fw-semibold"
-                >
-                    Description
-                </label>
-
-                <textarea
-                    id="sp-desc"
-                    class="form-control"
-                    rows="3"
-                    placeholder="Enter part description"
-                >${v.desc || v.description || ''}</textarea>
-
-            </div>
-
-
-            <!-- PRICE -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-price"
-                    class="form-label fw-semibold"
-                >
-                    Price (₱)
-                </label>
-
-                <input
-                    type="number"
-                    id="sp-price"
-                    class="form-control"
-                    value="${v.price || ''}"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                >
-
-            </div>
-
-
-            <!-- CATEGORY -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-cat"
-                    class="form-label fw-semibold"
-                >
-                    Category
-                </label>
-
-                <select
-                    id="sp-cat"
-                    class="form-select"
-                >
-
-                    <option
-                        value="engine"
-                        ${v.category === 'engine' ? 'selected' : ''}
-                    >
-                        Engine
-                    </option>
-
-                    <option
-                        value="brakes"
-                        ${v.category === 'brakes' ? 'selected' : ''}
-                    >
-                        Brakes
-                    </option>
-
-                    <option
-                        value="suspension"
-                        ${v.category === 'suspension' ? 'selected' : ''}
-                    >
-                        Suspension
-                    </option>
-
-                    <option
-                        value="electrical"
-                        ${v.category === 'electrical' ? 'selected' : ''}
-                    >
-                        Electrical
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <!-- IMAGE URL -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-img"
-                    class="form-label fw-semibold"
-                >
-                    Image URL
-                </label>
-
-                <input
-                    type="url"
-                    id="sp-img"
-                    class="form-control"
-                    value="${v.image_url || ''}"
-                    placeholder="https://example.com/image.jpg"
-                >
-
-            </div>
-
-
-            <!-- STOCK -->
-            <div class="mb-3">
-
-                <label
-                    for="sp-stock"
-                    class="form-label fw-semibold"
-                >
-                    Stock
-                </label>
-
-                <input
-                    type="number"
-                    id="sp-stock"
-                    class="form-control"
-                    value="${v.stock ?? 0}"
-                    min="0"
-                    step="1"
-                >
-
-            </div>
-
-        </div>
-    `;
+            <div class="mb-2"><label class="form-label fw-semibold small">Name</label>
+            <input id="sp-name" class="form-control" value="${v.name || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Description</label>
+            <textarea id="sp-desc" class="form-control" rows="2">${v.desc || ''}</textarea></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
+            <input id="sp-price" type="number" class="form-control" value="${v.price || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Category</label>
+            <select id="sp-cat" class="form-select">
+                <option value="engine"     ${v.category === 'engine'     ? 'selected' : ''}>Engine</option>
+                <option value="brakes"     ${v.category === 'brakes'     ? 'selected' : ''}>Brakes</option>
+                <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
+                <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
+            </select></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Image URL</label>
+            <input id="sp-img" class="form-control" value="${v.image_url || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Stock</label>
+            <input id="sp-stock" type="number" class="form-control" value="${v.stock || 0}"></div>
+        </div>`;
 }
 
 function getPartFormValues(action, id = null) {
-
-    const nameElement =
-        document.getElementById('sp-name');
-
-    const brandElement =
-        document.getElementById('sp-brand');
-
-    const descriptionElement =
-        document.getElementById('sp-desc');
-
-    const priceElement =
-        document.getElementById('sp-price');
-
-    const categoryElement =
-        document.getElementById('sp-cat');
-
-    const imageElement =
-        document.getElementById('sp-img');
-
-    const stockElement =
-        document.getElementById('sp-stock');
-
-
-    const name =
-        nameElement
-            ? nameElement.value.trim()
-            : '';
-
-    const brand =
-        brandElement
-            ? brandElement.value.trim()
-            : '';
-
-    const description =
-        descriptionElement
-            ? descriptionElement.value.trim()
-            : '';
-
-    const price =
-        priceElement
-            ? parseFloat(priceElement.value)
-            : 0;
-
-    const category =
-        categoryElement
-            ? categoryElement.value
-            : '';
-
-    const image_url =
-        imageElement
-            ? imageElement.value.trim()
-            : '';
-
-    const stock =
-        stockElement
-            ? parseInt(stockElement.value, 10)
-            : 0;
-
-
-    if (!name) {
-
-        Swal.showValidationMessage(
-            'Part name is required.'
-        );
-
-        return false;
-    }
-
-
-    if (isNaN(price) || price < 0) {
-
-        Swal.showValidationMessage(
-            'Please enter a valid price.'
-        );
-
-        return false;
-    }
-
-
-    if (isNaN(stock) || stock < 0) {
-
-        Swal.showValidationMessage(
-            'Please enter a valid stock quantity.'
-        );
-
-        return false;
-    }
-
-
-    const values = {
-
-        action: action,
-
-        name: name,
-
-        brand: brand,
-
-        description: description,
-
-        price: price,
-
-        category: category,
-
-        image_url: image_url,
-
-        stock: stock
+    const val = {
+        action,
+        name:        document.getElementById('sp-name').value.trim(),
+        description: document.getElementById('sp-desc').value.trim(),
+        price:       parseFloat(document.getElementById('sp-price').value),
+        category:    document.getElementById('sp-cat').value,
+        image_url:   document.getElementById('sp-img').value.trim(),
+        stock:       parseInt(document.getElementById('sp-stock').value)
     };
-
-
-    if (id !== null) {
-        values.id = id;
+    if (id) val.id = id;
+    if (!val.name || !val.price) {
+        Swal.showValidationMessage('Name and price are required.');
+        return false;
     }
-
-
-    return values;
+    return val;
 }
 
 function postPartData(payload) {
@@ -2341,16 +1854,9 @@ function postData(endpoint, payload) {
             Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: data.message || 'Updated successfully', showConfirmButton: false, timer: 2500 });
             // ✅ Wrapped separately so errors here don't trigger the catch above
             try {
-                // Refresh every dashboard dataset after a user update.
-// This keeps all tabs synchronized with the latest user data.
-loadFullSiteData();
-
-historyData = [];
-loadServiceHistory();
-
-loadInquiries();
-loadOrders();
-loadMechanics();
+                loadFullSiteData();
+                historyData = [];
+                loadServiceHistory();
             } catch (reloadErr) {
                 console.warn('Reload error (non-critical):', reloadErr.message);
             }
@@ -2375,11 +1881,9 @@ function startRealtime() {
             loadFullSiteData();
             loadAdminChatUsers();
             loadParts();
-loadInquiries();
-loadOrders();
-loadServiceHistory();
-loadMechanics();
-loadBusyDates();
+            loadInquiries();
+            loadOrders();
+            loadBusyDates();
         } catch (e) {
             console.error("Realtime error:", e);
         }
@@ -2765,74 +2269,15 @@ function toggleService(id, newStatus) {
 // =============================================================
 
 function loadMechanics() {
-    const tbody = document.getElementById('mechanicsTableBody');
-
-    if (!tbody) return;
-
-    fetch('api/admin/manage_mechanics.php?action=list', {
-        credentials: 'include',
-        headers: getAuthHeaders()
-    })
-        .then(async response => {
-
-            const text = await response.text();
-
-            let data;
-
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.error(
-                    'Mechanics API returned invalid JSON:',
-                    text
-                );
-
-                throw new Error(
-                    'Mechanics API returned invalid JSON.'
-                );
-            }
-
-            if (!response.ok) {
-                throw new Error(
-                    data.message ||
-                    `HTTP ${response.status}`
-                );
-            }
-
-            if (data.status !== 'success') {
-                throw new Error(
-                    data.message ||
-                    'Failed to load mechanics.'
-                );
-            }
-
-            return data;
-        })
+    fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
         .then(data => {
-
-            mechanicsData = Array.isArray(data.mechanics)
-                ? data.mechanics
-                : [];
-
+            mechanicsData = data.mechanics || [];
             filterAndRenderMechanics();
         })
-        .catch(err => {
-
-            console.error(
-                'Mechanics loading error:',
-                err
-            );
-
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4"
-                            class="text-danger text-center py-4">
-                            Failed to load mechanics.
-                        </td>
-                    </tr>
-                `;
-            }
+        .catch(() => {
+            const tbody = document.getElementById('mechanicsTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Failed to load mechanics.</td></tr>';
         });
 }
 
@@ -2968,6 +2413,158 @@ function deleteMechanic(id, name) {
         if (result.isConfirmed) {
             fetch('api/admin/manage_mechanics.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'delete', id }) })
                 .then(r=>r.json()).then(d=>{ if(d.status==='success') loadMechanics(); else Swal.fire('Error', d.message, 'error'); });
+        }
+    });
+}
+
+// =============================================================
+// MECHANIC LEAVE REQUESTS
+// =============================================================
+// Mechanics file a leave request (api/submit_leave_request.php) which
+// sits 'pending' here until an admin approves or rejects it. Approving
+// immediately sets that mechanic's roster status to "On Leave"
+// (on_break) — see api/admin/manage_leave_requests.php.
+
+function loadLeaveRequests() {
+    fetch('api/admin/manage_leave_requests.php', { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+            leaveRequestsData = data.leave_requests || [];
+            filterAndRenderLeaveRequests();
+            updateLeaveRequestsBadge();
+        })
+        .catch(() => {
+            const tbody = document.getElementById('leaveRequestsTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-danger text-center">Failed to load leave requests.</td></tr>';
+        });
+}
+
+function filterAndRenderLeaveRequests() {
+    const term = globalSearchTerm;
+    const statusFilter = document.getElementById('leaveRequestsStatusFilter')?.value ?? 'pending';
+
+    const filtered = leaveRequestsData.filter(r => {
+        const matchesTerm = !term ||
+            (r.mechanic_name && r.mechanic_name.toLowerCase().includes(term)) ||
+            (r.reason && r.reason.toLowerCase().includes(term));
+        const matchesStatus = !statusFilter || r.status === statusFilter;
+        return matchesTerm && matchesStatus;
+    });
+    renderLeaveRequests(filtered);
+}
+
+function leaveStatusLabel(status) {
+    return { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' }[status] || status;
+}
+function leaveStatusBadgeClass(status) {
+    if (status === 'approved') return 'bg-success';
+    if (status === 'rejected') return 'bg-danger';
+    return 'bg-warning text-dark'; // pending
+}
+
+function formatLeaveDate(d) {
+    if (!d) return '—';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function updateLeaveRequestsBadge() {
+    const badge = document.getElementById('leaveRequestsPendingBadge');
+    if (!badge) return;
+    const pendingCount = leaveRequestsData.filter(r => r.status === 'pending').length;
+    if (pendingCount > 0) {
+        badge.textContent = pendingCount + ' pending';
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function renderLeaveRequests(requests) {
+    const tbody = document.getElementById('leaveRequestsTableBody');
+    if (!tbody) return;
+    if (!requests.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No leave requests found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = requests.map(r => `
+        <tr>
+            <td><strong>${r.mechanic_name}</strong></td>
+            <td>${formatLeaveDate(r.start_date)} &ndash; ${formatLeaveDate(r.end_date)}</td>
+            <td>${r.reason ? r.reason : '<span class="text-muted">No reason given</span>'}</td>
+            <td><span class="badge ${leaveStatusBadgeClass(r.status)}">${leaveStatusLabel(r.status)}</span></td>
+            <td>${formatLeaveDate(r.requested_at ? r.requested_at.split(' ')[0] : '')}</td>
+            <td>
+                ${r.status === 'pending' ? `
+                    <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve"><i class="bi bi-check-lg"></i></button>
+                    <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Reject"><i class="bi bi-x-lg"></i></button>
+                ` : ''}
+                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
+}
+
+function approveLeaveRequest(id, name) {
+    Swal.fire({
+        title: 'Approve Leave Request?',
+        html: `${name} will be marked <b>On Leave</b> right away. You can set them back to Available later from the mechanic roster.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'Approve'
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_leave_requests.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'approve', id }) })
+            .then(r=>r.json()).then(d=>{
+                if (d.status === 'success') {
+                    Swal.fire({ toast:true, position:'bottom-end', icon:'success', title:d.message||'Approved', showConfirmButton:false, timer:2000 });
+                    loadLeaveRequests();
+                    loadMechanics();
+                } else {
+                    Swal.fire('Error', d.message, 'error');
+                }
+            });
+    });
+}
+
+function rejectLeaveRequest(id, name) {
+    Swal.fire({
+        title: 'Decline Leave Request?',
+        html: `<div class="text-start">
+                <p>Decline ${name}'s leave request?</p>
+                <label class="form-label fw-semibold">Note to mechanic (optional)</label>
+                <textarea id="leaveRejectNotes" class="form-control" rows="2" placeholder="e.g. Short-staffed that week"></textarea>
+               </div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e62429',
+        confirmButtonText: 'Decline',
+        preConfirm: () => document.getElementById('leaveRejectNotes').value.trim()
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch('api/admin/manage_leave_requests.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'reject', id, admin_notes: result.value }) })
+            .then(r=>r.json()).then(d=>{
+                if (d.status === 'success') {
+                    Swal.fire({ toast:true, position:'bottom-end', icon:'success', title:d.message||'Declined', showConfirmButton:false, timer:2000 });
+                    loadLeaveRequests();
+                } else {
+                    Swal.fire('Error', d.message, 'error');
+                }
+            });
+    });
+}
+
+function deleteLeaveRequest(id, name) {
+    Swal.fire({
+        title: 'Delete Leave Request?',
+        text: `Remove ${name}'s leave request from the list?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e62429',
+        confirmButtonText: 'Delete'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('api/admin/manage_leave_requests.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify({ action:'delete', id }) })
+                .then(r=>r.json()).then(d=>{ if(d.status==='success') loadLeaveRequests(); else Swal.fire('Error', d.message, 'error'); });
         }
     });
 }

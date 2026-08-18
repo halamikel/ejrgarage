@@ -782,7 +782,7 @@ include 'includes/header.php';
 
                             </span>
 
-                            Registered Users
+                            Registered Customers
 
                         </div>
 
@@ -1207,17 +1207,20 @@ include 'includes/header.php';
 
                         <table class="ejr-table">
 
-                           <thead>
-    <tr>
-        <th>Image</th>
-        <th>Name</th>
-        <th>Brand</th>
-        <th>Category</th>
-        <th>Price</th>
-        <th>Stock</th>
-        <th>Actions</th>
-    </tr>
-</thead>
+                            <thead>
+
+                                <tr>
+
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+
+                                </tr>
+
+                            </thead>
 
 
                             <tbody id="partsTableBody">
@@ -1288,11 +1291,28 @@ include 'includes/header.php';
 
                     <div class="ejr-filter-bar mb-3">
 
-                        <select id="inquiriesStatusFilter" class="form-select">
-    <option value="all" selected>All Inquiries</option>
-    <option value="pending">Pending</option>
-    <option value="responded">Responded</option>
-</select>
+                        <select
+                            id="inquiriesStatusFilter"
+                            class="ejr-filter-select"
+                            onchange="applyAllFilters()"
+                        >
+
+                            <option
+                                value="pending"
+                                selected
+                            >
+                                Pending Only
+                            </option>
+
+                            <option value="responded">
+                                Responded Only
+                            </option>
+
+                            <option value="all">
+                                All Inquiries
+                            </option>
+
+                        </select>
 
                     </div>
 
@@ -1744,6 +1764,123 @@ include 'includes/header.php';
                 id="tab-mechanics"
                 style="display:none;"
             >
+
+                <!-- ===========================================================
+                     LEAVE REQUESTS
+                =========================================================== -->
+
+                <div class="ejr-card mb-4">
+
+                    <div class="ejr-card-header">
+
+                        <div class="ejr-card-title">
+
+                            <span
+                                class="ejr-card-icon"
+                                style="
+                                    background:rgba(230,36,41,0.1);
+                                "
+                            >
+
+                                <i
+                                    class="bi bi-calendar2-week text-danger"
+                                ></i>
+
+                            </span>
+
+                            Leave Requests
+
+                            <span
+                                id="leaveRequestsPendingBadge"
+                                class="badge bg-warning text-dark ms-2"
+                                style="display:none;"
+                            ></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ejr-filter-bar mb-3">
+
+                        <select
+                            id="leaveRequestsStatusFilter"
+                            class="ejr-filter-select"
+                            onchange="applyAllFilters()"
+                        >
+
+                            <option value="pending" selected>
+                                Pending Only
+                            </option>
+
+                            <option value="">
+                                All
+                            </option>
+
+                            <option value="approved">
+                                Approved Only
+                            </option>
+
+                            <option value="rejected">
+                                Rejected Only
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-responsive">
+
+                        <table class="ejr-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Mechanic</th>
+                                    <th>Dates</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Requested</th>
+                                    <th>Actions</th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="leaveRequestsTableBody">
+
+                                <tr>
+
+                                    <td
+                                        colspan="6"
+                                        class="ejr-loading"
+                                    >
+
+                                        <div
+                                            class="spinner-border spinner-border-sm text-danger"
+                                        ></div>
+
+                                        Loading...
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ===========================================================
+                     MECHANIC ROSTER
+                =========================================================== -->
 
                 <div class="ejr-card">
 
