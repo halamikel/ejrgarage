@@ -236,8 +236,8 @@ function renderParts(parts) {
             <div class="card part-card h-100">
                 <div style="position:relative;">
                     <img src="${p.image_url || 'assets/images/no-image.png'}"
-                         alt="${p.name}"
-                         onerror="this.src='assets/images/no-image.png'">
+     alt="${p.name}"
+     onerror="this.onerror=null; this.src='assets/images/no-image.png';">
                     <span class="part-badge">${p.category}</span>
                 </div>
                 <div class="card-body d-flex flex-column p-3">
