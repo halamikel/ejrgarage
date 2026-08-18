@@ -9,14 +9,16 @@
  * mechanic<->user linkage pattern as update_availability.php).
  *
  * GET  (action=list, default): every leave request, pending first.
- * POST action=approve: marks the request 'approved' and immediately
- *                       sets the mechanic's roster status to 'on_break'
- *                       ("On Leave" in the UI — same status the mechanic
- *                       app itself uses), so the admin doesn't have to
- *                       separately edit the mechanic afterward. Admin
- *                       can always set them back to Available later from
- *                       the existing Edit Mechanic dialog once the leave
- *                       is over.
+ * POST action=approve: marks the request 'approved'. The mechanic's
+ *                       roster status is NOT force-changed here —
+ *                       includes/leave_sync.php's ejr_sync_leave_statuses()
+ *                       (called below, and at the top of every endpoint
+ *                       that reads mechanic status) derives 'on_break'
+ *                       from the request's start_date/end_date instead,
+ *                       so leave takes effect on the actual requested
+ *                       start date (not the moment it's approved) and
+ *                       automatically reverts to 'available' once the
+ *                       end date passes — no manual admin follow-up.
  * POST action=reject:  marks the request 'rejected'; no roster change.
  * POST action=delete:  removes the request row entirely (housekeeping).
  */
@@ -24,6 +26,7 @@ header('Content-Type: application/json');
 require_once '../db_config.php';
 require_once '../../includes/php-jwt/JWT.php';
 require_once '../../includes/php-jwt/Key.php';
+require_once '../../includes/leave_sync.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -59,6 +62,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
 
+// Re-derive every mechanic's on-leave status from today's date before
+// doing anything else, so the list (and any status this endpoint
+// implies) is never stale.
+ejr_sync_leave_statuses($conn);
+
 if ($method === 'GET') {
     if ($action === 'list') {
         $result = $conn->query("SELECT * FROM leave_requests
@@ -91,12 +99,13 @@ if ($method === 'POST') {
             $upd->bind_param("i", $id);
             $upd->execute();
 
-            // Reflect the approved leave on the mechanic's roster status
-            // immediately, same as the "On Leave" state the mechanic app
-            // itself can set via update_availability.php.
-            $mechUpd = $conn->prepare("UPDATE mechanics SET status='on_break' WHERE id=?");
-            $mechUpd->bind_param("i", $reqRow['mechanic_id']);
-            $mechUpd->execute();
+            // Re-sync roster statuses against every approved leave's
+            // actual date range. If this leave's start_date is today
+            // (or already in progress), the mechanic flips to
+            // 'on_break' right now; if it starts later, they stay
+            // whatever they currently are until that date arrives (the
+            // sync re-runs on every subsequent admin/mechanic read).
+            ejr_sync_leave_statuses($conn);
 
             echo json_encode(['status'=>'success','message'=>$reqRow['mechanic_name'].'\'s leave request was approved.']);
             break;

@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 require_once '../db_config.php';
 require_once '../../includes/php-jwt/JWT.php';
 require_once '../../includes/php-jwt/Key.php';
+require_once '../../includes/leave_sync.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -71,6 +72,11 @@ if ($statusCol && strpos($statusCol['Type'], 'on_break') === false) {
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
+
+// Re-derive on-leave status from approved leave_requests date ranges
+// before returning/using mechanic rows, so the list always reflects
+// today's actual state instead of whatever it was at approval time.
+ejr_sync_leave_statuses($conn);
 
 if ($method === 'GET') {
 

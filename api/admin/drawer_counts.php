@@ -43,6 +43,7 @@ date_default_timezone_set('Asia/Manila');
 require_once '../db_config.php';
 require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
 require_once __DIR__ . '/../../includes/php-jwt/Key.php';
+require_once __DIR__ . '/../../includes/leave_sync.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -111,6 +112,9 @@ function ejr_count(mysqli $conn, string $sql): int {
 }
 
 try {
+    // Keep on-leave status current before counting available mechanics.
+    ejr_sync_leave_statuses($conn);
+
     $counts = [];
 
     $counts['pending_appointments'] = ejr_count($conn,

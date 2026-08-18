@@ -11,6 +11,7 @@ header('Content-Type: application/json');
 require_once 'db_config.php';   // loads env.php, $conn
 require_once 'security.php';
 require_once 'rate_limit.php';
+require_once '../includes/leave_sync.php';
 
 $ip   = ejr_get_ip();
 $raw  = ejr_json_input();
@@ -96,6 +97,12 @@ if ($user) {
         $mechanicStatus = 'unavailable';
         if ((int)$user['role_id'] === 3) {
             try {
+                // Re-derive on-leave status from approved leave_requests
+                // date ranges before reading it, so a mechanic logging in
+                // sees their real current state (not stale from whenever
+                // an admin last approved/edited it).
+                ejr_sync_leave_statuses($conn);
+
                 $mStmt = $conn->prepare("SELECT status FROM mechanics WHERE user_id = ? LIMIT 1");
                 $mStmt->bind_param("i", $user['id']);
                 $mStmt->execute();

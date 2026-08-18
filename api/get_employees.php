@@ -14,6 +14,7 @@ header('Content-Type: application/json');
 require_once 'db_config.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
+require_once '../includes/leave_sync.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -56,6 +57,9 @@ $colCheck = $conn->query("SHOW COLUMNS FROM mechanics LIKE 'user_id'");
 if ($colCheck && $colCheck->num_rows === 0) {
     $conn->query("ALTER TABLE mechanics ADD COLUMN user_id INT NULL");
 }
+
+// Keep on-leave status current before this staff directory is read.
+ejr_sync_leave_statuses($conn);
 
 // ── Staff directory: admins + mechanics only, never customers ──────
 $query = "SELECT u.id, u.full_name, u.email, u.role_id, u.profile_picture,
