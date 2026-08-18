@@ -1,6 +1,6 @@
 # ignore a specific file
 includes/mail_config.php
-
+uploads/avatars/avatars.htaccess
 
 # ignore all .env files
 .env
