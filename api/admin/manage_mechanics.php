@@ -21,6 +21,7 @@ if (preg_match('/bearer\s(\S+)/i', $auth, $m)) {
 if (!$isAdmin) { http_response_code(403); echo json_encode(['status'=>'error','message'=>'Forbidden']); exit; }
 
 // ── Auto-create mechanics table ────────────────────────────────
+// ── Auto-create mechanics table ────────────────────────────────
 $conn->query("CREATE TABLE IF NOT EXISTS mechanics (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     user_id    INT NULL,
@@ -29,6 +30,28 @@ $conn->query("CREATE TABLE IF NOT EXISTS mechanics (
     status     ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+
+/*
+ * Existing installations may already have the mechanics table
+ * without user_id.
+ *
+ * Add user_id only when it doesn't already exist.
+ */
+
+$userIdColumn = $conn->query(
+    "SHOW COLUMNS FROM mechanics LIKE 'user_id'"
+);
+
+if (
+    $userIdColumn &&
+    $userIdColumn->num_rows === 0
+) {
+    $conn->query(
+        "ALTER TABLE mechanics
+         ADD COLUMN user_id INT NULL AFTER id"
+    );
+}
 
 // Make sure older databases also have the user_id column.
 $userIdCol = $conn->query("SHOW COLUMNS FROM mechanics LIKE 'user_id'");
@@ -50,29 +73,80 @@ $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
 
 if ($method === 'GET') {
+
     if ($action === 'list') {
+
+        /*
+         * LEFT JOIN is intentional.
+         *
+         * Existing mechanics may not yet have a user_id.
+         * They must still appear in the Mechanics tab.
+         */
+
         $result = $conn->query("
-    SELECT
-        m.*,
-        u.full_name AS user_full_name,
-        u.email AS user_email
-    FROM mechanics m
-    LEFT JOIN users u
-        ON u.id = m.user_id
-    ORDER BY COALESCE(u.full_name, m.name) ASC
-");
+            SELECT
+                m.id,
+                m.user_id,
+                m.name,
+                m.specialty,
+                m.status,
+                m.created_at,
+
+                u.full_name AS current_user_name,
+                u.email AS current_user_email
+
+            FROM mechanics m
+
+            LEFT JOIN users u
+                ON u.id = m.user_id
+
+            ORDER BY
+                COALESCE(u.full_name, m.name) ASC
+        ");
+
+        if (!$result) {
+            http_response_code(500);
+
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to load mechanics: ' . $conn->error
+            ]);
+
+            exit;
+        }
+
         $rows = [];
 
-while ($r = $result->fetch_assoc()) {
+        while ($r = $result->fetch_assoc()) {
 
-    // If this mechanic is linked to a user account,
-    // always display the user's current name.
-    if (!empty($r['user_full_name'])) {
-        $r['name'] = $r['user_full_name'];
+            /*
+             * If the mechanic is connected to a user account,
+             * display the user's CURRENT name.
+             *
+             * Otherwise keep the existing mechanic name.
+             */
+
+            if (
+                isset($r['current_user_name']) &&
+                trim((string)$r['current_user_name']) !== ''
+            ) {
+                $r['name'] = $r['current_user_name'];
+            }
+
+            unset(
+                $r['current_user_name'],
+                $r['current_user_email']
+            );
+
+            $rows[] = $r;
+        }
+
+        echo json_encode([
+            'status'    => 'success',
+            'mechanics' => $rows
+        ]);
     }
 
-    $rows[] = $r;
-}
     exit;
 }
 
@@ -82,8 +156,18 @@ if ($method === 'POST') {
             $name      = trim($input['name'] ?? '');
             $specialty = trim($input['specialty'] ?? '');
             if (!$name) { echo json_encode(['status'=>'error','message'=>'Name is required.']); exit; }
-            $stmt = $conn->prepare("INSERT INTO mechanics (name, specialty) VALUES (?, ?)");
-            $stmt->bind_param("ss", $name, $specialty);
+            $stmt = $conn->prepare("
+    INSERT INTO mechanics
+        (user_id, name, specialty)
+    VALUES
+        (NULL, ?, ?)
+");
+
+$stmt->bind_param(
+    "ss",
+    $name,
+    $specialty
+);
             $stmt->execute();
             echo json_encode(['status'=>'success','id'=>$conn->insert_id]);
             break;

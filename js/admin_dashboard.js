@@ -2765,15 +2765,74 @@ function toggleService(id, newStatus) {
 // =============================================================
 
 function loadMechanics() {
-    fetch('api/admin/manage_mechanics.php', { headers: getAuthHeaders() })
-        .then(r => r.json())
+    const tbody = document.getElementById('mechanicsTableBody');
+
+    if (!tbody) return;
+
+    fetch('api/admin/manage_mechanics.php?action=list', {
+        credentials: 'include',
+        headers: getAuthHeaders()
+    })
+        .then(async response => {
+
+            const text = await response.text();
+
+            let data;
+
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error(
+                    'Mechanics API returned invalid JSON:',
+                    text
+                );
+
+                throw new Error(
+                    'Mechanics API returned invalid JSON.'
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    `HTTP ${response.status}`
+                );
+            }
+
+            if (data.status !== 'success') {
+                throw new Error(
+                    data.message ||
+                    'Failed to load mechanics.'
+                );
+            }
+
+            return data;
+        })
         .then(data => {
-            mechanicsData = data.mechanics || [];
+
+            mechanicsData = Array.isArray(data.mechanics)
+                ? data.mechanics
+                : [];
+
             filterAndRenderMechanics();
         })
-        .catch(() => {
-            const tbody = document.getElementById('mechanicsTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Failed to load mechanics.</td></tr>';
+        .catch(err => {
+
+            console.error(
+                'Mechanics loading error:',
+                err
+            );
+
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4"
+                            class="text-danger text-center py-4">
+                            Failed to load mechanics.
+                        </td>
+                    </tr>
+                `;
+            }
         });
 }
 

@@ -42,145 +42,110 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role_id'] != 2 && $_SESSION['use
 $method = $_SERVER['REQUEST_METHOD'];
 
 // ── GET ORDERS ────────────────────────────────────────────────
+// ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
-    // Return every order regardless of status — approved/completed/cancelled
-    // orders stay visible in the admin dashboard instead of disappearing
-    // once acted on. The Orders tab's status filter dropdown lets admins
-    // narrow the view back down to just Pending, etc. when they want to.
+
+    /*
+     * IMPORTANT:
+     * Use LEFT JOIN instead of JOIN.
+     *
+     * Some old orders may contain a user_id that no longer has
+     * a matching users record. INNER JOIN would make those orders
+     * disappear completely from the admin dashboard.
+     *
+     * We therefore:
+     *   1. Keep every order.
+     *   2. Use the current user's information when available.
+     *   3. Fall back to the information stored in the order.
+     */
+
     $result = $conn->query("
-    SELECT
-        o.*,
-        u.email,
-        u.full_name AS user_full_name,
-        u.phone AS current_phone,
-        u.notif_email
-    FROM part_orders o
-    LEFT JOIN users u
-        ON u.id = o.user_id
-    ORDER BY o.created_at DESC
-");
+        SELECT
+            o.*,
+
+            /* Current user information */
+            u.email AS current_email,
+            u.full_name AS current_full_name,
+            u.phone AS current_phone,
+            u.notif_email,
+            u.notif_sms
+
+        FROM part_orders o
+
+        LEFT JOIN users u
+            ON u.id = o.user_id
+
+        ORDER BY o.created_at DESC
+    ");
+
+    if (!$result) {
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Failed to load orders: ' . $conn->error
+        ]);
+        exit;
+    }
+
     $orders = [];
 
-while ($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) {
 
-    // Always use the user's CURRENT profile information.
-    // This prevents old order data from being displayed
-    // after the customer updates their account.
+        /*
+         * Use CURRENT user data when available.
+         * Otherwise preserve the original order data.
+         */
 
-    if (!empty($row['user_full_name'])) {
-        $row['customer_name'] = $row['user_full_name'];
-    }
-
-    if (
-        isset($row['current_phone']) &&
-        trim((string)$row['current_phone']) !== ''
-    ) {
-        $row['contact'] = $row['current_phone'];
-    }
-
-    $row['items'] = json_decode($row['items'], true);
-
-    $orders[] = $row;
-}
-
-// ── POST ACTIONS ──────────────────────────────────────────────
-$data      = json_decode(file_get_contents('php://input'), true);
-$action    = $data['action'] ?? '';
-$order_id  = isset($data['id']) ? (int)$data['id'] : 0;
-
-if ($action === 'update_status') {
-    $new_status = $data['status'] ?? '';
-    if (!in_array($new_status, ['pending', 'approved', 'cancelled'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid status.']);
-        exit;
-    }
-
-    // 1. Get the current status, items, and contact/notification info before updating
-    $checkStmt = $conn->prepare("
-        SELECT o.status, o.items, o.contact, o.customer_name, o.total_price, o.created_at, u.notif_sms
-        FROM part_orders o
-        JOIN users u ON u.id = o.user_id
-        WHERE o.id = ?
-    ");
-    $checkStmt->bind_param("i", $order_id);
-    $checkStmt->execute();
-    $currentOrder = $checkStmt->get_result()->fetch_assoc();
-
-    if (!$currentOrder) {
-        echo json_encode(['status' => 'error', 'message' => 'Order not found.']);
-        exit;
-    }
-
-    // 2. Update the order status
-    $stmt = $conn->prepare("UPDATE part_orders SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $new_status, $order_id);
-    $stmt->execute();
-
-    // 2b. SMS notification — fires on any real status change, independent
-    // of the approved-only email/stock logic below.
-    if ($new_status !== $currentOrder['status'] && $currentOrder['notif_sms'] == 1 && !empty($currentOrder['contact'])) {
-        $orderNo   = 'EJR-ORD-' . date('Y', strtotime($currentOrder['created_at'])) . '-' . str_pad($order_id, 5, '0', STR_PAD_LEFT);
-        $firstName = explode(' ', trim($currentOrder['customer_name'] ?? 'there'))[0];
-        $total     = '₱' . number_format((float)$currentOrder['total_price'], 2);
-
-        $orderStatusMessages = [
-            'approved'  => "Hi {$firstName}, your order {$orderNo} ({$total}) has been APPROVED. We'll notify you when it's ready for pickup/delivery.",
-            'cancelled' => "Hi {$firstName}, your order {$orderNo} has been CANCELLED. Contact us if you have questions.",
-            'pending'   => "Hi {$firstName}, your order {$orderNo} is now PENDING review. We'll update you shortly.",
-        ];
-
-        $orderSmsText = "EJR Garage: " . ($orderStatusMessages[$new_status]
-            ?? "Hi {$firstName}, your order {$orderNo} status is now [{$new_status}].");
-
-        $orderSmsResult = sendSmsViaSemaphore($currentOrder['contact'], $orderSmsText);
-        if ($orderSmsResult['status'] !== 'success') {
-            error_log("EJR ORDER SMS: order_id={$order_id} to={$currentOrder['contact']} FAILED — " . $orderSmsResult['message']);
-        }
-    }
-
-    // 3. Handle Stock and Email only if status is changing TO 'approved'
-    if ($new_status === 'approved' && $currentOrder['status'] !== 'approved') {
-        $items = json_decode($currentOrder['items'], true);
-        
-        if (is_array($items)) {
-            foreach ($items as $item) {
-                $qty = (int)$item['qty'];
-                $part_id = (int)$item['id'];
-
-                // Update parts table stock (ensures stock doesn't go below 0)
-                $stockStmt = $conn->prepare("UPDATE parts SET stock = stock - ? WHERE id = ? AND stock >= ?");
-                $stockStmt->bind_param("iii", $qty, $part_id, $qty);
-                $stockStmt->execute();
-            }
+        if (
+            isset($row['current_full_name']) &&
+            trim((string)$row['current_full_name']) !== ''
+        ) {
+            $row['customer_name'] = $row['current_full_name'];
         }
 
-        // 4. Auto-send receipt email
-        $stmt2 = $conn->prepare("
-            SELECT o.*, u.email, u.full_name as user_full_name, u.notif_email
-            FROM part_orders o
-            JOIN users u ON u.id = o.user_id
-            WHERE o.id = ?
-        ");
-        $stmt2->bind_param("i", $order_id);
-        $stmt2->execute();
-        $order = $stmt2->get_result()->fetch_assoc();
-
-        if ($order) {
-            $emailResult = sendOrderReceipt($order);
-            if ($emailResult['status'] !== 'success') {
-                error_log("Order #{$order_id} approved but receipt email failed: " . $emailResult['message']);
-            }
-        } else {
-            $emailResult = ['status' => 'error', 'message' => 'Could not find order/customer record for email (order_id=' . $order_id . ').'];
+        if (
+            isset($row['current_phone']) &&
+            trim((string)$row['current_phone']) !== ''
+        ) {
+            $row['contact'] = $row['current_phone'];
         }
-    } else {
-        $emailResult = ['status' => 'skipped', 'message' => 'Not a new approval.'];
+
+        if (
+            isset($row['current_email']) &&
+            trim((string)$row['current_email']) !== ''
+        ) {
+            $row['email'] = $row['current_email'];
+        }
+
+        /*
+         * Decode items safely.
+         */
+        $decodedItems = json_decode(
+            $row['items'] ?? '',
+            true
+        );
+
+        $row['items'] = is_array($decodedItems)
+            ? $decodedItems
+            : [];
+
+        /*
+         * Remove helper fields from the API response.
+         * The dashboard doesn't need these.
+         */
+        unset(
+            $row['current_email'],
+            $row['current_full_name'],
+            $row['current_phone']
+        );
+
+        $orders[] = $row;
     }
 
     echo json_encode([
         'status' => 'success',
-        'message' => 'Order updated successfully.'
+        'orders' => $orders
     ]);
+
     exit;
 }
 
