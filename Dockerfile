@@ -3,8 +3,11 @@ FROM php:8.3-apache
 # Install MySQL extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+# Enable Apache modules: rewrite (used by .htaccess RewriteRules) and
+# headers (required for .htaccess "Header always set ..." directives —
+# without this, security headers like CSP/HSTS/X-Frame-Options are
+# silently ignored even if .htaccess is otherwise correct)
+RUN a2enmod rewrite headers
 
 # Copy project files
 COPY . /var/www/html/
