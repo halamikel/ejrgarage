@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="col-md-6 d-flex gap-2">
-        <select id="categoryFilter" class="form-select shadow-sm">
+        <select id="categoryFilter" aria-label="Filter by category" class="form-select shadow-sm">
           <option value="">All Categories</option>
           <option value="engine">Engine</option>
           <option value="brakes">Brakes</option>
