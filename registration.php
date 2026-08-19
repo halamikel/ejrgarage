@@ -89,7 +89,7 @@ session_start();
           <label>Password</label>
           <div class="input-wrap">
             <input type="password" id="r-pw" class="has-eye" placeholder="Enter password" minlength="8" required oninput="updateStrength(this.value)">
-            <button class="eye" type="button" onclick="togglePw('r-pw', this)"><i class="bi bi-eye"></i></button>
+            <button class="eye" type="button" aria-label="Toggle Password Visibility" onclick="togglePw('r-pw', this)"><i class="bi bi-eye"></i></button>
           </div>
           <div class="strength-wrap">
             <div class="strength-bar">
@@ -103,7 +103,7 @@ session_start();
           <label>Confirm Password</label>
           <div class="input-wrap">
             <input type="password" id="r-pw2" class="has-eye" placeholder="Re-enter password" required>
-            <button class="eye" type="button" onclick="togglePw('r-pw2', this)"><i class="bi bi-eye"></i></button>
+            <button class="eye" aria-label="Toggle Password Visibility" type="button" onclick="togglePw('r-pw2', this)"><i class="bi bi-eye"></i></button>
           </div>
         </div>
     
