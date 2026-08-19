@@ -959,6 +959,57 @@ function openEditPart(id, name, brand, desc, price, category, image_url, stock) 
     });
 }
 
+function uploadPartImage(inputEl) {
+    const file = inputEl.files[0];
+    const statusEl = document.getElementById('sp-img-status');
+    if (!file) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+        if (statusEl) statusEl.textContent = 'Only JPG, PNG, WEBP, or GIF images are allowed.';
+        inputEl.value = '';
+        return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+        if (statusEl) statusEl.textContent = 'Image must be smaller than 3MB.';
+        inputEl.value = '';
+        return;
+    }
+
+    if (statusEl) statusEl.textContent = 'Uploading...';
+
+    const token = localStorage.getItem('jwt_token');
+    const formData = new FormData();
+    formData.append('image', file);
+
+    fetch('api/admin/upload_part_image.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': token ? 'Bearer ' + token : '' },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const hidden = document.getElementById('sp-img');
+            const preview = document.getElementById('sp-img-preview');
+            if (hidden) hidden.value = data.image_url;
+            if (preview) {
+                preview.src = data.image_url;
+                preview.style.display = '';
+            }
+            if (statusEl) statusEl.textContent = 'Photo uploaded.';
+        } else {
+            if (statusEl) statusEl.textContent = data.message || 'Upload failed.';
+            inputEl.value = '';
+        }
+    })
+    .catch(() => {
+        if (statusEl) statusEl.textContent = 'Upload failed. Check your connection.';
+        inputEl.value = '';
+    });
+}
+
 function partForm(v = {}) {
     return `
         <div class="text-start">
@@ -977,8 +1028,15 @@ function partForm(v = {}) {
                 <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
                 <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
             </select></div>
-            <div class="mb-2"><label class="form-label fw-semibold small">Image URL</label>
-            <input id="sp-img" class="form-control" value="${v.image_url || ''}"></div>
+            <div class="mb-2">
+                <label class="form-label fw-semibold small">Photo</label>
+                <input id="sp-img-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" onchange="uploadPartImage(this)">
+                <input type="hidden" id="sp-img" value="${v.image_url || ''}">
+                <div class="mt-2 d-flex align-items-center gap-2">
+                    <img id="sp-img-preview" src="${v.image_url || ''}" style="width:70px;height:56px;object-fit:cover;border-radius:8px;${v.image_url ? '' : 'display:none;'}">
+                    <span id="sp-img-status" class="small text-muted"></span>
+                </div>
+            </div>
             <div class="mb-2"><label class="form-label fw-semibold small">Stock</label>
             <input id="sp-stock" type="number" class="form-control" value="${v.stock || 0}"></div>
         </div>`;
