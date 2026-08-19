@@ -61,6 +61,20 @@ if (!isset($data['status'])) {
     exit;
 }
 
+// The admin's reply/reason when declining or cancelling an appointment
+// from the Manage dialog's cancellation-reply dropdown — optional, and
+// only meaningful when the new status is 'Cancelled'.
+$cancellationReply = trim((string)($data['cancellation_reply'] ?? ''));
+
+// Self-healing: same column this endpoint writes to below. Guards
+// against the column not existing yet if this endpoint is hit before
+// the admin dashboard's own self-healing check in get_full_site_data.php
+// has ever run.
+$replyColCheck = $conn->query("SHOW COLUMNS FROM appointments LIKE 'cancellation_reply'");
+if ($replyColCheck && $replyColCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE appointments ADD COLUMN cancellation_reply VARCHAR(255) NULL");
+}
+
 // ── FETCH APPOINTMENT ─────────────────────────────────────────
 $fetch = $conn->prepare("
     SELECT a.service_type, a.appointment_date, a.user_id,
@@ -85,12 +99,23 @@ $userStmt->execute();
 $user = $userStmt->get_result()->fetch_assoc();
 
 // ── UPDATE STATUS ─────────────────────────────────────────────
-$stmt = $conn->prepare("UPDATE appointments SET status = ? WHERE id = ?");
+// Only write cancellation_reply when a status is actually 'Cancelled'
+// with a reply given — an admin re-opening a previously-cancelled
+// appointment to a different status shouldn't need to clear it
+// manually, but a fresh cancellation always overwrites it (including
+// clearing it back to NULL if this cancellation has no reply chosen).
+if ($data['status'] === 'Cancelled') {
+    $stmt = $conn->prepare("UPDATE appointments SET status = ?, cancellation_reply = ? WHERE id = ?");
+    $replyOrNull = $cancellationReply !== '' ? $cancellationReply : null;
+    $stmt->bind_param("ssi", $data['status'], $replyOrNull, $data['appointment_id']);
+} else {
+    $stmt = $conn->prepare("UPDATE appointments SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $data['status'], $data['appointment_id']);
+}
 if (!$stmt) {
     echo json_encode(['status' => 'error', 'message' => 'DB error: ' . $conn->error]);
     exit;
 }
-$stmt->bind_param("si", $data['status'], $data['appointment_id']);
 if (!$stmt->execute()) {
     echo json_encode(['status' => 'error', 'message' => 'Update failed.']);
     exit;
@@ -138,7 +163,12 @@ if ($user && $user['notif_email'] == 1) {
                     <tr><td style="color:#5f6b7a;padding:6px 0;">Plate No.</td><td style="color:#1e2a36;font-weight:bold;">' . htmlspecialchars($plate) . '</td></tr>
                     <tr><td style="color:#5f6b7a;padding:6px 0;">Services</td><td style="color:#1e2a36;font-weight:bold;">' . htmlspecialchars($appt['service_type']) . '</td></tr>
                 </table>
-            </div>
+            </div>' .
+            ($status === 'Cancelled' && $cancellationReply !== '' ? '
+            <div style="background:#f8d7da;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+                <p style="color:#842029;margin:0;font-size:13px;font-weight:bold;">Message from EJR Garage</p>
+                <p style="color:#842029;margin:6px 0 0;font-size:14px;">' . htmlspecialchars($cancellationReply) . '</p>
+            </div>' : '') . '
             <div style="text-align:center;margin-top:24px;">
                 <a href="https://ejrgarage.onrender.com/my_appointments.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                     View My Appointments
@@ -167,6 +197,10 @@ if ($user && $user['notif_sms'] == 1 && !empty($user['phone'])) {
     $smsText = isset($statusMessages[$status])
         ? "EJR Garage: " . $statusMessages[$status]
         : "EJR Garage: Hi {$firstName}, your appointment on {$formattedDate} has been updated to [{$status}]. Vehicle: {$vehicle}.";
+
+    if ($status === 'Cancelled' && $cancellationReply !== '') {
+        $smsText .= " Note: {$cancellationReply}";
+    }
 
     $smsResult = sendSmsViaSemaphore($user['phone'], $smsText);
     if ($smsResult['status'] !== 'success') {

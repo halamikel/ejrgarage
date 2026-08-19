@@ -55,6 +55,16 @@ try {
 
     $v        = $data['vehicle'];
     $services = is_array($data['services']) ? implode(", ", $data['services']) : $data['services'];
+    $notes    = trim((string)($v['notes'] ?? ''));
+
+    // Self-healing: the "Additional Notes" field on the booking form
+    // (booking-details.php) was being captured and sent here all along,
+    // but this table never had a column to store it in — see the admin
+    // dashboard's Appointments tab, which now surfaces it.
+    $notesColCheck = $conn->query("SHOW COLUMNS FROM appointments LIKE 'notes'");
+    if ($notesColCheck && $notesColCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE appointments ADD COLUMN notes TEXT NULL");
+    }
 
     // ── CHECK / INSERT VEHICLE ────────────────────────────────
     $checkStmt = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ? LIMIT 1");
@@ -80,10 +90,10 @@ try {
 
     // ── SAVE APPOINTMENT ──────────────────────────────────────
     $stmtApp = $conn->prepare(
-        "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, status)
-         VALUES (?, ?, ?, ?, 'Pending')"
+        "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, notes, status)
+         VALUES (?, ?, ?, ?, ?, 'Pending')"
     );
-    $stmtApp->bind_param("iiss", $userId, $vehicleId, $services, $v['appointmentDate']);
+    $stmtApp->bind_param("iisss", $userId, $vehicleId, $services, $v['appointmentDate'], $notes);
 
     if (!$stmtApp->execute()) {
         throw new Exception("Appointment Save Failed: " . $stmtApp->error);

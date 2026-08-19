@@ -428,7 +428,18 @@ function applyAllFilters() {
 function renderAppointments(apps) {
     const active = apps;
     document.getElementById("appointmentTableBody").innerHTML = active.length
-        ? active.map(a => `
+        ? active.map(a => {
+            const notesText = (a.notes || '').trim();
+            const notesHtml = notesText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            // data-note (not an inline onclick JS string) so multi-line
+            // notes with quotes/newlines can't break out of the markup —
+            // HTML attributes tolerate raw newlines; JS string literals
+            // embedded in onclick="..." do not.
+            const notesCell = notesText
+                ? `<span class="text-truncate d-inline-block" style="max-width:160px;cursor:pointer;" title="Click to view full note" data-note="${notesHtml}" onclick="viewAppointmentNote(this.dataset.note)">${notesHtml}</span>`
+                : `<span class="text-muted small">—</span>`;
+            const replyHtml = (a.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            return `
             <tr>
                 <td class="fw-bold">${a.full_name || 'Guest'}</td>
                 <td><span class="badge bg-light text-dark border">${a.service_type}</span></td>
@@ -441,7 +452,13 @@ function renderAppointments(apps) {
                         ? `<span class="badge bg-info text-dark"><i class="bi bi-person-gear me-1"></i>${a.mechanic_name}</span>`
                         : `<span class="text-muted small">Unassigned</span>`}
                 </td>
-                <td>${statusBadge(a.status)}</td>
+                <td>${notesCell}</td>
+                <td>
+                    ${statusBadge(a.status)}
+                    ${a.status === 'Cancelled' && replyHtml
+                        ? `<div class="small text-muted mt-1" style="max-width:160px;" title="${replyHtml}"><i class="bi bi-reply-fill me-1"></i>${replyHtml}</div>`
+                        : ''}
+                </td>
                 <td>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-dark" onclick="manageApp(${a.id}, '${a.status}')">
@@ -452,8 +469,18 @@ function renderAppointments(apps) {
                         </button>
                     </div>
                 </td>
-            </tr>`).join('')
-        : '<tr><td colspan="7" class="text-center text-muted py-4">No appointments found.</td></tr>';
+            </tr>`;
+        }).join('')
+        : '<tr><td colspan="8" class="text-center text-muted py-4">No appointments found.</td></tr>';
+}
+
+function viewAppointmentNote(note) {
+    Swal.fire({
+        title: 'Additional Notes',
+        text: note,
+        icon: 'info',
+        confirmButtonColor: '#b30000'
+    });
 }
 
 function renderUsers(users) {
@@ -586,6 +613,19 @@ function renderHistory(data) {
 // APPOINTMENTS
 // =============================================================
 
+// Canned reply options shown in the "Reply to customer" dropdown when
+// an admin sets an appointment to Cancelled. Selecting one fills the
+// textarea below it (still editable before sending) — matches the same
+// "canned reply, fully editable" pattern as rejectLeaveRequest().
+const CANCELLATION_REPLIES = {
+    'reschedule':  "We're sorry to cancel — please contact us to reschedule at your convenience.",
+    'mechanic':    "Cancelled due to mechanic unavailability on your selected date. Please rebook for another day.",
+    'parts':       "Cancelled due to parts unavailability for this service. We'll notify you once they're back in stock.",
+    'customer':    "Cancelled as requested.",
+    'conflict':    "Cancelled due to a scheduling conflict. Please choose another available date.",
+    'custom':      ''
+};
+
 function manageApp(id, currentStatus) {
     Swal.fire({
         title: 'Update Appointment Status',
@@ -601,12 +641,61 @@ function manageApp(id, currentStatus) {
         confirmButtonColor: '#b30000',
         confirmButtonText: 'Update'
     }).then(result => {
-        if (result.isConfirmed && result.value) {
+        if (!result.isConfirmed || !result.value) return;
+
+        if (result.value === 'Cancelled') {
+            promptCancellationReply(id);
+        } else {
             postData('api/admin/update_appointment.php', {
                 appointment_id: id,
                 status: result.value
             });
         }
+    });
+}
+
+// Populates the cancellation-reply textarea from the dropdown's canned
+// text. Kept as a standalone global function (rather than inlining the
+// lookup in the <select>'s onchange attribute) because several canned
+// replies contain apostrophes/quotes that would otherwise break out of
+// the attribute's own quoting.
+function applyCannedReply(selectEl) {
+    const text = CANCELLATION_REPLIES[selectEl.value] || '';
+    document.getElementById('swal-cancel-reply-text').value = text;
+}
+
+// Second step shown only when cancelling: a dropdown of canned replies
+// (editable in the textarea below before sending) that gets emailed/
+// texted to the customer alongside the cancellation notice.
+function promptCancellationReply(id) {
+    Swal.fire({
+        title: 'Reply to Customer',
+        html: `
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Quick reply</label>
+                <select id="swal-cancel-reply-select" class="form-select mb-2" onchange="applyCannedReply(this)">
+                    <option value="reschedule" selected>Please contact us to reschedule</option>
+                    <option value="mechanic">Mechanic unavailable that day</option>
+                    <option value="parts">Parts unavailable</option>
+                    <option value="customer">Cancelled as requested</option>
+                    <option value="conflict">Scheduling conflict</option>
+                    <option value="custom">Custom message...</option>
+                </select>
+                <label class="form-label fw-semibold small">Message sent to customer (optional — edit as needed)</label>
+                <textarea id="swal-cancel-reply-text" class="form-control" rows="3">${CANCELLATION_REPLIES.reschedule}</textarea>
+            </div>`,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Cancel Appointment',
+        cancelButtonText: 'Back',
+        preConfirm: () => document.getElementById('swal-cancel-reply-text').value.trim()
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        postData('api/admin/update_appointment.php', {
+            appointment_id: id,
+            status: 'Cancelled',
+            cancellation_reply: result.value || ''
+        });
     });
 }
 
@@ -1880,8 +1969,8 @@ function endLiveSession() {
 function exportCSV(type) {
     let rows = [], headers = [], filename = '';
     if (type === 'appointments') {
-        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Status'];
-        rows     = masterData.appointments.map(a => [a.full_name || 'Guest', a.service_type, a.vehicle_info || '—', a.appointment_date, a.status]);
+        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Notes', 'Status', 'Cancellation Reply'];
+        rows     = masterData.appointments.map(a => [a.full_name || 'Guest', a.service_type, a.vehicle_info || '—', a.appointment_date, a.notes || '—', a.status, a.cancellation_reply || '—']);
         filename = 'appointments.csv';
     } else if (type === 'users') {
         headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];

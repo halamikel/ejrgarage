@@ -26,6 +26,19 @@ if ($colCheck && $colCheck->num_rows === 0) {
     $conn->query("ALTER TABLE appointments ADD COLUMN mechanic_id INT NULL");
 }
 
+// notes: the customer's "Additional Notes" free-text field from the
+// booking form (booking-details.php). cancellation_reply: the admin's
+// reply/reason when declining/cancelling an appointment from the
+// Manage dialog — see api/admin/update_appointment.php.
+$notesColCheck = $conn->query("SHOW COLUMNS FROM appointments LIKE 'notes'");
+if ($notesColCheck && $notesColCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE appointments ADD COLUMN notes TEXT NULL");
+}
+$replyColCheck = $conn->query("SHOW COLUMNS FROM appointments LIKE 'cancellation_reply'");
+if ($replyColCheck && $replyColCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE appointments ADD COLUMN cancellation_reply VARCHAR(255) NULL");
+}
+
 $svcTableCheck = $conn->query("SHOW TABLES LIKE 'ejr_services'");
 $svcTableIsNew = ($svcTableCheck && $svcTableCheck->num_rows === 0);
 

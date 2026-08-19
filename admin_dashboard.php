@@ -711,6 +711,10 @@ include 'includes/header.php';
                                     </th>
 
                                     <th>
+                                        Notes
+                                    </th>
+
+                                    <th>
                                         Status
                                     </th>
 
@@ -728,7 +732,7 @@ include 'includes/header.php';
                                 <tr>
 
                                     <td
-                                        colspan="7"
+                                        colspan="8"
                                         class="ejr-loading"
                                     >
 
