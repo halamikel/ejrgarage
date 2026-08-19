@@ -1213,6 +1213,7 @@ include 'includes/header.php';
 
                                     <th>Image</th>
                                     <th>Name</th>
+                                    <th>Brand</th>
                                     <th>Category</th>
                                     <th>Price</th>
                                     <th>Stock</th>
@@ -1228,7 +1229,7 @@ include 'includes/header.php';
                                 <tr>
 
                                     <td
-                                        colspan="6"
+                                        colspan="7"
                                         class="ejr-loading"
                                     >
 
