@@ -187,52 +187,19 @@ let cart = JSON.parse(localStorage.getItem('ejr_cart') || '[]');
 function refreshUserFromApi() {
     const token = localStorage.getItem('jwt_token');
     if (!token) return;
-   fetch('api/place_order.php', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-        customer_name:   document.getElementById('orderCustomerName').value,
-        contact:         document.getElementById('orderContact').value,
-        address:         document.getElementById('orderAddress').value.trim(),
-        items:           cart,
-        total_price:     total,
-        payment_method:  paymentMethod
+    fetch('api/get_profile.php', {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token }
     })
-})                                   // ← closes fetch's options object AND the fetch() call
-.then(res => res.json())
-.then(data => {
-    if (data.status === 'success') {
-        cart = [];
-        saveCart();
-        if (data.checkout_url) {
-            window.location.href = data.checkout_url;
-        } else {
-            Swal.fire({
-                icon: 'success',
-                title: 'Order Placed!',
-                text: paymentMethod === 'cod'
-                    ? 'Your order is pending. Please prepare exact cash for delivery/pickup.'
-                    : 'Your order is now pending. We will contact you shortly.',
-                confirmButtonColor: '#e62429'
-            }).then(() => {
-                window.location.href = 'available_parts.php';
-            });
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success' && data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            prefillUser(data.user);
         }
-    } else {
-        Swal.fire('Error', data.message || 'Failed to place order.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
-    }
-})
-.catch(() => {
-    Swal.fire('Error', 'Failed to connect to server.', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
-});
+    })
+    .catch(err => console.warn('Could not refresh user:', err));
+}
 
 function prefillUser(user) {
     let fullName = '';
@@ -323,6 +290,7 @@ function setupAddressControls() {
         }
     });
 }
+
 document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -444,13 +412,14 @@ document.getElementById('orderForm').addEventListener('submit', function (e) {
             'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
-    customer_name:   document.getElementById('orderCustomerName').value,
-    contact:         document.getElementById('orderContact').value,
-    address:         document.getElementById('orderAddress').value.trim(),
-    items:           cart,
-    total_price:     total,
-    payment_method:  paymentMethod
-})
+            customer_name:   document.getElementById('orderCustomerName').value,
+            contact:         document.getElementById('orderContact').value,
+            address:         document.getElementById('orderAddress').value.trim(),
+            items:           cart,
+            total_price:     total,
+            payment_method:  paymentMethod
+        })
+    })
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
