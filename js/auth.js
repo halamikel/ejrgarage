@@ -554,6 +554,13 @@ async function loadAppointments() {
                     ? `${app.brand} ${app.model}`
                     : "Vehicle Details Pending";
 
+                const replyHtml = (app.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                const cancellationNotice = (isCancelled && replyHtml)
+                    ? `<div class="small mt-2 p-2" style="background:#f8d7da;color:#842029;border-radius:8px;">
+                           <i class="bi bi-reply-fill me-1"></i><strong>Message from EJR Garage:</strong> ${replyHtml}
+                       </div>`
+                    : '';
+
                 const html = `
                 <div class="border rounded p-3 mb-3 bg-white shadow-sm">
                     <div class="d-flex justify-content-between align-items-start">
@@ -563,6 +570,7 @@ async function loadAppointments() {
                             <p class="small text-danger mb-0">
                                 <strong>Schedule:</strong> ${app.appointment_date}
                             </p>
+                            ${cancellationNotice}
                         </div>
                         <div class="text-end">
                             <span class="badge ${badgeClass} mb-2 d-inline-block">${app.status}</span>

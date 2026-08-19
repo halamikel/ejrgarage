@@ -256,6 +256,13 @@ function loadOrders() {
                 </div>
             `).join('');
 
+            const replyHtml = (order.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const cancellationNotice = (order.status === 'cancelled' && replyHtml)
+                ? `<div class="small mt-2 p-2" style="background:#fde2e2;color:#c0282d;border-radius:8px;">
+                       <i class="bi bi-reply-fill me-1"></i><strong>Message from EJR Garage:</strong> ${replyHtml}
+                   </div>`
+                : '';
+
             return `
             <div class="order-track-card card">
                 <div class="order-track-head">
@@ -271,6 +278,7 @@ function loadOrders() {
                 ${renderSteps(order.status)}
                 <div class="order-track-body">
                     ${itemsHtml}
+                    ${cancellationNotice}
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
                         <span class="fw-bold">Total</span>
                         <span class="fw-bold text-danger fs-5">₱${parseFloat(order.total_price).toLocaleString('en-PH', {minimumFractionDigits:2})}</span>

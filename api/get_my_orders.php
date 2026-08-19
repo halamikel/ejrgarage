@@ -38,8 +38,16 @@ try {
         exit;
     }
 
+    // ── SELF-HEALING: cancellation_reply column ─────────────────
+    // Guards against the column not existing yet if this endpoint is
+    // hit before an admin has ever cancelled an order.
+    $replyColCheck = $conn->query("SHOW COLUMNS FROM part_orders LIKE 'cancellation_reply'");
+    if ($replyColCheck && $replyColCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE part_orders ADD COLUMN cancellation_reply VARCHAR(255) NULL");
+    }
+
     $stmt = $conn->prepare("
-        SELECT id, items, total_price, status, payment_status, payment_method, created_at,
+        SELECT id, items, total_price, status, payment_status, payment_method, created_at, cancellation_reply,
                ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at ASC) AS user_order_number
         FROM part_orders
         WHERE user_id = ?
