@@ -26,7 +26,7 @@
         <h2 class="section-title">Quality Car Repair and Auto Parts</h2>
         <h5 class="fw-semibold text-dark">Mabalacat, Pampanga</h5>
         <div class="mini-line mx-auto"></div>
-        <p class="lead-text mx-auto" style="max-width: 850px;">
+        <p class="lead-text mx-auto text-dark" style="max-width: 850px;">
             We take pride in delivering dependable automotive solutions for all types of vehicles. From preventive maintenance to urgent roadside help, our skilled technicians are committed to fast turnaround times, accurate diagnostics, and customer-first service.
         </p>
     </div>
