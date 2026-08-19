@@ -57,25 +57,25 @@
       <div class="col-6 col-md-3">
         <div class="stat-item text-center">
           <div class="number h2 fw-bold text-danger">40+</div>
-          <div class="label small text-uppercase">Years in Service</div>
+          <div class="label small text-uppercase text-white">Years in Service</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-item text-center">
           <div class="number h2 fw-bold text-danger">5,000+</div>
-          <div class="label small text-uppercase">Satisfied Clients</div>
+          <div class="label small text-uppercase text-white">Satisfied Clients</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-item text-center">
           <div class="number h2 fw-bold text-danger">4.6</div>
-          <div class="label small text-uppercase">Average Rating</div>
+          <div class="label small text-uppercase text-white">Average Rating</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-item text-center">
           <div class="number h2 fw-bold text-danger">24/7</div>
-          <div class="label small text-uppercase">Emergency Response</div>
+          <div class="label small text-uppercase text-white">Emergency Response</div>
         </div>
       </div>
     </div>
