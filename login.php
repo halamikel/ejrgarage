@@ -54,8 +54,8 @@
         <div class="field">
           <label for="l-pw">Password</label>
           <div class="input-wrap">
-            <input type="password" id="l-pw" class="has-eye aria-label='Show-Password'" placeholder="Your password"/>
-            <button class="eye aria-label='Toggle Password Visibility'" type="button" onclick="togglePw('l-pw', this)"><i class="bi bi-eye"></i></button>
+            <input type="password" id="l-pw" class="has-eye" placeholder="Your password"/>
+            <button class="eye" aria-label="Toggle Password Visibility" type="button" onclick="togglePw('l-pw', this)"><i class="bi bi-eye"></i></button>
           </div>
           <div class="field-error" id="pwError"></div>
         </div>
