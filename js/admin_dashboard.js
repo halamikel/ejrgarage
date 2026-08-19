@@ -131,6 +131,7 @@ function filterAndRenderParts() {
     const filtered = partsData.filter(p => {
         const matchesTerm = !term ||
             (p.name && p.name.toLowerCase().includes(term)) ||
+            (p.brand && p.brand.toLowerCase().includes(term)) ||
             (p.category && p.category.toLowerCase().includes(term));
         const matchesCategory = !category || p.category === category;
         const matchesStock = !stock ||
@@ -145,21 +146,29 @@ function renderParts(parts) {
     const tbody = document.getElementById('partsTableBody');
     if (!tbody) return;
     if (!parts.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No parts match your search.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No parts match your search.</td></tr>';
         return;
     }
-    tbody.innerHTML = parts.map(p => `
+    tbody.innerHTML = parts.map(p => {
+        const brand = (p.brand || '').replace(/'/g, "\\'");
+        return `
         <tr>
-            <td><img src="${p.image_url || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
-                     onerror="this.style.display='none'"></td>
+            <td>${
+                p.image_url
+                    ? `<img src="${p.image_url}" style="width:50px;height:40px;object-fit:cover;border-radius:6px;"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='inline';">
+                       <span class="text-muted" style="display:none;">No image</span>`
+                    : `<span class="text-muted">No image</span>`
+            }</td>
             <td class="fw-bold">${p.name}</td>
+            <td>${p.brand ? `<span class="badge bg-light text-dark border">${p.brand}</span>` : `<span class="text-muted">—</span>`}</td>
             <td><span class="badge bg-light text-dark border">${p.category}</span></td>
             <td>₱${parseFloat(p.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
             <td><span class="badge ${p.stock > 0 ? 'bg-success' : 'bg-danger'}">${p.stock}</span></td>
             <td>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-dark"
-                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
+                            onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${brand}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
                         <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
@@ -168,7 +177,8 @@ function renderParts(parts) {
                     </button>
                 </div>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
 function loadInquiries() {
@@ -936,10 +946,10 @@ function openAddPart() {
     });
 }
 
-function openEditPart(id, name, desc, price, category, image_url, stock) {
+function openEditPart(id, name, brand, desc, price, category, image_url, stock) {
     Swal.fire({
         title: 'Edit Part',
-        html: partForm({ name, desc, price, category, image_url, stock }),
+        html: partForm({ name, brand, desc, price, category, image_url, stock }),
         showCancelButton: true,
         confirmButtonColor: '#b30000',
         confirmButtonText: 'Save Changes',
@@ -954,6 +964,8 @@ function partForm(v = {}) {
         <div class="text-start">
             <div class="mb-2"><label class="form-label fw-semibold small">Name</label>
             <input id="sp-name" class="form-control" value="${v.name || ''}"></div>
+            <div class="mb-2"><label class="form-label fw-semibold small">Brand</label>
+            <input id="sp-brand" class="form-control" value="${v.brand || ''}" placeholder="e.g. Bosch, Brembo, Toyota"></div>
             <div class="mb-2"><label class="form-label fw-semibold small">Description</label>
             <textarea id="sp-desc" class="form-control" rows="2">${v.desc || ''}</textarea></div>
             <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
@@ -976,6 +988,7 @@ function getPartFormValues(action, id = null) {
     const val = {
         action,
         name:        document.getElementById('sp-name').value.trim(),
+        brand:       document.getElementById('sp-brand').value.trim(),
         description: document.getElementById('sp-desc').value.trim(),
         price:       parseFloat(document.getElementById('sp-price').value),
         category:    document.getElementById('sp-cat').value,
