@@ -112,7 +112,7 @@ if (localStorage.getItem('jwt_token')) {
 
                 </div>
 
-                <p class="text-secondary small px-lg-5">
+                <p class="text-primary small px-lg-5">
 
                     Reliable repairs.
                     Honest pricing.
@@ -187,7 +187,7 @@ if (localStorage.getItem('jwt_token')) {
                             Monday – Friday:
 
                             <span
-                                class="text-secondary ps-2"
+                                class="text-primary ps-2"
                             >
                                 8:00 AM – 6:00 PM
                             </span>
@@ -199,7 +199,7 @@ if (localStorage.getItem('jwt_token')) {
                             Saturday:
 
                             <span
-                                class="text-secondary ps-2"
+                                class="text-primary ps-2"
                             >
                                 8:00 AM – 5:00 PM
                             </span>
@@ -236,7 +236,7 @@ if (localStorage.getItem('jwt_token')) {
                 >
 
                 <p
-                    class="small text-secondary m-0"
+                    class="small text-primary m-0"
                 >
                     © 2026 EJR Garage.
                     All rights reserved.
