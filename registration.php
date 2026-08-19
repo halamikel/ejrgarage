@@ -4,7 +4,7 @@ session_start();
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<head role="header">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EJR Garage — Register</title>
@@ -22,7 +22,7 @@ session_start();
   <link rel="stylesheet" href="css/registration.css" />
 </head>
 
-<body>
+<main role="main">
 
   <div class="stripe"></div>
   <svg class="gear gear-1" viewBox="0 0 100 100">
@@ -163,6 +163,6 @@ session_start();
   <script src="js/global.js?v=<?php echo time(); ?>"></script>
   <script src="js/auth.js?v=<?php echo time(); ?>"></script>
 
-</body>
+</main>
 
 </html>
