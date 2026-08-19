@@ -122,7 +122,7 @@ if (localStorage.getItem('jwt_token')) {
 
                 <div class="d-flex gap-3 mt-2">
 
-                    <a
+                    <!-- <a
                         href="#"
                         class="text-white opacity-75"
                     >
@@ -141,7 +141,7 @@ if (localStorage.getItem('jwt_token')) {
                         class="text-white opacity-75"
                     >
                         <i class="bi bi-twitter-x fs-5"></i>
-                    </a>
+                    </a> -->
 
                 </div>
 
