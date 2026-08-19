@@ -541,43 +541,49 @@ body {
 /* Customer */
 #tab-appointments .ejr-table th:nth-child(1),
 #tab-appointments .ejr-table td:nth-child(1) {
-    width: 17%;
+    width: 14%;
 }
 
 /* Service */
 #tab-appointments .ejr-table th:nth-child(2),
 #tab-appointments .ejr-table td:nth-child(2) {
-    width: 17%;
+    width: 15%;
 }
 
 /* Vehicle */
 #tab-appointments .ejr-table th:nth-child(3),
 #tab-appointments .ejr-table td:nth-child(3) {
-    width: 16%;
+    width: 13%;
 }
 
 /* Date */
 #tab-appointments .ejr-table th:nth-child(4),
 #tab-appointments .ejr-table td:nth-child(4) {
-    width: 14%;
+    width: 11%;
 }
 
 /* Mechanic */
 #tab-appointments .ejr-table th:nth-child(5),
 #tab-appointments .ejr-table td:nth-child(5) {
-    width: 14%;
+    width: 12%;
+}
+
+/* Notes */
+#tab-appointments .ejr-table th:nth-child(6),
+#tab-appointments .ejr-table td:nth-child(6) {
+    width: 10%;
 }
 
 /* Status */
-#tab-appointments .ejr-table th:nth-child(6),
-#tab-appointments .ejr-table td:nth-child(6) {
-    width: 11%;
+#tab-appointments .ejr-table th:nth-child(7),
+#tab-appointments .ejr-table td:nth-child(7) {
+    width: 10%;
 }
 
 /* Action */
-#tab-appointments .ejr-table th:nth-child(7),
-#tab-appointments .ejr-table td:nth-child(7) {
-    width: 11%;
+#tab-appointments .ejr-table th:nth-child(8),
+#tab-appointments .ejr-table td:nth-child(8) {
+    width: 15%;
 }
 
 /* -------------------------------------------------------------
