@@ -288,7 +288,8 @@ function renderOrders(orders) {
             : o.items;
         const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const safeName  = o.customer_name.replace(/'/g, "\\'");
-        const isPending = o.status.toLowerCase() === 'pending';
+        const isPending  = o.status.toLowerCase() === 'pending';
+        const isApproved = o.status.toLowerCase() === 'approved';
         const address   = o.address || '—';
 
         return `
@@ -305,7 +306,7 @@ function renderOrders(orders) {
             <td>${statusBadge(o.status)}</td>
             <td>
                 <div class="btn-group">
-                    ${isPending ? `
+                    ${(isPending || isApproved) ? `
                         <button class="btn btn-sm btn-outline-success"
                                 onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Manage">
                             <i class="bi bi-pencil-square"></i>
@@ -348,6 +349,7 @@ function statusBadge(status) {
         'approved':  'bg-success',
         'confirmed': 'bg-success',
         'completed': 'bg-success',
+        'delivered': 'bg-primary',
         'cancelled': 'bg-danger'
     };
     const displayStatus = s.charAt(0).toUpperCase() + s.slice(1);
@@ -1240,12 +1242,27 @@ function deleteInquiry(id) {
 
 function updateOrder(id, status, name) {
     const currentStatus = status.toLowerCase();
-    if (currentStatus === 'approved' || currentStatus === 'completed') {
-        Swal.fire({ title: 'Already Approved', html: `Order for <b>${name}</b> is already approved.`, icon: 'info', confirmButtonColor: '#b30000' });
+    if (currentStatus === 'delivered' || currentStatus === 'completed') {
+        Swal.fire({ title: 'Already Delivered', html: `Order for <b>${name}</b> has already been delivered.`, icon: 'info', confirmButtonColor: '#b30000' });
         return;
     }
     if (currentStatus === 'cancelled') {
         Swal.fire({ title: 'Order Cancelled', html: `Order for <b>${name}</b> has already been cancelled.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+    if (currentStatus === 'approved') {
+        Swal.fire({
+            title: 'Mark as Delivered?',
+            html: `Confirm that the order for <b>${name}</b> has been delivered/picked up.`,
+            icon: 'question',
+            showConfirmButton: true,
+            confirmButtonText: '✓ Mark Delivered',
+            confirmButtonColor: '#198754',
+            showCancelButton: true,
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) executeStatusUpdate(id, 'delivered', name);
+        });
         return;
     }
     Swal.fire({
