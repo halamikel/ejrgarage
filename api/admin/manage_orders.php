@@ -50,6 +50,14 @@ if ($method === 'POST') {
     $order_id = (int)($postData['id'] ?? 0);
 }
 
+// ── SELF-HEALING: cancellation_reply column ─────────────────────
+// Mirrors the same pattern used for appointments — adds the column
+// on first use so existing installs don't need a manual migration.
+$replyColCheck = $conn->query("SHOW COLUMNS FROM part_orders LIKE 'cancellation_reply'");
+if ($replyColCheck && $replyColCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE part_orders ADD COLUMN cancellation_reply VARCHAR(255) NULL");
+}
+
 // ── GET ORDERS ────────────────────────────────────────────────
 // ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
@@ -167,14 +175,85 @@ if ($action === 'update_status') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE part_orders SET status = ? WHERE id = ?");
-    $stmt->bind_param("si", $newStatus, $order_id);
+    // Admin's reply/reason when declining/cancelling an order — optional,
+    // only meaningful when the new status is 'cancelled'.
+    $cancellationReply = trim((string)($postData['cancellation_reply'] ?? ''));
 
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Order status updated.']);
+    if ($newStatus === 'cancelled') {
+        $stmt = $conn->prepare("UPDATE part_orders SET status = ?, cancellation_reply = ? WHERE id = ?");
+        $replyOrNull = $cancellationReply !== '' ? $cancellationReply : null;
+        $stmt->bind_param("ssi", $newStatus, $replyOrNull, $order_id);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update order status.']);
+        $stmt = $conn->prepare("UPDATE part_orders SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $newStatus, $order_id);
     }
+
+    if (!$stmt->execute()) {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update order status.']);
+        exit;
+    }
+
+    echo json_encode(['status' => 'success', 'message' => 'Order status updated.']);
+
+    // ── NOTIFY CUSTOMER (cancellations only) ────────────────────
+    // Sent after the response so the admin UI isn't held up waiting
+    // on email/SMS delivery.
+    if ($newStatus === 'cancelled') {
+        $orderStmt = $conn->prepare("
+            SELECT o.customer_name, o.total_price,
+                   u.email, u.full_name, u.phone, u.notif_email, u.notif_sms
+            FROM part_orders o
+            LEFT JOIN users u ON u.id = o.user_id
+            WHERE o.id = ?
+        ");
+        $orderStmt->bind_param("i", $order_id);
+        $orderStmt->execute();
+        $orderRow = $orderStmt->get_result()->fetch_assoc();
+
+        if ($orderRow && !empty($orderRow['email'])) {
+            $orderNo   = 'EJR-ORD-' . date('Y') . '-' . str_pad($order_id, 5, '0', STR_PAD_LEFT);
+            $firstName = explode(' ', trim($orderRow['full_name'] ?? $orderRow['customer_name'] ?? 'Customer'))[0];
+
+            if ((int)($orderRow['notif_email'] ?? 1) === 1) {
+                $html = '
+                <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
+                    <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
+                        <div style="text-align:center;margin-bottom:24px;">
+                            <h2 style="color:#e62429;margin:0;">EJR Garage</h2>
+                            <p style="color:#5f6b7a;margin:4px 0 0;">Order Update</p>
+                        </div>
+                        <p style="color:#1e2a36;">Hi <strong>' . htmlspecialchars($orderRow['full_name'] ?? $orderRow['customer_name']) . '</strong>,</p>
+                        <p style="color:#5f6b7a;">Your order <strong>' . $orderNo . '</strong> has been:</p>
+                        <div style="text-align:center;margin:16px 0;">
+                            <span style="background:#f8d7da;color:#842029;padding:6px 20px;border-radius:20px;font-size:15px;font-weight:bold;">CANCELLED</span>
+                        </div>' .
+                        ($cancellationReply !== '' ? '
+                        <div style="background:#f8d7da;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+                            <p style="color:#842029;margin:0;font-size:13px;font-weight:bold;">Message from EJR Garage</p>
+                            <p style="color:#842029;margin:6px 0 0;font-size:14px;">' . htmlspecialchars($cancellationReply) . '</p>
+                        </div>' : '') . '
+                        <div style="text-align:center;margin-top:24px;">
+                            <a href="https://ejrgarage.onrender.com/my_orders.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                                View My Orders
+                            </a>
+                        </div>
+                        <p style="color:#a0aab5;font-size:11px;text-align:center;margin-top:24px;">EJR Garage &mdash; Santo Tomas, Batangas</p>
+                    </div>
+                </div>';
+
+                sendEmailViaBrevo($orderRow['email'], $orderRow['full_name'] ?? $orderRow['customer_name'], "EJR Garage - Order Cancelled", $html);
+            }
+
+            if ((int)($orderRow['notif_sms'] ?? 0) === 1 && !empty($orderRow['phone'])) {
+                $smsText = "EJR Garage: Hi {$firstName}, your order {$orderNo} has been CANCELLED.";
+                if ($cancellationReply !== '') {
+                    $smsText .= " Note: {$cancellationReply}";
+                }
+                sendSmsViaSemaphore($orderRow['phone'], $smsText);
+            }
+        }
+    }
+
     exit;
 }
 

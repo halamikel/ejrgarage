@@ -291,6 +291,7 @@ function renderOrders(orders) {
         const isPending  = o.status.toLowerCase() === 'pending';
         const isApproved = o.status.toLowerCase() === 'approved';
         const address   = o.address || '—';
+        const replyHtml = (o.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
         return `
         <tr>
@@ -303,7 +304,12 @@ function renderOrders(orders) {
                 title="${itemsList}">${itemsList}</td>
             <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
             <td>${date}</td>
-            <td>${statusBadge(o.status)}</td>
+            <td>
+                ${statusBadge(o.status)}
+                ${o.status.toLowerCase() === 'cancelled' && replyHtml
+                    ? `<div class="small text-muted mt-1" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3em;" title="${replyHtml}"><i class="bi bi-reply-fill me-1"></i>${replyHtml}</div>`
+                    : ''}
+            </td>
             <td>
                 <div class="btn-group">
                     ${(isPending || isApproved) ? `
@@ -1279,13 +1285,64 @@ function updateOrder(id, status, name) {
         cancelButtonText: 'Keep Pending'
     }).then(result => {
         if (result.isConfirmed) executeStatusUpdate(id, 'approved', name);
-        else if (result.isDenied) executeStatusUpdate(id, 'cancelled', name);
+        else if (result.isDenied) promptOrderCancellationReply(id, name);
     });
 }
 
-function executeStatusUpdate(id, newStatus, name) {
+// Canned reply options shown in the "Reply to customer" dropdown when
+// an admin declines/cancels a parts order — same pattern as
+// CANCELLATION_REPLIES for appointments above.
+const ORDER_CANCELLATION_REPLIES = {
+    'stock':      "We're sorry, one or more items in your order are currently out of stock.",
+    'payment':    "Cancelled due to a payment issue. Please contact us or place a new order.",
+    'customer':   "Cancelled as requested.",
+    'incorrect':  "Cancelled due to incorrect or incomplete order details. Please place a new order.",
+    'unreachable':"Cancelled — we were unable to reach you to confirm delivery/pickup details.",
+    'custom':     ''
+};
+
+// Populates the order cancellation-reply textarea from the dropdown's
+// canned text — mirrors applyCannedReply() for appointments.
+function applyOrderCannedReply(selectEl) {
+    const text = ORDER_CANCELLATION_REPLIES[selectEl.value] || '';
+    document.getElementById('swal-order-cancel-reply-text').value = text;
+}
+
+// Second step shown only when declining/cancelling an order: a dropdown
+// of canned replies (editable in the textarea below before sending)
+// that gets emailed/texted to the customer alongside the cancellation
+// notice — mirrors promptCancellationReply() for appointments.
+function promptOrderCancellationReply(id, name) {
+    Swal.fire({
+        title: 'Reply to Customer',
+        html: `
+            <div class="text-start mb-3">
+                <label class="form-label fw-semibold small">Quick reply</label>
+                <select id="swal-order-cancel-reply-select" class="form-select mb-2" onchange="applyOrderCannedReply(this)">
+                    <option value="stock" selected>Item(s) out of stock</option>
+                    <option value="payment">Payment issue</option>
+                    <option value="customer">Cancelled as requested</option>
+                    <option value="incorrect">Incorrect/incomplete order details</option>
+                    <option value="unreachable">Unable to reach customer</option>
+                    <option value="custom">Custom message...</option>
+                </select>
+                <label class="form-label fw-semibold small">Message sent to customer (optional — edit as needed)</label>
+                <textarea id="swal-order-cancel-reply-text" class="form-control" rows="3">${ORDER_CANCELLATION_REPLIES.stock}</textarea>
+            </div>`,
+        showCancelButton: true,
+        confirmButtonColor: '#b30000',
+        confirmButtonText: 'Decline Order',
+        cancelButtonText: 'Back',
+        preConfirm: () => document.getElementById('swal-order-cancel-reply-text').value.trim()
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        executeStatusUpdate(id, 'cancelled', name, result.value || '');
+    });
+}
+
+function executeStatusUpdate(id, newStatus, name, cancellationReply) {
     fetch('api/admin/manage_orders.php', { method: 'POST', credentials: 'include', headers: getAuthHeaders(),
-        body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+        body: JSON.stringify({ action: 'update_status', id, status: newStatus, cancellation_reply: cancellationReply || '' })
     })
     .then(res => res.json())
     .then(data => {
