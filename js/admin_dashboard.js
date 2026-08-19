@@ -1022,12 +1022,7 @@ function partForm(v = {}) {
             <div class="mb-2"><label class="form-label fw-semibold small">Price (₱)</label>
             <input id="sp-price" type="number" class="form-control" value="${v.price || ''}"></div>
             <div class="mb-2"><label class="form-label fw-semibold small">Category</label>
-            <select id="sp-cat" class="form-select">
-                <option value="engine"     ${v.category === 'engine'     ? 'selected' : ''}>Engine</option>
-                <option value="brakes"     ${v.category === 'brakes'     ? 'selected' : ''}>Brakes</option>
-                <option value="suspension" ${v.category === 'suspension' ? 'selected' : ''}>Suspension</option>
-                <option value="electrical" ${v.category === 'electrical' ? 'selected' : ''}>Electrical</option>
-            </select></div>
+            <input id="sp-cat" class="form-control" value="${v.category || ''}" placeholder="e.g. Engine, Brakes, Suspension"></div>
             <div class="mb-2">
                 <label class="form-label fw-semibold small">Photo</label>
                 <input id="sp-img-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" onchange="uploadPartImage(this)">
