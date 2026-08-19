@@ -710,7 +710,7 @@ include 'includes/header.php';
                                         Mechanic
                                     </th>
 
-                                    <th>
+                                    <th style="width:120px;">
                                         Notes
                                     </th>
 

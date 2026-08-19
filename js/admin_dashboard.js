@@ -436,7 +436,7 @@ function renderAppointments(apps) {
             // HTML attributes tolerate raw newlines; JS string literals
             // embedded in onclick="..." do not.
             const notesCell = notesText
-                ? `<span class="text-truncate d-inline-block" style="max-width:160px;cursor:pointer;" title="Click to view full note" data-note="${notesHtml}" onclick="viewAppointmentNote(this.dataset.note)">${notesHtml}</span>`
+                ? `<span class="d-inline-block" style="max-width:110px;max-height:2.6em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3em;cursor:pointer;" title="Click to view full note" data-note="${notesHtml}" onclick="viewAppointmentNote(this.dataset.note)">${notesHtml}</span>`
                 : `<span class="text-muted small">—</span>`;
             const replyHtml = (a.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             return `
@@ -456,7 +456,7 @@ function renderAppointments(apps) {
                 <td>
                     ${statusBadge(a.status)}
                     ${a.status === 'Cancelled' && replyHtml
-                        ? `<div class="small text-muted mt-1" style="max-width:160px;" title="${replyHtml}"><i class="bi bi-reply-fill me-1"></i>${replyHtml}</div>`
+                        ? `<div class="small text-muted mt-1" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3em;" title="${replyHtml}"><i class="bi bi-reply-fill me-1"></i>${replyHtml}</div>`
                         : ''}
                 </td>
                 <td>
