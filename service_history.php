@@ -141,7 +141,7 @@ function loadServiceHistory(token) {
 
         container.innerHTML = data.history.map(h => {
             const vehicle = h.brand && h.model
-                ? `${h.brand} ${h.model} (${h.year_model || '—'})`
+                ? `${h.brand} ${h.model} (${h.year_model || '—'})${h.plate_number ? ' — ' + h.plate_number : ''}`
                 : '—';
             const date = h.appointment_date
                 ? new Date(h.appointment_date).toLocaleDateString('en-US', {
