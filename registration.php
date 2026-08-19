@@ -116,6 +116,50 @@ session_start();
       </div>
     </div>
 
+  <div id="tosModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('tosModal')">&times;</span>
+      <h2>Terms of Service</h2>
+      <div class="modal-body">
+        <p><strong>Last updated:</strong> <?php echo date('F j, Y'); ?></p>
+
+        <h3>1. Acceptance of Terms</h3>
+        <p>By creating an account with EJR Garage, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, please do not register for or use our services.</p>
+
+        <h3>2. Account Registration</h3>
+        <p>You must provide accurate, current, and complete information when creating your account, including your name, email address, and phone number. You are responsible for maintaining the confidentiality of your password and for all activity that occurs under your account.</p>
+
+        <h3>3. Service Bookings</h3>
+        <p>EJR Garage allows you to book vehicle repair and maintenance appointments, track service history, and manage your vehicles online. Appointment availability is subject to confirmation, and we reserve the right to reschedule or decline bookings due to capacity or unforeseen circumstances.</p>
+
+        <h3>4. Parts &amp; Payments</h3>
+        <p>Prices for parts and services are subject to change without prior notice. Payments made through the platform are processed via our third-party payment providers. You agree to pay all charges incurred under your account at the prices in effect when such charges are incurred.</p>
+
+        <h3>5. User Conduct</h3>
+        <ul>
+          <li>You will not use the platform for any unlawful purpose or in violation of these Terms.</li>
+          <li>You will not attempt to gain unauthorized access to other accounts, systems, or networks connected to EJR Garage.</li>
+          <li>You will not submit false, misleading, or fraudulent information when booking services or placing orders.</li>
+        </ul>
+
+        <h3>6. Vehicle &amp; Personal Information</h3>
+        <p>Information you provide about yourself and your vehicles is used to deliver and improve our services, including appointment scheduling, service history tracking, and customer support. We do not sell your personal information to third parties.</p>
+
+        <h3>7. Limitation of Liability</h3>
+        <p>EJR Garage strives to provide accurate and reliable service, but we make no warranties regarding the availability, accuracy, or reliability of the platform. To the fullest extent permitted by law, EJR Garage shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform.</p>
+
+        <h3>8. Account Termination</h3>
+        <p>We reserve the right to suspend or terminate accounts that violate these Terms of Service, provide fraudulent information, or misuse the platform in any way.</p>
+
+        <h3>9. Changes to These Terms</h3>
+        <p>We may update these Terms of Service from time to time. Continued use of your account after changes are posted constitutes your acceptance of the revised terms.</p>
+
+        <h3>10. Contact Us</h3>
+        <p>If you have any questions about these Terms of Service, please reach out to us through the Contact page.</p>
+      </div>
+    </div>
+  </div>
+
   <script src="js/global.js?v=<?php echo time(); ?>"></script>
   <script src="js/auth.js?v=<?php echo time(); ?>"></script>
 

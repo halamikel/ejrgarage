@@ -34,6 +34,37 @@ function logout() {
     window.location.href = '/logout.php';
 }
 
+// ==========================================
+// GENERIC MODAL HELPERS (e.g. Terms of Service)
+// ==========================================
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.style.display = "block";
+    document.body.style.overflow = "hidden";
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.style.display = "none";
+    document.body.style.overflow = "";
+}
+
+document.addEventListener("click", (e) => {
+    if (e.target.classList && e.target.classList.contains("modal")) {
+        closeModal(e.target.id);
+    }
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        document.querySelectorAll(".modal").forEach((modal) => {
+            if (modal.style.display === "block") closeModal(modal.id);
+        });
+    }
+});
+
 function togglePw(inputId, btn) {
     const input = document.getElementById(inputId);
     const icon = btn.querySelector("i");

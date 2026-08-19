@@ -210,6 +210,43 @@ input[type="password"]::-ms-clear {
   transform: scale(1.1);
 }
 
+.modal-content .modal-body {
+  padding: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-dark);
+  background: #fff;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.modal-content .modal-body p {
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.modal-content .modal-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  color: var(--text-dark);
+}
+
+.modal-content .modal-body h3:first-of-type {
+  margin-top: 0;
+}
+
+.modal-content .modal-body ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.modal-content .modal-body li {
+  margin-bottom: 6px;
+}
+
 @keyframes modalFadeIn {
   from {
     transform: translateY(-20px);
