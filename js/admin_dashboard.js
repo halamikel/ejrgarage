@@ -2930,13 +2930,6 @@ function assignMechanic(appointmentId) {
                 '[data-section="vehicles"]'
             ],
 
-            history: [
-                '#history',
-                '#historyTab',
-                '#history-section',
-                '[data-section="history"]'
-            ],
-
             parts: [
                 '#parts',
                 '#partsTab',
