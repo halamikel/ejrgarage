@@ -41,6 +41,15 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role_id'] != 2 && $_SESSION['use
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+// ── PARSE POST BODY (action, id) ────────────────────────────────
+$action   = '';
+$order_id = 0;
+if ($method === 'POST') {
+    $postData = json_decode(file_get_contents('php://input'), true) ?? [];
+    $action   = $postData['action'] ?? '';
+    $order_id = (int)($postData['id'] ?? 0);
+}
+
 // ── GET ORDERS ────────────────────────────────────────────────
 // ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
@@ -146,6 +155,26 @@ if ($method === 'GET') {
         'orders' => $orders
     ]);
 
+    exit;
+}
+
+if ($action === 'update_status') {
+    $newStatus = $postData['status'] ?? '';
+    $allowed   = ['pending', 'approved', 'cancelled', 'completed'];
+
+    if (!$order_id || !in_array($newStatus, $allowed, true)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid order or status.']);
+        exit;
+    }
+
+    $stmt = $conn->prepare("UPDATE part_orders SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $newStatus, $order_id);
+
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Order status updated.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update order status.']);
+    }
     exit;
 }
 
