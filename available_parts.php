@@ -5,14 +5,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<section class="appointment-header text-center">
+<section class="appointment-header text-center" role="header">
   <div class="container">
     <h1>Available Parts</h1>
     <p>Browse high-quality automotive parts available at EJR Garage</p>
   </div>
 </section>
 
-<section class="services-section py-5">
+<section class="services-section py-5" role="available parts">
   <div class="container">
 
     <div class="row g-3 mb-4">
@@ -34,7 +34,7 @@
           <option value="electrical">Electrical</option>
         </select>
         <!-- Cart Button -->
-        <a href="my_cart.php" class="btn btn-dark position-relative flex-shrink-0 px-3">
+        <a href="my_cart.php" class="btn btn-dark position-relative flex-shrink-0 px-3" aria-label="View Cart">
           <i class="bi bi-cart3 fs-5"></i>
           <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
         </a>
