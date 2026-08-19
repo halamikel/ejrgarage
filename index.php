@@ -5,7 +5,7 @@
     include 'includes/header.php'; 
 ?>
 
-<section class="hero" role="hero page" style="background: linear-gradient(rgba(5, 5, 5, 0.7), rgba(5, 5, 5, 0.7)), url('assets/images/index1.png') center/cover no-repeat;">
+<section class="hero" style="background: linear-gradient(rgba(5, 5, 5, 0.7), rgba(5, 5, 5, 0.7)), url('assets/images/index1.png') center/cover no-repeat;">
   <div class="container">
     <div class="row">
       <div class="col-lg-7">
@@ -21,7 +21,7 @@
   </div>
 </section>
 
-<section class="services-intro py-5" role="service introduction" id="about">
+<section class="services-intro py-5" id="about">
     <div class="container text-center">
         <h2 class="section-title">Quality Car Repair and Auto Parts</h2>
         <h5 class="fw-semibold text-dark">Mabalacat, Pampanga</h5>
@@ -83,7 +83,7 @@
 </section>
 
 <!-- Google Reviews -->
-<section class="py-5" style="background: #f8f9fa;" role="customer reviews">
+<section class="py-5" style="background: #f8f9fa;">
   <div class="container">
     <div class="text-center mb-4">
       <h2 class="section-title">What Our Customers Say</h2>
