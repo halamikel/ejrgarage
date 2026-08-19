@@ -244,7 +244,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     function () {
 
                         const serviceName =
-                            this.textContent.trim();
+                            (this.dataset.serviceName || this.textContent).trim();
 
 
                         if (serviceError) {
@@ -322,6 +322,225 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
         );
+
+
+        // ========================================================
+        // SERVICE DETAILS MODAL
+        // ========================================================
+
+        const detailsModal =
+            document.getElementById("serviceDetailsModal");
+
+        const detailsNameEl =
+            document.getElementById("serviceDetailsName");
+
+        const detailsPriceEl =
+            document.getElementById("serviceDetailsPrice");
+
+        const detailsDescEl =
+            document.getElementById("serviceDetailsDescription");
+
+        const detailsSelectBtn =
+            document.getElementById("serviceDetailsSelectBtn");
+
+        let activeDetailsService = null;
+
+        function formatPrice(price) {
+
+            const num = parseFloat(price);
+
+            if (!num || num <= 0) {
+
+                return "";
+
+            }
+
+            return "Starts at \u20B1" +
+                num.toLocaleString("en-PH", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
+
+        }
+
+        function refreshDetailsSelectBtn() {
+
+            if (!activeDetailsService || !detailsSelectBtn) {
+
+                return;
+
+            }
+
+            const isDisabled =
+                activeDetailsService.dataset.vehicleDisabled === "true";
+
+            const isSelected =
+                activeDetailsService.classList.contains("selected");
+
+            if (isDisabled) {
+
+                detailsSelectBtn.textContent =
+                    "Not Available For This Vehicle";
+
+                detailsSelectBtn.disabled = true;
+
+                detailsSelectBtn.classList.remove("is-selected");
+
+                return;
+
+            }
+
+            detailsSelectBtn.disabled = false;
+
+            if (isSelected) {
+
+                detailsSelectBtn.textContent =
+                    "Remove From Selection";
+
+                detailsSelectBtn.classList.add("is-selected");
+
+            } else {
+
+                detailsSelectBtn.textContent =
+                    "Select This Service";
+
+                detailsSelectBtn.classList.remove("is-selected");
+
+            }
+
+        }
+
+        window.showServiceDetails = function (serviceEl) {
+
+            if (!serviceEl || !detailsModal) {
+
+                return;
+
+            }
+
+            activeDetailsService = serviceEl;
+
+            const name =
+                serviceEl.dataset.serviceName ||
+                serviceEl.textContent.trim();
+
+            const description =
+                serviceEl.dataset.description || "";
+
+            const price =
+                serviceEl.dataset.price || "";
+
+            if (detailsNameEl) {
+
+                detailsNameEl.textContent = name;
+
+            }
+
+            if (detailsDescEl) {
+
+                detailsDescEl.textContent =
+                    description ||
+                    "No additional details are available for this service yet. Feel free to ask our team when you arrive.";
+
+            }
+
+            const formattedPrice =
+                formatPrice(price);
+
+            if (detailsPriceEl) {
+
+                if (formattedPrice) {
+
+                    detailsPriceEl.textContent =
+                        formattedPrice;
+
+                    detailsPriceEl.style.display =
+                        "inline-block";
+
+                } else {
+
+                    detailsPriceEl.style.display =
+                        "none";
+
+                }
+
+            }
+
+            refreshDetailsSelectBtn();
+
+            detailsModal.style.display = "flex";
+
+            document.body.style.overflow = "hidden";
+
+        };
+
+        window.closeServiceDetails = function () {
+
+            if (!detailsModal) {
+
+                return;
+
+            }
+
+            detailsModal.style.display = "none";
+
+            document.body.style.overflow = "";
+
+            activeDetailsService = null;
+
+        };
+
+        window.toggleServiceFromModal = function () {
+
+            if (
+                !activeDetailsService ||
+                activeDetailsService.dataset.vehicleDisabled === "true"
+            ) {
+
+                return;
+
+            }
+
+            activeDetailsService.click();
+
+            refreshDetailsSelectBtn();
+
+        };
+
+        if (detailsModal && detailsModal.dataset.listenersAttached !== "true") {
+
+            detailsModal.addEventListener(
+                "click",
+                function (event) {
+
+                    if (event.target === detailsModal) {
+
+                        window.closeServiceDetails();
+
+                    }
+
+                }
+            );
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Escape" &&
+                        detailsModal.style.display === "flex"
+                    ) {
+
+                        window.closeServiceDetails();
+
+                    }
+
+                }
+            );
+
+            detailsModal.dataset.listenersAttached = "true";
+
+        }
 
 
         // ========================================================

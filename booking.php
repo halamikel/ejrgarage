@@ -295,6 +295,52 @@ include 'includes/header.php';
 
 
 <!-- ============================================================
+     SERVICE DETAILS MODAL
+============================================================ -->
+
+<div
+    id="serviceDetailsModal"
+    class="service-details-modal"
+    style="display:none;"
+>
+
+    <div class="service-details-modal-content">
+
+        <button
+            type="button"
+            class="service-details-close"
+            aria-label="Close"
+            onclick="window.closeServiceDetails();"
+        >
+            &times;
+        </button>
+
+        <div class="service-details-icon">
+            <i class="bi bi-tools"></i>
+        </div>
+
+        <h3 id="serviceDetailsName">Service Name</h3>
+
+        <div id="serviceDetailsPrice" class="service-details-price" style="display:none;"></div>
+
+        <p id="serviceDetailsDescription" class="service-details-desc"></p>
+
+        <button
+            type="button"
+            id="serviceDetailsSelectBtn"
+            class="btn btn-next w-100 mt-2"
+            onclick="window.toggleServiceFromModal();"
+        >
+            Select This Service
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================================================
      LOAD SERVICES FROM DATABASE
 ============================================================ -->
 
@@ -480,6 +526,9 @@ include 'includes/header.php';
                                     service.price_from
                                 ) || 0;
 
+                            const description =
+                                (service.description || '').trim();
+
 
                             html += `
 
@@ -490,6 +539,7 @@ include 'includes/header.php';
                                     <div
                                         class="service-item"
                                         data-service-name="${escapeHtml(service.name)}"
+                                        data-description="${escapeHtml(description)}"
                                         ${
                                             price > 0
                                                 ? `data-price="${price}"`
@@ -497,9 +547,18 @@ include 'includes/header.php';
                                         }
                                     >
 
-                                        ${escapeHtml(
+                                        <button
+                                            type="button"
+                                            class="service-info-btn"
+                                            aria-label="View details for ${escapeHtml(service.name)}"
+                                            onclick="event.stopPropagation(); window.showServiceDetails(this.closest('.service-item'));"
+                                        >
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+
+                                        <span class="service-name-text">${escapeHtml(
                                             service.name
-                                        )}
+                                        )}</span>
 
                                     </div>
 
@@ -636,6 +695,231 @@ include 'includes/header.php';
 
 
 /* ============================================================
+   SERVICE ITEM — INFO BUTTON
+============================================================ */
+
+.service-item {
+
+    position: relative;
+
+}
+
+.service-info-btn {
+
+    position: absolute;
+
+    top: 6px;
+
+    right: 6px;
+
+    width: 24px;
+
+    height: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.06);
+
+    border: none;
+
+    border-radius: 50%;
+
+    color: #5f6b7a;
+
+    font-size: 14px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    z-index: 2;
+
+    transition: background 0.2s, color 0.2s;
+
+}
+
+.service-info-btn:hover {
+
+    background: #e62429;
+
+    color: #ffffff;
+
+}
+
+.service-item.ev-disabled .service-info-btn,
+.service-item.vehicle-disabled .service-info-btn {
+
+    pointer-events: none;
+
+    opacity: 0.5;
+
+}
+
+
+
+/* ============================================================
+   SERVICE DETAILS MODAL
+============================================================ */
+
+.service-details-modal {
+
+    position: fixed;
+
+    z-index: 10000;
+
+    left: 0;
+
+    top: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+}
+
+.service-details-modal-content {
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    width: 100%;
+
+    max-width: 420px;
+
+    padding: 34px 28px 28px;
+
+    position: relative;
+
+    text-align: center;
+
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+
+    border: 1px solid #e3e8ef;
+
+}
+
+.service-details-close {
+
+    position: absolute;
+
+    top: 12px;
+
+    right: 16px;
+
+    background: none;
+
+    border: none;
+
+    font-size: 26px;
+
+    line-height: 1;
+
+    color: #a0aab5;
+
+    cursor: pointer;
+
+}
+
+.service-details-icon {
+
+    width: 64px;
+
+    height: 64px;
+
+    border-radius: 50%;
+
+    background: rgba(230, 36, 41, 0.1);
+
+    color: #e62429;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin: 0 auto 16px;
+
+    font-size: 28px;
+
+}
+
+#serviceDetailsName {
+
+    font-family: 'Rajdhani', sans-serif;
+
+    font-weight: 700;
+
+    color: #1e2a36;
+
+    font-size: 1.4rem;
+
+    margin-bottom: 8px;
+
+    text-transform: uppercase;
+
+}
+
+.service-details-price {
+
+    display: inline-block;
+
+    background: rgba(230, 36, 41, 0.08);
+
+    color: #e62429;
+
+    font-weight: 700;
+
+    font-size: 0.95rem;
+
+    padding: 4px 14px;
+
+    border-radius: 20px;
+
+    margin-bottom: 14px;
+
+}
+
+.service-details-desc {
+
+    color: #5f6b7a;
+
+    font-size: 0.92rem;
+
+    line-height: 1.6;
+
+    margin-bottom: 18px;
+
+}
+
+#serviceDetailsSelectBtn.is-selected {
+
+    background: #ffffff !important;
+
+    color: #e62429 !important;
+
+    border: 2px solid #e62429 !important;
+
+}
+
+
+
+/* ============================================================
    ELECTRIC VEHICLE NOTICE
 ============================================================ */
 
@@ -753,6 +1037,28 @@ include 'includes/header.php';
         text-align: center !important;
 
         flex-direction: column;
+
+    }
+
+
+    .service-info-btn {
+
+        width: 20px;
+
+        height: 20px;
+
+        font-size: 12px;
+
+        top: 4px;
+
+        right: 4px;
+
+    }
+
+
+    .service-details-modal-content {
+
+        padding: 28px 20px 22px;
 
     }
 
