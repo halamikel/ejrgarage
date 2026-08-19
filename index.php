@@ -51,7 +51,7 @@
     </div>
 </section>
 
-<section class="stats py-5 bg-dark text-white" role="statistics">
+<section class="stats py-5 bg-dark text-white">
   <div class="container">
     <div class="row g-4">
       <div class="col-6 col-md-3">
