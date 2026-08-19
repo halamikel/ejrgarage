@@ -71,7 +71,7 @@
                     <h5 class="mb-3 fw-bold text-dark">
                         <i class="bi bi-calendar-check text-danger me-2"></i> Upcoming Appointment
                     </h5>
-                    <div id="upcomingContainer" class="appointments-scroll">
+                    <div id="upcomingContainer">
                         <p class="text-muted small">Checking for scheduled services...</p>
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                     <h5 class="mb-3 fw-bold text-dark">
                         <i class="bi bi-tools text-secondary me-2"></i> Completed Appointment
                     </h5>
-                    <div id="completedContainer" class="appointments-scroll">
+                    <div id="completedContainer">
                         <p class="text-muted small">No past records to display.</p>
                     </div>
                 </div>
@@ -89,45 +89,6 @@
         </div>
     </div>
 </section>
-
-<style>
-    .appointments-scroll {
-        max-height: 420px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 6px;
-        scrollbar-width: thin;
-        scrollbar-color: #e62429 #f1f1f1;
-    }
-
-    .appointments-scroll::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .appointments-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .appointments-scroll::-webkit-scrollbar-thumb {
-        background-color: #e62429;
-        border-radius: 10px;
-    }
-
-    .appointments-scroll::-webkit-scrollbar-thumb:hover {
-        background-color: #b30000;
-    }
-
-    .appointments-scroll .border.rounded:last-child {
-        margin-bottom: 0 !important;
-    }
-
-    @media (max-width: 576px) {
-        .appointments-scroll {
-            max-height: 320px;
-        }
-    }
-</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
