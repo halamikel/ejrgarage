@@ -1714,6 +1714,10 @@ include 'includes/header.php';
                                     </th>
 
                                     <th>
+                                        Details
+                                    </th>
+
+                                    <th>
                                         Available
                                     </th>
 
@@ -1731,7 +1735,7 @@ include 'includes/header.php';
                                 <tr>
 
                                     <td
-                                        colspan="4"
+                                        colspan="5"
                                         class="ejr-loading"
                                     >
 

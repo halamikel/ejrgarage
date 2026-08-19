@@ -2205,7 +2205,7 @@ function loadServices() {
         })
         .catch(() => {
             const tbody = document.getElementById('servicesTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Failed to load services.</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Failed to load services.</td></tr>';
         });
 }
 
@@ -2239,13 +2239,23 @@ function renderServices(services) {
     const tbody = document.getElementById('servicesTableBody');
     if (!tbody) return;
     if (!services.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No services match your search.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No services match your search.</td></tr>';
         return;
     }
-    tbody.innerHTML = services.map(s => `
+    tbody.innerHTML = services.map(s => {
+        const hasDesc = !!(s.description && s.description.trim());
+        const price = parseFloat(s.price_from) || 0;
+        const detailsBadge = hasDesc
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i>Has details</span>'
+            : '<span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="bi bi-exclamation-circle me-1"></i>No description</span>';
+        const priceLine = price > 0
+            ? `<div class="small text-muted mt-1">Starts at &#8369;${price.toLocaleString('en-PH')}</div>`
+            : '';
+        return `
         <tr>
             <td><strong>${s.name}</strong></td>
             <td><span class="badge bg-secondary">${s.category}</span></td>
+            <td>${detailsBadge}${priceLine}</td>
             <td>
                 <div class="form-check form-switch mb-0">
                     <input class="form-check-input" type="checkbox" role="switch"
@@ -2255,12 +2265,17 @@ function renderServices(services) {
                 </div>
             </td>
             <td>
+                <button class="btn btn-sm btn-outline-secondary me-1"
+                        onclick="openEditService(${s.id})" title="Edit Details">
+                    <i class="bi bi-pencil"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-danger"
                         onclick="deleteService(${s.id}, '${s.name.replace(/'/g,"\\'")}')" title="Remove Service">
                     <i class="bi bi-trash"></i>
                 </button>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
 function deleteService(id, name) {
@@ -2300,7 +2315,11 @@ function openAddService() {
                 <label class="form-label fw-semibold">Service Name *</label>
                 <input id="svcName" class="form-control mb-3" placeholder="e.g. Engine Overhaul">
                 <label class="form-label fw-semibold">Category</label>
-                <input id="svcCategory" class="form-control" placeholder="e.g. Popular Services" value="Popular Services">
+                <input id="svcCategory" class="form-control mb-3" placeholder="e.g. Popular Services" value="Popular Services">
+                <label class="form-label fw-semibold">Starting Price (&#8369;)</label>
+                <input id="svcPrice" type="number" min="0" step="0.01" class="form-control mb-3" placeholder="e.g. 850 (optional)">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea id="svcDescription" class="form-control" rows="3" placeholder="What's included in this service? Shown to customers when they tap the info icon."></textarea>
             </div>`,
         confirmButtonText: 'Add Service',
         confirmButtonColor: '#e62429',
@@ -2311,7 +2330,9 @@ function openAddService() {
             return {
                 action: 'add',
                 name,
-                category: document.getElementById('svcCategory').value.trim() || 'General'
+                category: document.getElementById('svcCategory').value.trim() || 'General',
+                price_from: parseFloat(document.getElementById('svcPrice').value) || 0,
+                description: document.getElementById('svcDescription').value.trim()
             };
         }
     }).then(result => {
@@ -2320,6 +2341,50 @@ function openAddService() {
                 .then(r=>r.json()).then(d=>{
                     if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:d.message||'Service added',showConfirmButton:false,timer:2000}); loadServices(); }
                     else Swal.fire('Error', d.message, 'error');
+                });
+        }
+    });
+}
+
+function openEditService(id) {
+    const s = servicesData.find(svc => Number(svc.id) === Number(id));
+    if (!s) return;
+
+    Swal.fire({
+        title: 'Edit Service Details',
+        html: `
+            <div class="text-start">
+                <label class="form-label fw-semibold">Service Name *</label>
+                <input id="svcEditName" class="form-control mb-3" value="${(s.name || '').replace(/"/g, '&quot;')}">
+                <label class="form-label fw-semibold">Category</label>
+                <input id="svcEditCategory" class="form-control mb-3" value="${(s.category || '').replace(/"/g, '&quot;')}">
+                <label class="form-label fw-semibold">Starting Price (&#8369;)</label>
+                <input id="svcEditPrice" type="number" min="0" step="0.01" class="form-control mb-3" value="${s.price_from || 0}" placeholder="0 = not shown to customers">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea id="svcEditDescription" class="form-control" rows="4" placeholder="What's included in this service? Shown to customers when they tap the info icon.">${s.description || ''}</textarea>
+            </div>`,
+        confirmButtonText: 'Save Changes',
+        confirmButtonColor: '#e62429',
+        showCancelButton: true,
+        preConfirm: () => {
+            const name = document.getElementById('svcEditName').value.trim();
+            if (!name) { Swal.showValidationMessage('Service name is required.'); return false; }
+            return {
+                action: 'update',
+                id: s.id,
+                name,
+                category: document.getElementById('svcEditCategory').value.trim() || 'General',
+                price_from: parseFloat(document.getElementById('svcEditPrice').value) || 0,
+                description: document.getElementById('svcEditDescription').value.trim(),
+                is_active: s.is_active
+            };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('api/admin/manage_services.php', { method:'POST', headers:getAuthHeaders(), body:JSON.stringify(result.value) })
+                .then(r=>r.json()).then(d=>{
+                    if(d.status==='success'){ Swal.fire({toast:true,position:'bottom-end',icon:'success',title:'Service updated',showConfirmButton:false,timer:2000}); loadServices(); }
+                    else Swal.fire('Error', d.message || 'Could not update this service.', 'error');
                 });
         }
     });
