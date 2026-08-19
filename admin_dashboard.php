@@ -258,40 +258,18 @@ include 'includes/header.php';
 
         <div class="ejr-controls mb-4">
 
-            <div class="admin-search-wrapper">
-    <div class="admin-search-input">
-        <i class="bi bi-search"></i>
+          <div class="ejr-search-wrap">
 
-        <input
-            type="text"
-            id="adminSearch"
-            class="form-control"
-            placeholder="Search users, vehicles, appointments..."
-            autocomplete="off"
-        >
-    </div>
+                <i class="bi bi-search ejr-search-icon"></i>
 
-    <div class="admin-search-filter">
-        <label for="adminSearchScope">Search in</label>
+                <input
+                    type="text"
+                    id="adminSearch"
+                    class="ejr-search-input"
+                    placeholder="Search users, vehicles, appointments..."
+                >
 
-        <select id="adminSearchScope" class="form-select">
-            <option value="all">All Sections</option>
-            <option value="appointments">Appointments</option>
-            <option value="users">Users</option>
-            <option value="vehicles">Vehicles</option>
-            <option value="history">History</option>
-            <option value="parts">Parts</option>
-            <option value="inquiries">Part Inquiries</option>
-            <option value="orders">Orders</option>
-            <option value="busy_dates">Busy Dates</option>
-            <option value="services">Services</option>
-            <option value="leave_requests">Leave Requests</option>
-            <option value="mechanics">Mechanics</option>
-        </select>
-    </div>
-</div>
-        </div>
-
+            </div>
 
         <!-- ── TAB NAVIGATION ─────────────────────────────── -->
 
