@@ -283,6 +283,13 @@ function loadOrders() {
                         <span class="fw-bold">Total</span>
                         <span class="fw-bold text-danger fs-5">₱${parseFloat(order.total_price).toLocaleString('en-PH', {minimumFractionDigits:2})}</span>
                     </div>
+                    ${order.status === 'pending' ? `
+                    <div class="text-end mt-2">
+                        <button onclick="handleCancelOrder(${order.id})"
+                                class="btn btn-sm btn-link text-danger p-0 border-0 text-decoration-none">
+                            <i class="bi bi-x-circle"></i> Cancel Order
+                        </button>
+                    </div>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -293,6 +300,49 @@ function loadOrders() {
 }
 
 document.addEventListener('DOMContentLoaded', loadOrders);
+
+async function handleCancelOrder(orderId) {
+    const result = await Swal.fire({
+        title: 'Cancel Order?',
+        text: "This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e62429',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, cancel it!',
+        background: '#fff'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const response = await fetch('api/cancel_order.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ id: orderId })
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Cancelled!',
+                text: 'Your order was cancelled.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            loadOrders();
+        } else {
+            Swal.fire('Error', res.message || 'Could not cancel order.', 'error');
+        }
+    } catch (err) {
+        Swal.fire('Error', 'Connection failed.', 'error');
+    }
+}
 
 function handleLogout() {
     const token = localStorage.getItem("jwt_token");

@@ -159,6 +159,4 @@ if ($appt['notif_email'] == 1) {
         header('Connection: close');
         ob_end_flush(); @ob_flush(); flush();
     }
-
-echo json_encode(["status" => "success", "message" => "Appointment cancelled successfully"]);
 ?>
