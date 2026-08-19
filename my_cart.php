@@ -51,6 +51,45 @@
                 <label class="form-label fw-semibold small text-muted text-uppercase">Contact Number</label>
                 <input type="text" id="orderContact" class="form-control shadow-sm" placeholder="09XX-XXX-XXXX" required>
               </div>
+              <div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <label for="orderAddress" class="form-label fw-semibold small text-muted text-uppercase mb-0">
+      Delivery / Pickup Address
+    </label>
+
+    <button
+      type="button"
+      id="useProfileAddressBtn"
+      class="btn btn-sm btn-outline-danger"
+      style="display:none;"
+    >
+      <i class="bi bi-person-check me-1"></i>
+      Use Profile Address
+    </button>
+  </div>
+
+  <textarea
+    id="orderAddress"
+    class="form-control shadow-sm"
+    rows="3"
+    placeholder="Enter your complete address"
+    required
+  ></textarea>
+
+  <div class="form-text">
+    <i class="bi bi-info-circle me-1"></i>
+    You can use your saved profile address or enter a different address for this order.
+  </div>
+
+  <div
+    id="savedAddressNotice"
+    class="small text-success mt-2"
+    style="display:none;"
+  >
+    <i class="bi bi-check-circle-fill me-1"></i>
+    Your saved profile address has been loaded.
+  </div>
+</div>
 
               <div class="mb-4">
                 <label class="form-label fw-semibold small text-muted text-uppercase mb-2">Payment Method</label>
@@ -148,35 +187,150 @@ let cart = JSON.parse(localStorage.getItem('ejr_cart') || '[]');
 function refreshUserFromApi() {
     const token = localStorage.getItem('jwt_token');
     if (!token) return;
-    fetch('api/get_profile.php', {
-        method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + token }
+   fetch('api/place_order.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({
+        customer_name:   document.getElementById('orderCustomerName').value,
+        contact:         document.getElementById('orderContact').value,
+        address:         document.getElementById('orderAddress').value.trim(),
+        items:           cart,
+        total_price:     total,
+        payment_method:  paymentMethod
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success' && data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-            prefillUser(data.user);
+})                                   // ← closes fetch's options object AND the fetch() call
+.then(res => res.json())
+.then(data => {
+    if (data.status === 'success') {
+        cart = [];
+        saveCart();
+        if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Placed!',
+                text: paymentMethod === 'cod'
+                    ? 'Your order is pending. Please prepare exact cash for delivery/pickup.'
+                    : 'Your order is now pending. We will contact you shortly.',
+                confirmButtonColor: '#e62429'
+            }).then(() => {
+                window.location.href = 'available_parts.php';
+            });
         }
-    })
-    .catch(err => console.warn('Could not refresh user:', err));
-}
+    } else {
+        Swal.fire('Error', data.message || 'Failed to place order.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
+    }
+})
+.catch(() => {
+    Swal.fire('Error', 'Failed to connect to server.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
+});
 
 function prefillUser(user) {
     let fullName = '';
+
     if (user.full_name) {
         const nameParts = user.full_name.trim().split(' ');
         const lastName  = nameParts.length > 1 ? nameParts.pop() : '';
         const firstName = nameParts.join(' ');
         fullName = firstName + (lastName ? ' ' + lastName : '');
     }
+
     document.getElementById('orderCustomerName').value = fullName;
-    document.getElementById('orderContact').value      = user.phone || '';
+    document.getElementById('orderContact').value = user.phone || '';
+
+    const addressInput = document.getElementById('orderAddress');
+    const useAddressBtn = document.getElementById('useProfileAddressBtn');
+    const addressNotice = document.getElementById('savedAddressNotice');
+
+    if (addressInput) {
+        const savedAddress = (user.address || '').trim();
+
+        if (savedAddress) {
+            addressInput.value = savedAddress;
+
+            if (useAddressBtn) {
+                useAddressBtn.style.display = 'inline-block';
+            }
+
+            if (addressNotice) {
+                addressNotice.style.display = 'block';
+            }
+        } else {
+            addressInput.value = '';
+
+            if (useAddressBtn) {
+                useAddressBtn.style.display = 'none';
+            }
+
+            if (addressNotice) {
+                addressNotice.style.display = 'none';
+            }
+        }
+    }
 }
 
+function setupAddressControls() {
+    const addressInput = document.getElementById('orderAddress');
+    const useAddressBtn = document.getElementById('useProfileAddressBtn');
+    const addressNotice = document.getElementById('savedAddressNotice');
+
+    if (!addressInput || !useAddressBtn) {
+        return;
+    }
+
+    useAddressBtn.addEventListener('click', function () {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const savedAddress = (user.address || '').trim();
+
+        if (!savedAddress) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Saved Address',
+                text: 'You do not have an address saved in your profile yet.'
+            });
+            return;
+        }
+
+        addressInput.value = savedAddress;
+
+        if (addressNotice) {
+            addressNotice.style.display = 'block';
+        }
+    });
+
+    addressInput.addEventListener('input', function () {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const savedAddress = (user.address || '').trim();
+
+        if (addressNotice) {
+            if (
+                savedAddress &&
+                addressInput.value.trim() === savedAddress
+            ) {
+                addressNotice.style.display = 'block';
+            } else {
+                addressNotice.style.display = 'none';
+            }
+        }
+    });
+}
 document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.full_name) prefillUser(user);
+
+    if (user.full_name || user.address) {
+        prefillUser(user);
+    }
+
+    setupAddressControls();
     refreshUserFromApi();
     renderCart();
 });
@@ -290,13 +444,13 @@ document.getElementById('orderForm').addEventListener('submit', function (e) {
             'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
-            customer_name:   document.getElementById('orderCustomerName').value,
-            contact:         document.getElementById('orderContact').value,
-            items:           cart,
-            total_price:     total,
-            payment_method:  paymentMethod
-        })
-    })
+    customer_name:   document.getElementById('orderCustomerName').value,
+    contact:         document.getElementById('orderContact').value,
+    address:         document.getElementById('orderAddress').value.trim(),
+    items:           cart,
+    total_price:     total,
+    payment_method:  paymentMethod
+})
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {

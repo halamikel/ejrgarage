@@ -2835,3 +2835,239 @@ function assignMechanic(appointmentId) {
             });
         });
 }
+
+/* ============================================================
+   ADMIN DASHBOARD SEARCH SCOPE FILTER
+   ============================================================ */
+
+(function () {
+    'use strict';
+
+    let searchTimer = null;
+
+    function getAdminSearchValue() {
+        const input = document.getElementById('adminSearch');
+
+        if (!input) {
+            return '';
+        }
+
+        return input.value.trim().toLowerCase();
+    }
+
+    function getAdminSearchScope() {
+        const select = document.getElementById('adminSearchScope');
+
+        if (!select) {
+            return 'all';
+        }
+
+        return select.value;
+    }
+
+    function getSearchableText(element) {
+        if (!element) {
+            return '';
+        }
+
+        return (element.innerText || element.textContent || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    function filterSectionRows(sectionSelector, searchTerm) {
+        const section = document.querySelector(sectionSelector);
+
+        if (!section) {
+            return;
+        }
+
+        const rows = section.querySelectorAll(
+            'tbody tr, .card, .list-group-item, [data-searchable]'
+        );
+
+        rows.forEach(function (row) {
+            if (!searchTerm) {
+                row.style.display = '';
+                return;
+            }
+
+            const text = getSearchableText(row);
+
+            row.style.display =
+                text.includes(searchTerm) ? '' : 'none';
+        });
+    }
+
+    function filterAdminSection(scope, searchTerm) {
+
+        /*
+         * These selectors intentionally support multiple possible
+         * IDs/classes so the existing dashboard structure does not
+         * have to be removed or rewritten.
+         */
+
+        const sectionSelectors = {
+            appointments: [
+                '#appointments',
+                '#appointmentsTab',
+                '#appointments-section',
+                '[data-section="appointments"]'
+            ],
+
+            users: [
+                '#users',
+                '#usersTab',
+                '#users-section',
+                '[data-section="users"]'
+            ],
+
+            vehicles: [
+                '#vehicles',
+                '#vehiclesTab',
+                '#vehicles-section',
+                '[data-section="vehicles"]'
+            ],
+
+            parts: [
+                '#parts',
+                '#partsTab',
+                '#parts-section',
+                '[data-section="parts"]'
+            ],
+
+            inquiries: [
+                '#inquiries',
+                '#inquiriesTab',
+                '#partInquiries',
+                '#part-inquiries',
+                '[data-section="inquiries"]'
+            ],
+
+            orders: [
+                '#orders',
+                '#ordersTab',
+                '#orders-section',
+                '[data-section="orders"]'
+            ],
+
+            busy_dates: [
+                '#busyDates',
+                '#busy-dates',
+                '#busyDatesTab',
+                '#busy-dates-section',
+                '[data-section="busy_dates"]'
+            ],
+
+            services: [
+                '#services',
+                '#servicesTab',
+                '#services-section',
+                '[data-section="services"]'
+            ],
+
+            leave_requests: [
+                '#leaveRequests',
+                '#leave-requests',
+                '#leaveRequestsTab',
+                '#leave-requests-section',
+                '[data-section="leave_requests"]'
+            ],
+
+            mechanics: [
+                '#mechanics',
+                '#mechanicsTab',
+                '#mechanics-section',
+                '[data-section="mechanics"]'
+            ]
+        };
+
+        /*
+         * If "All Sections" is selected, don't interfere with
+         * the dashboard's existing search logic.
+         */
+        if (scope === 'all') {
+            return;
+        }
+
+        const selectors = sectionSelectors[scope];
+
+        if (!selectors) {
+            return;
+        }
+
+        selectors.forEach(function (selector) {
+            filterSectionRows(selector, searchTerm);
+        });
+    }
+
+    function applyAdminSearchFilter() {
+        const searchTerm = getAdminSearchValue();
+        const scope = getAdminSearchScope();
+
+        /*
+         * Keep the existing dashboard search behavior.
+         * The scope filter is an additional layer.
+         */
+        if (scope === 'all') {
+            return;
+        }
+
+        filterAdminSection(scope, searchTerm);
+    }
+
+    function initializeAdminSearchFilter() {
+
+        const searchInput = document.getElementById('adminSearch');
+        const searchScope = document.getElementById('adminSearchScope');
+
+        if (!searchInput || !searchScope) {
+            return;
+        }
+
+        /*
+         * Prevent duplicate event listeners if the dashboard
+         * dynamically reloads part of the page.
+         */
+        if (searchInput.dataset.scopeFilterInitialized === 'true') {
+            return;
+        }
+
+        searchInput.dataset.scopeFilterInitialized = 'true';
+
+        searchInput.addEventListener('input', function () {
+
+            clearTimeout(searchTimer);
+
+            searchTimer = setTimeout(function () {
+                applyAdminSearchFilter();
+            }, 150);
+
+        });
+
+        searchScope.addEventListener('change', function () {
+            applyAdminSearchFilter();
+        });
+    }
+
+    /*
+     * Normal page load
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeAdminSearchFilter();
+    });
+
+    /*
+     * Also attempt initialization after dashboard content
+     * has been dynamically loaded.
+     */
+    setTimeout(function () {
+        initializeAdminSearchFilter();
+    }, 500);
+
+    setTimeout(function () {
+        initializeAdminSearchFilter();
+    }, 1500);
+
+})();

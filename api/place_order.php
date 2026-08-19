@@ -43,15 +43,19 @@ try {
 
     $data = json_decode(file_get_contents('php://input'), true);
     $customer_name   = trim($data['customer_name'] ?? '');
-    $contact         = trim($data['contact'] ?? '');
-    $items           = $data['items'] ?? [];
+$contact         = trim($data['contact'] ?? '');
+$address         = trim($data['address'] ?? '');
+$items           = $data['items'] ?? [];
     $total_price     = floatval($data['total_price'] ?? 0);
     $payment_method  = ($data['payment_method'] ?? 'card') === 'cod' ? 'cod' : 'card';
 
-    if (!$customer_name || !$contact || empty($items) || $total_price <= 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing required fields.']);
-        exit;
-    }
+    if (!$customer_name || !$contact || !$address || empty($items) || $total_price <= 0) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Name, contact number, address, items, and total price are required.'
+    ]);
+    exit;
+}
 
     // --- NEW: PRE-ORDER STOCK CHECK ---
     foreach ($items as $item) {
@@ -73,12 +77,29 @@ try {
     $items_json = json_encode($items);
 
     $stmt = $conn->prepare("
-        INSERT INTO part_orders (user_id, customer_name, contact, items, total_price, status, payment_method)
-        VALUES (?, ?, ?, ?, ?, 'pending', ?)
-    ");
-    
-    $stmt->bind_param("isssds", $user_id, $customer_name, $contact, $items_json, $total_price, $payment_method);
+    INSERT INTO part_orders (
+        user_id,
+        customer_name,
+        contact,
+        address,
+        items,
+        total_price,
+        status,
+        payment_method
+    )
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+");
 
+$stmt->bind_param(
+    "issssds",
+    $user_id,
+    $customer_name,
+    $contact,
+    $address,
+    $items_json,
+    $total_price,
+    $payment_method
+);
     if ($stmt->execute()) {
         $order_id = $stmt->insert_id;
 
