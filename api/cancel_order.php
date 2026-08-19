@@ -123,7 +123,7 @@ if (!empty($order['email']) && (int)($order['notif_email'] ?? 1) === 1) {
                     </tr>
                 </table>
             </div>
-            <p style="color:#5f6b7a;">If this was a mistake, you're welcome to place a new order anytime.</p>
+            <p style="color:#5f6b7a;">If this was a mistake, you\'re welcome to place a new order anytime.</p>
             <div style="text-align:center;margin-top:24px;">
                 <a href="https://ejrgarage.onrender.com/available_parts.php"
                    style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
