@@ -638,6 +638,19 @@ const CANCELLATION_REPLIES = {
 };
 
 function manageApp(id, currentStatus) {
+    const status = (currentStatus || '').toLowerCase();
+    const appt   = masterData.appointments.find(a => a.id === id);
+    const name   = appt?.full_name || 'this customer';
+
+    if (status === 'completed') {
+        Swal.fire({ title: 'Already Completed', html: `Appointment for <b>${name}</b> has already been completed.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+    if (status === 'cancelled') {
+        Swal.fire({ title: 'Appointment Cancelled', html: `Appointment for <b>${name}</b> has already been cancelled.`, icon: 'info', confirmButtonColor: '#b30000' });
+        return;
+    }
+
     Swal.fire({
         title: 'Update Appointment Status',
         input: 'select',
