@@ -447,7 +447,7 @@ document.getElementById('orderForm').addEventListener('submit', function (e) {
         Swal.fire('Error', 'Failed to connect to server.', 'error');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
-    });
+    })
 });
 </script>
 
