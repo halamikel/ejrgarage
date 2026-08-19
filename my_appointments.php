@@ -61,7 +61,7 @@
            <div class="col-lg-8">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="mb-0 fw-bold">My Appointments</h4>
-                    <a href="booking.php" class="btn px-4 fw-bold text-white" 
+                    <a href="booking-details.php" class="btn px-4 fw-bold text-white" 
                        style="background: linear-gradient(45deg, #e62429, #ff6b00); border: none;">
                         <i class="bi bi-plus-lg me-1"></i> Book Appointment
                     </a>
