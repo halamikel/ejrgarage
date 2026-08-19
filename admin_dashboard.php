@@ -1434,6 +1434,7 @@ include 'includes/header.php';
                                     <th>Order #</th>
                                     <th>Customer</th>
                                     <th>Contact</th>
+                                    <th>Address</th>
                                     <th>Items</th>
                                     <th>Total</th>
                                     <th>Date</th>
@@ -1450,7 +1451,7 @@ include 'includes/header.php';
                                 <tr>
 
                                     <td
-                                        colspan="8"
+                                        colspan="9"
                                         class="ejr-loading"
                                     >
 

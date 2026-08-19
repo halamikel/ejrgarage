@@ -249,7 +249,7 @@ function loadOrders() {
         })
         .catch(err => {
             console.error('Orders error:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Failed to load orders.</td></tr>';
         });
 }
 
@@ -275,7 +275,7 @@ function renderOrders(orders) {
     if (!tbody) return;
 
     if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No orders match your search.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No orders match your search.</td></tr>';
         return;
     }
 
@@ -289,12 +289,15 @@ function renderOrders(orders) {
         const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const safeName  = o.customer_name.replace(/'/g, "\\'");
         const isPending = o.status.toLowerCase() === 'pending';
+        const address   = o.address || '—';
 
         return `
         <tr>
             <td><code style="color:#b30000;">${orderNo}</code></td>
             <td class="fw-bold">${o.customer_name}</td>
             <td>${o.contact}</td>
+            <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                title="${address}">${address}</td>
             <td class="text-muted small" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
                 title="${itemsList}">${itemsList}</td>
             <td class="fw-bold text-danger">₱${parseFloat(o.total_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
