@@ -24,7 +24,7 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         // used in api/admin/get_full_site_data.php: table "mechanics",
         // FK "appointments.mechanic_id", name column "name".
         $query = "SELECT a.*,
-                         v.brand, v.model, v.plate_number,
+                         v.brand, v.model, v.year_model, v.plate_number,
                          CONCAT_WS(' ', v.brand, v.model,
                              CASE WHEN v.plate_number IS NOT NULL THEN CONCAT('(', v.plate_number, ')') ELSE NULL END
                          ) AS vehicle_info,

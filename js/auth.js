@@ -551,7 +551,7 @@ async function loadAppointments() {
                 if (isCompleted) badgeClass = "bg-primary";
 
                 const vehicleDisplay = (app.brand && app.model)
-                    ? `${app.brand} ${app.model}`
+                    ? `${app.brand} ${app.model}${app.year_model ? ' ' + app.year_model : ''}${app.plate_number ? ' — ' + app.plate_number : ''}`
                     : "Vehicle Details Pending";
 
                 const replyHtml = (app.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
