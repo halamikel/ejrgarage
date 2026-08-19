@@ -63,7 +63,7 @@
                                 <label for="avatarUploadInput" class="btn btn-sm fw-bold me-2 d-inline-flex align-items-center justify-content-center" style="box-sizing:border-box;background:linear-gradient(45deg,#e62429,#ff6b00);color:#fff;border:1px solid transparent;border-radius:8px;padding:0 20px;cursor:pointer;height:38px;line-height:1;">
                                     <i class="bi bi-upload me-1"></i> Upload Photo
                                 </label>
-                                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center" id="removePhotoBtn" onclick="removeProfilePhoto()" style="box-sizing:border-box;border-radius:8px;padding:0 16px;height:38px;line-height:1;">
+                                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center"  id="removePhotoBtn" onclick="removeProfilePhoto()" style="box-sizing:border-box;border-radius:8px;padding:0 16px;height:38px;line-height:1;">
                                     <i class="bi bi-trash me-1"></i> Remove
                                 </button>
                             </div>
@@ -140,7 +140,7 @@
                                 <label class="form-label fw-semibold">Current Password</label>
                                 <div class="input-group">
                                     <input type="password" id="currPass" class="form-control" placeholder="Enter current password">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePass('currPass', this)">
+                                    <button class="btn btn-outline-secondary" type="button" aria-label="Toggle password visibility" onclick="togglePass('currPass', this)">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -149,7 +149,7 @@
                                 <label class="form-label fw-semibold">New Password</label>
                                 <div class="input-group">
                                     <input type="password" id="newPass" class="form-control" placeholder="Enter new password">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePass('newPass', this)">
+                                    <button class="btn btn-outline-secondary" type="button" aria-label="Toggle password visibility" onclick="togglePass('newPass', this)">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -158,7 +158,7 @@
                                 <label class="form-label fw-semibold">Confirm Password</label>
                                 <div class="input-group">
                                     <input type="password" id="confirmPass" class="form-control" placeholder="Confirm new password">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePass('confirmPass', this)">
+                                    <button class="btn btn-outline-secondary" type="button" aria-label="Toggle password visibility" onclick="togglePass('confirmPass', this)">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>

@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="col-md-6 d-flex gap-2">
-        <select id="categoryFilter" class="form-select shadow-sm">
+        <select id="categoryFilter" aria-label="Filter by category" class="form-select shadow-sm">
           <option value="">All Categories</option>
           <option value="engine">Engine</option>
           <option value="brakes">Brakes</option>
@@ -34,7 +34,7 @@
           <option value="electrical">Electrical</option>
         </select>
         <!-- Cart Button -->
-        <a href="my_cart.php" class="btn btn-dark position-relative flex-shrink-0 px-3">
+        <a href="my_cart.php" class="btn btn-dark position-relative flex-shrink-0 px-3" aria-label="View Cart">
           <i class="bi bi-cart3 fs-5"></i>
           <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
         </a>

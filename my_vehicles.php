@@ -81,7 +81,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Car Brand</label>
-                                <select class="form-select bg-light" id="carBrand" required>
+                                <select class="form-select bg-light" aria-label="Select car brand" id="carBrand" required>
                                     <option selected disabled value="">Select brand</option>
                                     <option>Toyota</option>
                                     <option>Honda</option>
@@ -94,12 +94,12 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Car Model</label>
-                                <input type="text" class="form-control bg-light" id="carModel" placeholder="e.g. Vios or Xpander" required>
+                                <input type="text" class="form-control bg-light" aria-label="Enter car model" id="carModel" placeholder="e.g. Vios or Xpander" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Year Model</label>
-                                <select class="form-select bg-light" id="yearModel" required>
+                                <select class="form-select bg-light" aria-label="Select year model" id="yearModel" required>
                                     <option selected disabled value="">Select year</option>
                                     <?php for ($y = date("Y"); $y >= 1990; $y--): ?>
                                         <option><?php echo $y; ?></option>
@@ -109,12 +109,12 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Plate Number</label>
-                                <input type="text" class="form-control bg-light text-uppercase" id="plateNumber" placeholder="ABC 1234" required>
+                                <input type="text" class="form-control bg-light text-uppercase" aria-label="Enter plate number" id="plateNumber" placeholder="ABC 1234" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Transmission</label>
-                                <select class="form-select bg-light" id="transmission" required>
+                                <select class="form-select bg-light" aria-label="Select transmission" id="transmission" required>
                                     <option selected disabled value="">Select transmission</option>
                                     <option>Automatic</option>
                                     <option>Manual</option>
@@ -124,7 +124,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Fuel Type</label>
-                                <select class="form-select bg-light" id="fuelType" required>
+                                <select class="form-select bg-light" aria-label="Select fuel type" id="fuelType" required>
                                     <option selected disabled value="">Select fuel type</option>
                                     <option>Gasoline</option>
                                     <option>Diesel</option>

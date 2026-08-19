@@ -652,6 +652,7 @@ include 'includes/header.php';
                             id="appointmentsStatusFilter"
                             class="ejr-filter-select"
                             onchange="applyAllFilters()"
+                            aria-label="Filter appointments by status"
                         >
 
                             <option value="">
@@ -808,6 +809,7 @@ include 'includes/header.php';
                             id="usersRoleFilter"
                             class="ejr-filter-select"
                             onchange="applyAllFilters()"
+                            aria-label="Filter users by role"
                         >
 
                             <option value="">
@@ -1134,6 +1136,7 @@ include 'includes/header.php';
                             id="partsCategoryFilter"
                             class="ejr-filter-select"
                             onchange="applyAllFilters()"
+                            aria-label="Filter parts by category"
                         >
 
                             <option value="">
@@ -1147,6 +1150,7 @@ include 'includes/header.php';
                             id="partsStockFilter"
                             class="ejr-filter-select"
                             onchange="applyAllFilters()"
+                            aria-label="Filter parts by stock status"
                         >
 
                             <option value="">
@@ -1258,6 +1262,7 @@ include 'includes/header.php';
                         <select
                             id="inquiriesStatusFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter inquiries by status"
                             onchange="applyAllFilters()"
                         >
 
@@ -1373,6 +1378,7 @@ include 'includes/header.php';
                         <select
                             id="ordersStatusFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter orders by status"
                             onchange="applyAllFilters()"
                         >
 
@@ -1510,6 +1516,7 @@ include 'includes/header.php';
                         <select
                             id="busyDateFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter busy dates"
                             onchange="applyBusyFilter()"
                         >
 
@@ -1632,6 +1639,7 @@ include 'includes/header.php';
                         <select
                             id="servicesCategoryFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter services by category"
                             onchange="applyAllFilters()"
                         >
 
@@ -1645,6 +1653,7 @@ include 'includes/header.php';
                         <select
                             id="servicesActiveFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter services by availability"
                             onchange="applyAllFilters()"
                         >
 
@@ -1779,6 +1788,7 @@ include 'includes/header.php';
                         <select
                             id="leaveRequestsStatusFilter"
                             class="ejr-filter-select"
+                            aria-label="Filter leave requests by status"
                             onchange="applyAllFilters()"
                         >
 
@@ -1897,6 +1907,7 @@ include 'includes/header.php';
 
                         <select
                             id="mechanicsStatusFilter"
+                            aria-label="Filter mechanics by status"
                             class="ejr-filter-select"
                             onchange="applyAllFilters()"
                         >

@@ -4,7 +4,7 @@ session_start();
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<head role="header">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EJR Garage — Register</title>
@@ -22,7 +22,7 @@ session_start();
   <link rel="stylesheet" href="css/registration.css" />
 </head>
 
-<body>
+<main role="main">
 
   <div class="stripe"></div>
   <svg class="gear gear-1" viewBox="0 0 100 100">
@@ -68,7 +68,7 @@ session_start();
         
         <div class="field"><label>Phone Number</label>
           <div class="input-wrap">
-            <span class="prefix">+63</span>
+            <span class="prefix" style="color: #595959;">+63</span>
             <input
               type="tel"
               id="r-phone"
@@ -89,7 +89,7 @@ session_start();
           <label>Password</label>
           <div class="input-wrap">
             <input type="password" id="r-pw" class="has-eye" placeholder="Enter password" minlength="8" required oninput="updateStrength(this.value)">
-            <button class="eye" type="button" onclick="togglePw('r-pw', this)"><i class="bi bi-eye"></i></button>
+            <button class="eye" type="button" aria-label="Toggle Password Visibility" onclick="togglePw('r-pw', this)"><i class="bi bi-eye"></i></button>
           </div>
           <div class="strength-wrap">
             <div class="strength-bar">
@@ -103,12 +103,12 @@ session_start();
           <label>Confirm Password</label>
           <div class="input-wrap">
             <input type="password" id="r-pw2" class="has-eye" placeholder="Re-enter password" required>
-            <button class="eye" type="button" onclick="togglePw('r-pw2', this)"><i class="bi bi-eye"></i></button>
+            <button class="eye" aria-label="Toggle Password Visibility" type="button" onclick="togglePw('r-pw2', this)"><i class="bi bi-eye"></i></button>
           </div>
         </div>
     
         <div class="check-wrap">
-          <input type="checkbox" id="terms" /><span>I agree to the <a href="javascript:void(0)" onclick="openModal('tosModal')">Terms of Service</a></span>
+          <input type="checkbox" id="terms" aria-label="agree to terms and conditions"/><span>I agree to the <a href="javascript:void(0)" onclick="openModal('tosModal')">Terms of Service</a></span>
         </div>
         
         <button class="btn" id="regBtn" onclick="handleRegister()">Create My Account</button>
@@ -163,6 +163,6 @@ session_start();
   <script src="js/global.js?v=<?php echo time(); ?>"></script>
   <script src="js/auth.js?v=<?php echo time(); ?>"></script>
 
-</body>
+</main>
 
 </html>

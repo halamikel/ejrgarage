@@ -3,7 +3,7 @@
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head role="header">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EJR Garage — Sign In</title>
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/shared.css?v=<?php echo time(); ?>" />
   <link rel="stylesheet" href="css/login.css"/>
 </head>
-<body>
+<main role="main">
 
   <div class="stripe"></div>
   <svg class="gear gear-1" viewBox="0 0 100 100"><path d="M43.3 5.8l-2.5 9.4a35 35 0 0 0-8.6 3.6l-9-4.3-9.3 9.3 4.3 9A35 35 0 0 0 14.6 42l-9.4 2.5v13.2l9.4 2.5a35 35 0 0 0 3.6 8.6l-4.3 9 9.3 9.3 9-4.3a35 35 0 0 0 8.6 3.6l2.5 9.4h13.2l2.5-9.4a35 35 0 0 0 8.6-3.6l9 4.3 9.3-9.3-4.3-9a35 35 0 0 0 3.6-8.6l9.4-2.5V43.3l-9.4-2.5a35 35 0 0 0-3.6-8.6l4.3-9-9.3-9.3-9 4.3a35 35 0 0 0-8.6-3.6L56.5 5.8zM50 34a16 16 0 1 1 0 32 16 16 0 0 1 0-32z"/></svg>
@@ -54,8 +54,8 @@
         <div class="field">
           <label for="l-pw">Password</label>
           <div class="input-wrap">
-            <input type="password" id="l-pw" class="has-eye aria-label='Show-Password'" placeholder="Your password"/>
-            <button class="eye aria-label='Toggle Password Visibility'" type="button" onclick="togglePw('l-pw', this)"><i class="bi bi-eye"></i></button>
+            <input type="password" id="l-pw" class="has-eye" placeholder="Your password"/>
+            <button class="eye" aria-label="Toggle Password Visibility" type="button" onclick="togglePw('l-pw', this)"><i class="bi bi-eye"></i></button>
           </div>
           <div class="field-error" id="pwError"></div>
         </div>
@@ -74,5 +74,5 @@
   <script src="js/global.js?v=<?php echo time(); ?>"></script>
   <script src="js/auth.js?v=<?php echo time(); ?>"></script>
 
-</body>
+</main>
 </html>
