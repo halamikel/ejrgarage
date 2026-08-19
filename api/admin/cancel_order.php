@@ -3,7 +3,7 @@ header("Content-Type: application/json");
 require_once 'db_config.php';
 require_once __DIR__ . '/../includes/php-jwt/JWT.php';
 require_once __DIR__ . '/../includes/php-jwt/Key.php';
-require_once __DIR__ . '/mailer_helper.php';
+require_once __DIR__ . '/../mailer_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 

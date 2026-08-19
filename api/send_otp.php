@@ -2,15 +2,11 @@
 header('Content-Type: application/json');
 session_start();
 
-require '../includes/PHPMailer/Exception.php';
-require '../includes/PHPMailer/PHPMailer.php';
-require '../includes/PHPMailer/SMTP.php';
 require_once 'db_config.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
+require_once 'mailer_helper.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -64,25 +60,10 @@ $_SESSION['pending_phone'] = $phone;
 $_SESSION['otp_user_id']   = $userId;
 $_SESSION['otp_expires']   = time() + 300; // 5 minutes
 
-// ✅ Send email
-$mail = new PHPMailer(true);
-
+// ✅ Send email via Brevo
 try {
-    $mail->isSMTP();
-    $mail->Host       = 'smtp.hostinger.com';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = 'support@ejrgarage.com';
-    $mail->Password   = 'Ejrgarage2026!';
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-
-            $mail->Timeout    = 15;
-    $mail->setFrom('support@ejrgarage.com', 'EJR Garage');
-    $mail->addAddress($user['email'], $user['full_name']);
-
-    $mail->isHTML(true);
-    $mail->Subject = 'EJR Garage - Phone Verification Code';
-    $mail->Body = '
+    $emailSubject = 'EJR Garage - Phone Verification Code';
+    $emailBody = '
     <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
         <div style="background:#ffffff;border-radius:12px;max-width:480px;margin:auto;padding:30px;text-align:center;border:1px solid #e3e8ef;">
             
@@ -112,12 +93,12 @@ try {
         </div>
     </div>';
 
-    $mail->send();
+    sendEmailViaBrevo($user['email'], $user['full_name'], $emailSubject, $emailBody);
     echo json_encode(['status' => 'success', 'message' => 'OTP sent to your email']);
 
-} catch (MailException $e) {
+} catch (\Throwable $e) {
     echo json_encode([
         'status'  => 'error',
-        'message' => 'Mail error: ' . $mail->ErrorInfo
+        'message' => 'Mail error: ' . $e->getMessage()
     ]);
 }

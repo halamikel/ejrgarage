@@ -3,13 +3,9 @@ header("Content-Type: application/json");
 require_once 'db_config.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
-require '../includes/PHPMailer/Exception.php';
-require '../includes/PHPMailer/PHPMailer.php';
-require '../includes/PHPMailer/SMTP.php';
+require_once 'mailer_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
 
 // ── JWT AUTH ─────────────────────────────────────────────────
 if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
@@ -75,27 +71,29 @@ if ($stmt->affected_rows <= 0) {
     exit;
 }
 
+// ── RESPOND TO BROWSER IMMEDIATELY, THEN SEND EMAIL (best-effort) ──
+// This used to send the email before responding, which meant a slow/
+// unreachable mail host would hang the request and the frontend would
+// see a blank/failed response even though the cancellation was saved.
+$responseBody = json_encode(["status" => "success", "message" => "Appointment cancelled successfully"]);
+if (function_exists('fastcgi_finish_request')) {
+    echo $responseBody; fastcgi_finish_request();
+} else {
+    ob_start(); echo $responseBody;
+    header('Content-Length: ' . ob_get_length());
+    header('Connection: close');
+    ob_end_flush(); @ob_flush(); flush();
+}
+
 // ── SEND CANCELLATION EMAIL ───────────────────────────────────
 if ($appt['notif_email'] == 1) {
     $formattedDate = date("F j, Y", strtotime($appt['appointment_date']));
     $vehicle       = trim(($appt['brand'] ?? '') . ' ' . ($appt['model'] ?? ''));
     $plate         = $appt['plate_number'] ?? 'N/A';
 
-    $mail = new PHPMailer(true);
     try {
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = 465;
-            $mail->Timeout    = 15;
-        $mail->setFrom(SMTP_USER, 'EJR Garage');
-        $mail->addAddress($appt['email'], $appt['full_name']);
-        $mail->isHTML(true);
-        $mail->Subject = 'EJR Garage - Appointment Cancelled';
-        $mail->Body    = '
+        $emailSubject = 'EJR Garage - Appointment Cancelled';
+        $emailBody    = '
         <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
             <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
                 <div style="text-align:center;margin-bottom:24px;">
@@ -141,22 +139,9 @@ if ($appt['notif_email'] == 1) {
                 </p>
             </div>
         </div>';
-        $mail->send();
-    } catch (MailException $e) {
+        sendEmailViaBrevo($appt['email'], $appt['full_name'], $emailSubject, $emailBody);
+    } catch (\Throwable $e) {
         // Silent — cancellation already saved
     }
 }
-
-
-    // BUGFIX: Respond to browser BEFORE sending email so PHP execution
-    // timeout can't produce a blank response. See save_booking.php for details.
-    $responseBody = json_encode(["status" => "success", "message" => "Appointment cancelled successfully"]);
-    if (function_exists('fastcgi_finish_request')) {
-        echo $responseBody; fastcgi_finish_request();
-    } else {
-        ob_start(); echo $responseBody;
-        header('Content-Length: ' . ob_get_length());
-        header('Connection: close');
-        ob_end_flush(); @ob_flush(); flush();
-    }
 ?>

@@ -3,14 +3,10 @@
 require_once '../db_config.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
-require '../includes/PHPMailer/Exception.php';
-require '../includes/PHPMailer/PHPMailer.php';
-require '../includes/PHPMailer/SMTP.php';
+require_once 'mailer_helper.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
 
 $id      = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $isAdmin = false;
@@ -86,23 +82,11 @@ foreach ($services as $i => $svc) {
 // ── EMAIL LOGIC ───────────────────────────────────────────────
 // Only send email if the 'send_email' trigger is in URL, or customize logic here
 if (isset($_GET['send_email'])) {
-    $mail = new PHPMailer(true);
     try {
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = 465;
-
-        $mail->setFrom(SMTP_USER, 'EJR Garage');
-        $mail->addAddress($email, $customer);
-        $mail->isHTML(true);
-        $mail->Subject = "Service Receipt - $receiptNo";
+        $emailSubject = "Service Receipt - $receiptNo";
 
         // Reuse the same design for the email body
-        $mail->Body = "
+        $emailBody = "
         <div style='background:#f4f6f8; padding:30px; font-family: Arial, sans-serif;'>
             <div style='background:#fff; border-radius:12px; max-width:600px; margin:auto; padding:40px; border:1px solid #e3e8ef;'>
                 <div style='text-align:center; margin-bottom:24px;'>
@@ -146,8 +130,8 @@ if (isset($_GET['send_email'])) {
             </div>
         </div>";
 
-        $mail->send();
-    } catch (MailException $e) {
+        sendEmailViaBrevo($email, $customer, $emailSubject, $emailBody);
+    } catch (\Throwable $e) {
         // Silently fail or log error
     }
 }

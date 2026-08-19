@@ -11,6 +11,7 @@ ejr_rate_limit($conn, 'submit_inquiry', ejr_get_ip(), 5, 300);
 // ── Auth: must be logged in via JWT ──────────────────────────
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
+require_once 'mailer_helper.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -80,28 +81,10 @@ if (function_exists('fastcgi_finish_request')) {
 }
 
 // ── Send email to admin (after response) ─────────────────────
-// SMTP password loaded from env.php — never hardcoded.
-require_once '../includes/PHPMailer/Exception.php';
-require_once '../includes/PHPMailer/PHPMailer.php';
-require_once '../includes/PHPMailer/SMTP.php';
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
-
+// Sent via Brevo's HTTPS API — API key loaded from env.php, never hardcoded.
 try {
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->SMTPAuth   = true;
-    $mail->Username   = SMTP_USER;
-    $mail->Password   = SMTP_PASS;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-    $mail->Timeout    = 15;
-    $mail->setFrom(SMTP_USER, 'EJR Garage');
-    $mail->addAddress(SMTP_USER, 'EJR Garage Admin');
-    $mail->isHTML(true);
-    $mail->Subject = 'New Part Inquiry - ' . $part['name'];
-    $mail->Body    = '
+    $emailSubject = 'New Part Inquiry - ' . $part['name'];
+    $emailBody    = '
     <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
         <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
             <h2 style="color:#e62429;">New Part Inquiry</h2>
@@ -114,8 +97,8 @@ try {
             </table>
         </div>
     </div>';
-    $mail->send();
-} catch (MailException $e) {
+    sendEmailViaBrevo(BREVO_SENDER_EMAIL, 'EJR Garage Admin', $emailSubject, $emailBody);
+} catch (\Throwable $e) {
     error_log('EJR inquiry mail error: ' . $e->getMessage());
 }
 exit;

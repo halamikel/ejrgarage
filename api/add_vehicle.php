@@ -4,14 +4,10 @@ require_once 'db_config.php';
 require_once 'rate_limit.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
-require '../includes/PHPMailer/Exception.php';
-require '../includes/PHPMailer/PHPMailer.php';
-require '../includes/PHPMailer/SMTP.php';
+require_once 'mailer_helper.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
 
 if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
 $secret_key = JWT_SECRET;
@@ -92,21 +88,9 @@ $uStmt->execute();
 $user = $uStmt->get_result()->fetch_assoc();
 
 if ($user) {
-    $mail = new PHPMailer(true);
     try {
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = SMTP_USER;
-        $mail->Password   = SMTP_PASS;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = 465;
-        $mail->Timeout    = 15;
-        $mail->setFrom(SMTP_USER, 'EJR Garage');
-        $mail->addAddress($user['email'], $user['full_name']);
-        $mail->isHTML(true);
-        $mail->Subject = 'EJR Garage - Vehicle Registered';
-        $mail->Body    = '
+        $emailSubject = 'EJR Garage - Vehicle Registered';
+        $emailBody    = '
         <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
             <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
                 <div style="text-align:center;margin-bottom:24px;">
@@ -134,8 +118,8 @@ if ($user) {
                 </div>
             </div>
         </div>';
-        $mail->send();
-    } catch (MailException $e) {
-        error_log("EJR Garage MAIL ERROR (vehicle registered to " . $user['email'] . "): " . $mail->ErrorInfo);
+        sendEmailViaBrevo($user['email'], $user['full_name'], $emailSubject, $emailBody);
+    } catch (\Throwable $e) {
+        error_log("EJR Garage MAIL ERROR (vehicle registered to " . $user['email'] . "): " . $e->getMessage());
     }
 }

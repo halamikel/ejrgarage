@@ -5,6 +5,7 @@ session_start();
 require_once __DIR__ . '/../db_config.php';   // loads env.php
 require_once __DIR__ . '/../../includes/php-jwt/JWT.php';
 require_once __DIR__ . '/../../includes/php-jwt/Key.php';
+require_once __DIR__ . '/../mailer_helper.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -64,28 +65,10 @@ $_SESSION['pending_phone'] = $phone;
 $_SESSION['otp_user_id']   = $userId;
 $_SESSION['otp_expires']   = time() + 300;
 
-// ── Send via PHPMailer — password from env.php ────────────────
-require_once __DIR__ . '/../../includes/PHPMailer/Exception.php';
-require_once __DIR__ . '/../../includes/PHPMailer/PHPMailer.php';
-require_once __DIR__ . '/../../includes/PHPMailer/SMTP.php';
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as MailException;
-
+// ── Send via Brevo — API key from env.php ──────────────────────
 try {
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->SMTPAuth   = true;
-    $mail->Username   = SMTP_USER;
-    $mail->Password   = SMTP_PASS;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port       = 465;
-    $mail->Timeout    = 15;
-    $mail->setFrom(SMTP_USER, 'EJR Garage');
-    $mail->addAddress($user['email'], $user['full_name']);
-    $mail->isHTML(true);
-    $mail->Subject = 'EJR Garage - Phone Verification Code';
-    $mail->Body    = '
+    $emailSubject = 'EJR Garage - Phone Verification Code';
+    $emailBody    = '
     <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
         <div style="background:#fff;border-radius:12px;max-width:480px;margin:auto;padding:30px;text-align:center;border:1px solid #e3e8ef;">
             <h2 style="color:#1e2a36;margin-bottom:10px;">Phone Verification</h2>
@@ -98,10 +81,10 @@ try {
         </div>
     </div>';
 
-    $mail->send();
+    sendEmailViaBrevo($user['email'], $user['full_name'], $emailSubject, $emailBody);
     echo json_encode(['status' => 'success', 'message' => 'OTP sent to your email.']);
 
-} catch (MailException $e) {
-    error_log('EJR admin OTP mail error: ' . $mail->ErrorInfo);
+} catch (\Throwable $e) {
+    error_log('EJR admin OTP mail error: ' . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => 'Failed to send OTP. Please try again.']);
 }
