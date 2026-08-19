@@ -108,7 +108,7 @@ session_start();
         </div>
     
         <div class="check-wrap">
-          <input type="checkbox" id="terms" /><span>I agree to the <a href="javascript:void(0)" onclick="openModal('tosModal')">Terms of Service</a></span>
+          <input type="checkbox" id="terms" aria-label="agree to terms and conditions"/><span>I agree to the <a href="javascript:void(0)" onclick="openModal('tosModal')">Terms of Service</a></span>
         </div>
         
         <button class="btn" id="regBtn" onclick="handleRegister()">Create My Account</button>
