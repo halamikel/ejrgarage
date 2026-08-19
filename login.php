@@ -3,7 +3,7 @@
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head role="login">
+<head role="header">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EJR Garage — Sign In</title>
