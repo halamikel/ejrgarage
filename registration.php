@@ -68,7 +68,7 @@ session_start();
         
         <div class="field"><label>Phone Number</label>
           <div class="input-wrap">
-            <span class="prefix">+63</span>
+            <span class="prefix" style="color: #595959;">+63</span>
             <input
               type="tel"
               id="r-phone"
