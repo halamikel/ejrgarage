@@ -88,6 +88,30 @@ try {
         $vehicleId = $conn->insert_id;
     }
 
+    // ── PER-CAR APPOINTMENT LIMIT ─────────────────────────────
+    // A single vehicle can have at most 2 appointments open at once
+    // (Pending or Confirmed). Completed/Cancelled ones don't count
+    // toward the limit, so once one wraps up the customer can book
+    // again for that same car.
+    $activeCountStmt = $conn->prepare("
+        SELECT COUNT(*) AS cnt
+        FROM appointments
+        WHERE vehicle_id = ?
+          AND status NOT IN ('Completed', 'Cancelled')
+    ");
+    $activeCountStmt->bind_param("i", $vehicleId);
+    $activeCountStmt->execute();
+    $activeCount = (int)($activeCountStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+
+    if ($activeCount >= 2) {
+        $conn->rollback();
+        echo json_encode([
+            "status"  => "error",
+            "message" => "This vehicle already has 2 ongoing appointments. Please wait until one is completed or cancelled before booking another for this car."
+        ]);
+        exit;
+    }
+
     // ── SAVE APPOINTMENT ──────────────────────────────────────
     $stmtApp = $conn->prepare(
         "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, notes, status)
