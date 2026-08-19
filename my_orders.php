@@ -100,6 +100,7 @@ include 'includes/header.php';
 }
 .status-pending   { background:#fff3cd; color:#8a6d00; }
 .status-approved  { background:#d1f3df; color:#0f7b3e; }
+.status-delivered { background:#d1e7ff; color:#0a4a9e; }
 .status-cancelled { background:#fde2e2; color:#c0282d; }
 .pay-badge-paid    { background:#d1e7ff; color:#0a4a9e; }
 .pay-badge-unpaid  { background:#f1f1f1; color:#6c757d; }
@@ -173,7 +174,7 @@ include 'includes/header.php';
 
 <script>
 function statusStepIndex(status) {
-    return { pending: 0, approved: 1, cancelled: -1 }[status] ?? 0;
+    return { pending: 0, approved: 1, delivered: 2, cancelled: -1 }[status] ?? 0;
 }
 
 function renderSteps(status) {
@@ -190,6 +191,7 @@ function renderSteps(status) {
     const steps = [
         { label: 'Order Placed', icon: 'bi-bag-check' },
         { label: 'Approved',     icon: 'bi-check2'    },
+        { label: 'Delivered',    icon: 'bi-box-seam'  },
     ];
     return `
         <div class="order-track-steps">
@@ -203,7 +205,7 @@ function renderSteps(status) {
 }
 
 function statusBadgeClass(status) {
-    return { pending: 'status-pending', approved: 'status-approved', cancelled: 'status-cancelled' }[status] || 'status-pending';
+    return { pending: 'status-pending', approved: 'status-approved', delivered: 'status-delivered', cancelled: 'status-cancelled' }[status] || 'status-pending';
 }
 
 function loadOrders() {

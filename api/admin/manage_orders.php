@@ -160,7 +160,7 @@ if ($method === 'GET') {
 
 if ($action === 'update_status') {
     $newStatus = $postData['status'] ?? '';
-    $allowed   = ['pending', 'approved', 'cancelled', 'completed'];
+    $allowed   = ['pending', 'approved', 'delivered', 'cancelled', 'completed'];
 
     if (!$order_id || !in_array($newStatus, $allowed, true)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid order or status.']);

@@ -1410,6 +1410,10 @@ include 'includes/header.php';
                                 Approved
                             </option>
 
+                            <option value="Delivered">
+                                Delivered
+                            </option>
+
                             <option value="Completed">
                                 Completed
                             </option>
