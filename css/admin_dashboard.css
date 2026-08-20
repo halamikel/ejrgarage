@@ -151,7 +151,7 @@ body.ejr-admin-page footer {
 /* ── MAIN BODY ─────────────────────────────────────────────── */
 
 .ejr-admin-body {
-    padding: 40px 0 60px;
+    padding: 40px 0 20px;
     flex: 1;
 }
 
@@ -322,6 +322,10 @@ body.ejr-admin-page footer {
     margin-bottom: 20px;
     min-width: 0;
     overflow: hidden;
+}
+
+.tab-pane > .ejr-card:last-child {
+    margin-bottom: 0;
 }
 
 .ejr-card-header {
