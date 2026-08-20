@@ -151,7 +151,7 @@ body.ejr-admin-page footer {
 /* ── MAIN BODY ─────────────────────────────────────────────── */
 
 .ejr-admin-body {
-    padding: 40px 0 20px;
+    padding: 40px 0 0;
     flex: 1;
 }
 
