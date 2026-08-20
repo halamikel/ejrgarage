@@ -27,6 +27,19 @@ body {
     color: var(--ejr-text);
 }
 
+/* Sticky footer: on the admin dashboard, pin the footer to the
+   bottom of the viewport instead of leaving a gap of body
+   background beneath it when the page content is short. */
+body:has(.ejr-admin-body) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+body:has(.ejr-admin-body) footer {
+    margin-top: auto;
+}
+
 /* ── HERO HEADER ───────────────────────────────────────────── */
 
 .ejr-admin-header {
@@ -139,7 +152,7 @@ body {
 
 .ejr-admin-body {
     padding: 40px 0 60px;
-    min-height: calc(100vh - 200px);
+    flex: 1;
 }
 
 /* ── STAT CARDS ────────────────────────────────────────────── */
