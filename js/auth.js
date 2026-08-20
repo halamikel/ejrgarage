@@ -375,13 +375,30 @@ async function handleAddVehicle(event) {
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
     const formData = {
-        brand: document.getElementById("carBrand").value,
-        model: document.getElementById("carModel").value,
-        year: document.getElementById("yearModel").value,
-        plate: document.getElementById("plateNumber").value,
+        brand: document.getElementById("brand").value,
+        model: (typeof getVehicleModelValue === "function")
+            ? getVehicleModelValue({ brandId: "brand", modelId: "model", modelOtherId: "modelOther" })
+            : document.getElementById("model").value,
+        year: document.getElementById("year").value,
+        plate: document.getElementById("plate").value.trim(),
         transmission: document.getElementById("transmission").value,
-        fuel: document.getElementById("fuelType").value
+        fuel: document.getElementById("fuel").value
     };
+
+    // Same manual validation approach as the booking form's vehicle step:
+    // native "required" isn't used since the model field toggles between
+    // a <select> and a free-text "Other" input.
+    if (!formData.brand || !formData.model || !formData.year || !formData.plate || !formData.transmission || !formData.fuel) {
+        showNotification("Please fill in all vehicle fields before saving.", "error");
+
+        const brandSelect = document.getElementById("brand");
+        const modelOtherInput = document.getElementById("modelOther");
+        if (!formData.model && brandSelect && (brandSelect.value === "Other" || document.getElementById("model")?.value === "Other") && modelOtherInput) {
+            modelOtherInput.focus();
+        }
+
+        return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
@@ -400,6 +417,10 @@ async function handleAddVehicle(event) {
 
         if (result.status === "success") {
             event.target.reset();
+            const brandField = document.getElementById("brand");
+            if (brandField) {
+                brandField.dispatchEvent(new Event("change"));
+            }
             showSuccessModal("Your car has been added to the garage!");
             loadVehicles(); 
         } else {

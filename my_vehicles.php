@@ -4,6 +4,7 @@
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/vehicle-form.js"></script>
 
 <section class="profile-header-bg">
     <div class="container">
@@ -77,59 +78,89 @@
 
                 <div class="card border-0 shadow-sm p-4">
                     <h4 class="mb-4 fw-bold">Add New Vehicle</h4>
+
                     <form id="addVehicleForm" onsubmit="handleAddVehicle(event)">
+
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Fill in your vehicle information below.
+                        </p>
+
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Car Brand</label>
-                                <select class="form-select bg-light" aria-label="Select car brand" id="carBrand" required>
-                                    <option selected disabled value="">Select brand</option>
-                                    <option>Toyota</option>
-                                    <option>Honda</option>
-                                    <option>Mitsubishi</option>
-                                    <option>Nissan</option>
-                                    <option>Suzuki</option>
-                                    <option>Ford</option>
+
+                            <!-- CAR BRAND -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="brand">Car Brand</label>
+                                <select class="form-select" id="brand">
+                                    <option value="">Select brand</option>
+                                    <option value="Toyota">Toyota</option>
+                                    <option value="Honda">Honda</option>
+                                    <option value="Mitsubishi">Mitsubishi</option>
+                                    <option value="Nissan">Nissan</option>
+                                    <option value="Ford">Ford</option>
+                                    <option value="Suzuki">Suzuki</option>
+                                    <option value="Isuzu">Isuzu</option>
+                                    <option value="Hyundai">Hyundai</option>
+                                    <option value="Kia">Kia</option>
+                                    <option value="Mazda">Mazda</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Car Model</label>
-                                <input type="text" class="form-control bg-light" aria-label="Enter car model" id="carModel" placeholder="e.g. Vios or Xpander" required>
+                            <!-- CAR MODEL -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="model">Car Model</label>
+
+                                <!-- NORMAL MODEL DROPDOWN -->
+                                <select class="form-select" id="model" disabled>
+                                    <option value="">Select a brand first</option>
+                                </select>
+
+                                <!-- CUSTOM MODEL TEXTBOX (hidden by default) -->
+                                <input type="text" class="form-control" id="modelOther" placeholder="Enter your car model" style="display:none;" disabled autocomplete="off">
+
+                                <small class="text-muted d-block mt-1" id="modelHelpText">
+                                    Models are based on vehicles commonly sold/registered in the Philippines.
+                                </small>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Year Model</label>
-                                <select class="form-select bg-light" aria-label="Select year model" id="yearModel" required>
-                                    <option selected disabled value="">Select year</option>
+                            <!-- YEAR -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="year">Year Model</label>
+                                <select class="form-select" id="year">
+                                    <option value="">Select year</option>
                                     <?php for ($y = date("Y"); $y >= 1990; $y--): ?>
                                         <option><?php echo $y; ?></option>
                                     <?php endfor; ?>
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Plate Number</label>
-                                <input type="text" class="form-control bg-light text-uppercase" aria-label="Enter plate number" id="plateNumber" placeholder="ABC 1234" required>
+                            <!-- PLATE NUMBER -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="plate">Plate Number</label>
+                                <input type="text" class="form-control" id="plate" placeholder="e.g. ABC 1234" autocomplete="off">
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Transmission</label>
-                                <select class="form-select bg-light" aria-label="Select transmission" id="transmission" required>
-                                    <option selected disabled value="">Select transmission</option>
-                                    <option>Automatic</option>
-                                    <option>Manual</option>
-                                    <option>CVT</option>
+                            <!-- TRANSMISSION -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="transmission">Transmission</label>
+                                <select class="form-select" id="transmission">
+                                    <option value="">Select transmission</option>
+                                    <option value="Automatic">Automatic</option>
+                                    <option value="Manual">Manual</option>
+                                    <option value="CVT">CVT</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fuel Type</label>
-                                <select class="form-select bg-light" aria-label="Select fuel type" id="fuelType" required>
-                                    <option selected disabled value="">Select fuel type</option>
-                                    <option>Gasoline</option>
-                                    <option>Diesel</option>
-                                    <option>Hybrid</option>
-                                    <option>Electric</option>
+                            <!-- FUEL TYPE -->
+                            <div class="col-6 col-md-6">
+                                <label class="form-label" for="fuel">Fuel Type</label>
+                                <select class="form-select" id="fuel">
+                                    <option value="">Select fuel type</option>
+                                    <option value="Gasoline">Gasoline</option>
+                                    <option value="Diesel">Diesel</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Electric">Electric</option>
                                 </select>
                             </div>
 
@@ -154,6 +185,13 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    initVehicleBrandModel({
+        brandId: "brand",
+        modelId: "model",
+        modelOtherId: "modelOther",
+        modelHelpId: "modelHelpText"
+    });
+
     const token = localStorage.getItem("jwt_token");
     const userStr = localStorage.getItem("user");
 
