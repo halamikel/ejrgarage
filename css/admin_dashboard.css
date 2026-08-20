@@ -30,13 +30,13 @@ body {
 /* Sticky footer: on the admin dashboard, pin the footer to the
    bottom of the viewport instead of leaving a gap of body
    background beneath it when the page content is short. */
-body:has(.ejr-admin-body) {
+body.ejr-admin-page {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
 }
 
-body:has(.ejr-admin-body) footer {
+body.ejr-admin-page footer {
     margin-top: auto;
 }
 

@@ -1,5 +1,6 @@
 <?php
 $pageTitle = "Admin Dashboard - EJR Garage";
+$bodyClass = "ejr-admin-page";
 include 'includes/header.php';
 ?>
 
