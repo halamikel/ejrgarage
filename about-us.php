@@ -66,7 +66,8 @@
               style="border:0; border-radius: 8px;" 
               allowfullscreen="" 
               loading="lazy" 
-              referrerpolicy="no-referrer-when-downgrade">
+              referrerpolicy="no-referrer-when-downgrade"
+              title="EJR Garage Location on Google Maps">
       </iframe>
     </div>
   </div>
