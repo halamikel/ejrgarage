@@ -42,5 +42,5 @@ SELECT * FROM (SELECT 'location' AS keyword, 'We are located in Mabalacat City, 
 WHERE NOT EXISTS (SELECT 1 FROM ejr_bot WHERE keyword = 'location') LIMIT 1;
 
 INSERT INTO ejr_bot (keyword, response)
-SELECT * FROM (SELECT 'contact' AS keyword, 'You can reach us at 0912-345-6789 or info@ejrgarage.com.' AS response) AS tmp
+SELECT * FROM (SELECT 'contact' AS keyword, 'You can reach us at 0906-704-5422 or ejrgaragetest@gmail.com.' AS response) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM ejr_bot WHERE keyword = 'contact') LIMIT 1;

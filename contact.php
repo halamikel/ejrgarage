@@ -39,7 +39,7 @@
     <div class="row g-4 mt-2">
       <div class="col-md-4"><div class="contact-info-card text-center h-100"><div class="contact-card-icon"><i class="bi bi-geo-alt-fill"></i></div><h5>Our Location</h5><p>Mabalacat, Pampanga</p></div></div>
       <div class="col-md-4"><div class="contact-info-card text-center h-100"><div class="contact-card-icon"><i class="bi bi-clock-fill"></i></div><h5>Business Hours</h5><p>8:00 AM - 5:00 PM</p><small>Monday - Saturday</small></div></div>
-      <div class="col-md-4"><div class="contact-info-card text-center h-100"><div class="contact-card-icon"><i class="bi bi-telephone-fill"></i></div><h5>Call Us</h5><p>0912-345-6789</p><small>Emergency Line</small></div></div>
+      <div class="col-md-4"><div class="contact-info-card text-center h-100"><div class="contact-card-icon"><i class="bi bi-telephone-fill"></i></div><h5>Call Us</h5><p>0906-704-5422</p><small>Emergency Line</small></div></div>
     </div>
   </div>
 </section>

@@ -72,7 +72,7 @@ if (localStorage.getItem('jwt_token')) {
                         ></i>
 
                         <span>
-                            0912-345-6789
+                            0906-704-5422
                         </span>
 
                     </li>
@@ -84,7 +84,7 @@ if (localStorage.getItem('jwt_token')) {
                         ></i>
 
                         <span>
-                            info@ejrgarage.com
+                            ejrgaragetest@gmail.com
                         </span>
 
                     </li>
