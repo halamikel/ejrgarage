@@ -355,7 +355,7 @@ async function handleSmsVerification() {
 
     Swal.fire({
         title: 'Sending code...',
-        text: 'We are sending a verification code to your email.',
+        text: 'We are sending a verification code to your phone via SMS.',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
     });
@@ -377,11 +377,11 @@ async function handleSmsVerification() {
         }
 
         const { value: otpCode } = await Swal.fire({
-            title: 'Check Your Email',
+            title: 'Check Your Phone',
             html: `
-                <p>A 6-digit verification code was sent to your registered email.</p>
+                <p>A 6-digit verification code was sent via SMS to <strong>0${phoneInputVal}</strong>.</p>
                 <p class="text-muted" style="font-size:0.85rem;">
-                    &#9432; Check your spam folder if you don't see it. Code expires in 5 minutes.
+                    &#9432; This may take a minute to arrive. Code expires in 5 minutes.
                 </p>`,
             input: 'text',
             inputPlaceholder: 'Enter 6-digit code',

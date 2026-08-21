@@ -188,10 +188,10 @@ if ($user && $user['notif_sms'] == 1 && !empty($user['phone'])) {
     $statusMessages = [
         'Confirmed'   => "Hi {$firstName}, your appointment is CONFIRMED. See you on your scheduled date! View: ejrgarage.onrender.com/my_appointments.php",
         'Pending'     => "Hi {$firstName}, your appointment is PENDING review. We will confirm it shortly. View: ejrgarage.onrender.com/my_appointments.php",
-        'Cancelled'   => "Hi {$firstName}, your appointment is CANCELLED. Please call us to reschedule. View: ejrgarage.onrender.com/my_appointments.php",
+        'Cancelled'   => "Hi {$firstName}, your appointment is CANCELLED. Please reschedule your booking. View: ejrgarage.onrender.com/booking-details.php",
         'Completed'   => "Hi {$firstName}, your appointment is COMPLETED. Thank you for trusting EJR Garage!",
         'In Progress' => "Hi {$firstName}, your appointment is now IN PROGRESS. Our team is currently working on your vehicle.",
-        'No Show'     => "Hi {$firstName}, we missed you for your appointment. Please contact us to reschedule.",
+        'No Show'     => "Hi {$firstName}, we missed you for your appointment. Please reschedule your booking. View: ejrgarage.onrender.com/booking-details.php",
     ];
 
     $smsText = isset($statusMessages[$status])
