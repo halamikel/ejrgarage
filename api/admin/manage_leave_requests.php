@@ -58,6 +58,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS leave_requests (
     resolved_at    TIMESTAMP NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+ejr_ensure_archive_columns($conn, 'leave_requests');
+
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
@@ -70,6 +72,7 @@ ejr_sync_leave_statuses($conn);
 if ($method === 'GET') {
     if ($action === 'list') {
         $result = $conn->query("SELECT * FROM leave_requests
+            WHERE (is_archived IS NULL OR is_archived = 0)
             ORDER BY (status = 'pending') DESC, requested_at DESC");
         $rows = [];
         while ($r = $result->fetch_assoc()) $rows[] = $r;
@@ -132,10 +135,11 @@ if ($method === 'POST') {
         }
 
         case 'delete': {
-            $del = $conn->prepare("DELETE FROM leave_requests WHERE id=?");
-            $del->bind_param("i", $id);
-            $del->execute();
-            echo json_encode(['status'=>'success']);
+            if (ejr_archive_row($conn, 'leave_requests', $id, $adminId)) {
+                echo json_encode(['status'=>'success']);
+            } else {
+                echo json_encode(['status'=>'error','message'=>'Leave request not found or already archived.']);
+            }
             break;
         }
 

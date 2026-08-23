@@ -112,3 +112,124 @@ try {
 
     exit;
 }
+
+// ----------------------------------------------------------------
+// Soft-delete / Archive helpers
+//
+// Instead of ever running DELETE FROM on a record the admin removes,
+// every admin "delete" action should archive the row in place. These
+// helpers self-heal the required columns (same self-healing pattern
+// already used elsewhere in this codebase, e.g. get_full_site_data.php)
+// and give every admin endpoint one consistent way to archive/restore.
+// ----------------------------------------------------------------
+
+/**
+ * Ensure a table has the columns needed to support archiving:
+ *   is_archived  TINYINT(1)  - 0 = active, 1 = archived
+ *   archived_at  DATETIME    - when it was archived
+ *   archived_by  INT         - admin user_id who archived it
+ *
+ * Safe to call on every request; it's a cheap SHOW COLUMNS check and
+ * only ALTERs the table the first time it's missing a column.
+ */
+function ejr_ensure_archive_columns(mysqli $conn, string $table): void
+{
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+
+    $cols = [
+        'is_archived' => "ALTER TABLE `{$table}` ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0",
+        'archived_at' => "ALTER TABLE `{$table}` ADD COLUMN archived_at DATETIME NULL",
+        'archived_by' => "ALTER TABLE `{$table}` ADD COLUMN archived_by INT NULL",
+    ];
+
+    foreach ($cols as $col => $alterSql) {
+        $check = $conn->query("SHOW COLUMNS FROM `{$table}` LIKE '{$col}'");
+        if ($check && $check->num_rows === 0) {
+            $conn->query($alterSql);
+        }
+    }
+}
+
+/**
+ * Archive a single row (by id) instead of deleting it.
+ * Returns true if a row was archived.
+ */
+function ejr_archive_row(mysqli $conn, string $table, int $id, ?int $adminId = null): bool
+{
+    ejr_ensure_archive_columns($conn, $table);
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+
+    $stmt = $conn->prepare("
+        UPDATE `{$table}`
+        SET is_archived = 1,
+            archived_at = NOW(),
+            archived_by = ?
+        WHERE id = ?
+          AND (is_archived IS NULL OR is_archived = 0)
+    ");
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param("ii", $adminId, $id);
+    $stmt->execute();
+
+    return $stmt->affected_rows > 0;
+}
+
+/**
+ * Archive every row matching a WHERE column = value condition
+ * (e.g. archive every vehicle belonging to a user being archived).
+ * Returns the number of rows archived.
+ */
+function ejr_archive_where(mysqli $conn, string $table, string $whereCol, int $whereVal, ?int $adminId = null): int
+{
+    ejr_ensure_archive_columns($conn, $table);
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $whereCol = preg_replace('/[^a-zA-Z0-9_]/', '', $whereCol);
+
+    $stmt = $conn->prepare("
+        UPDATE `{$table}`
+        SET is_archived = 1,
+            archived_at = NOW(),
+            archived_by = ?
+        WHERE `{$whereCol}` = ?
+          AND (is_archived IS NULL OR is_archived = 0)
+    ");
+
+    if (!$stmt) {
+        return 0;
+    }
+
+    $stmt->bind_param("ii", $adminId, $whereVal);
+    $stmt->execute();
+
+    return $stmt->affected_rows;
+}
+
+/**
+ * Restore a previously archived row.
+ */
+function ejr_restore_row(mysqli $conn, string $table, int $id): bool
+{
+    ejr_ensure_archive_columns($conn, $table);
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+
+    $stmt = $conn->prepare("
+        UPDATE `{$table}`
+        SET is_archived = 0,
+            archived_at = NULL,
+            archived_by = NULL
+        WHERE id = ?
+    ");
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    return $stmt->affected_rows > 0;
+}

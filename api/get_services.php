@@ -13,7 +13,9 @@ $conn->query("CREATE TABLE IF NOT EXISTS ejr_services (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-$result = $conn->query("SELECT id, name, category, description, price_from FROM ejr_services WHERE is_active = 1 ORDER BY category, name ASC");
+ejr_ensure_archive_columns($conn, 'ejr_services');
+
+$result = $conn->query("SELECT id, name, category, description, price_from FROM ejr_services WHERE is_active = 1 AND (is_archived IS NULL OR is_archived = 0) ORDER BY category, name ASC");
 $services = [];
 while ($r = $result->fetch_assoc()) $services[] = $r;
 

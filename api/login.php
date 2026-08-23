@@ -36,7 +36,9 @@ use Firebase\JWT\Key;
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$stmt = $conn->prepare("SELECT id, full_name, email, phone, address, profile_picture, password_hash, login_attempts, lockout_time, is_verified, is_phone_verified, role_id, created_at FROM users WHERE email = ?");
+ejr_ensure_archive_columns($conn, 'users');
+
+$stmt = $conn->prepare("SELECT id, full_name, email, phone, address, profile_picture, password_hash, login_attempts, lockout_time, is_verified, is_phone_verified, role_id, created_at FROM users WHERE email = ? AND (is_archived IS NULL OR is_archived = 0)");
 $stmt->bind_param("s", $data['email']);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();

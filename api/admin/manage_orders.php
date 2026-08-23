@@ -58,6 +58,8 @@ if ($replyColCheck && $replyColCheck->num_rows === 0) {
     $conn->query("ALTER TABLE part_orders ADD COLUMN cancellation_reply VARCHAR(255) NULL");
 }
 
+ejr_ensure_archive_columns($conn, 'part_orders');
+
 // ── GET ORDERS ────────────────────────────────────────────────
 // ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
@@ -91,6 +93,8 @@ if ($method === 'GET') {
 
         LEFT JOIN users u
             ON u.id = o.user_id
+
+        WHERE (o.is_archived IS NULL OR o.is_archived = 0)
 
         ORDER BY o.created_at DESC
     ");
@@ -279,10 +283,12 @@ if ($action === 'send_receipt') {
 }
 
 if ($action === 'delete') {
-    $stmt = $conn->prepare("DELETE FROM part_orders WHERE id = ?");
-    $stmt->bind_param("i", $order_id);
-    $stmt->execute();
-    echo json_encode(['status' => 'success', 'message' => 'Order deleted.']);
+    $adminId = (int)($_SESSION['user_id'] ?? 0);
+    if (ejr_archive_row($conn, 'part_orders', $order_id, $adminId)) {
+        echo json_encode(['status' => 'success', 'message' => 'Order archived.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Order not found or already archived.']);
+    }
     exit;
 }
 

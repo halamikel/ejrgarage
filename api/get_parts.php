@@ -2,10 +2,12 @@
 header('Content-Type: application/json');
 require_once 'db_config.php';
 
+ejr_ensure_archive_columns($conn, 'parts');
+
 $category = $_GET['category'] ?? '';
 $search   = $_GET['search'] ?? '';
 
-$sql = "SELECT * FROM parts WHERE 1=1";
+$sql = "SELECT * FROM parts WHERE (is_archived IS NULL OR is_archived = 0)";
 $params = [];
 $types  = '';
 

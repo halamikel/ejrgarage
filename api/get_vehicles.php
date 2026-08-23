@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 require_once 'db_config.php';
+ejr_ensure_archive_columns($conn, 'vehicles');
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
 
@@ -20,7 +21,7 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         $userId = $decoded->uid; 
 
         $query = "SELECT id, brand, model, year_model, plate_number, transmission, fuel_type 
-                  FROM vehicles WHERE user_id = ? ORDER BY created_at DESC";
+                  FROM vehicles WHERE user_id = ? AND (is_archived IS NULL OR is_archived = 0) ORDER BY created_at DESC";
                   
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $userId);

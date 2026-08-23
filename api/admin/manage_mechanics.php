@@ -69,6 +69,8 @@ if ($statusCol && strpos($statusCol['Type'], 'on_break') === false) {
     $conn->query("ALTER TABLE mechanics MODIFY COLUMN status ENUM('available','unavailable','on_break','on_duty') DEFAULT 'available'");
 }
 
+ejr_ensure_archive_columns($conn, 'mechanics');
+
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
@@ -105,6 +107,8 @@ if ($method === 'GET') {
 
             LEFT JOIN users u
                 ON u.id = m.user_id
+
+            WHERE (m.is_archived IS NULL OR m.is_archived = 0)
 
             ORDER BY
                 COALESCE(u.full_name, m.name) ASC
@@ -201,10 +205,11 @@ $stmt->bind_param(
             if ($count > 0) {
                 echo json_encode(['status'=>'error','message'=>'Cannot delete: mechanic has active appointments.']); exit;
             }
-            $del = $conn->prepare("DELETE FROM mechanics WHERE id=?");
-            $del->bind_param("i", $id);
-            $del->execute();
-            echo json_encode(['status'=>'success']);
+            if (ejr_archive_row($conn, 'mechanics', $id, $adminId)) {
+                echo json_encode(['status'=>'success']);
+            } else {
+                echo json_encode(['status'=>'error','message'=>'Mechanic not found or already archived.']);
+            }
             break;
 
         case 'assign':

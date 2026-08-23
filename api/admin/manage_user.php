@@ -470,8 +470,12 @@ if ($action === 'delete') {
 
 
     // ========================================================
-    // DELETE USER SAFELY
+    // ARCHIVE USER SAFELY (no hard deletes — this is a soft
+    // delete: the row stays in the database, just marked as
+    // archived so it disappears from the admin dashboard).
     // ========================================================
+
+    $adminId = (int)($_SESSION['user_id'] ?? 0);
 
     try {
 
@@ -501,49 +505,19 @@ if ($action === 'delete') {
 
 
         // ----------------------------------------------------
-        // Delete vehicles
+        // Archive vehicles owned by this user
         // ----------------------------------------------------
 
-        $stmt = $conn->prepare("
-            DELETE FROM vehicles
-            WHERE user_id = ?
-        ");
-
-        if ($stmt) {
-
-            $stmt->bind_param(
-                "i",
-                $user_id
-            );
-
-            $stmt->execute();
-        }
+        ejr_archive_where($conn, 'vehicles', 'user_id', $user_id, $adminId);
 
 
         // ----------------------------------------------------
-        // Delete user
+        // Archive the user
         // ----------------------------------------------------
 
-        $stmt = $conn->prepare("
-            DELETE FROM users
-            WHERE id = ?
-        ");
+        $archived = ejr_archive_row($conn, 'users', $user_id, $adminId);
 
-        if (!$stmt) {
-            throw new Exception(
-                'Failed to prepare delete query.'
-            );
-        }
-
-        $stmt->bind_param(
-            "i",
-            $user_id
-        );
-
-        $stmt->execute();
-
-
-        if ($stmt->affected_rows === 0) {
+        if (!$archived) {
 
             $conn->rollback();
 
@@ -561,7 +535,7 @@ if ($action === 'delete') {
 
         echo json_encode([
             'status'  => 'success',
-            'message' => 'User deleted successfully.'
+            'message' => 'User archived successfully.'
         ]);
 
     } catch (Throwable $e) {
@@ -569,13 +543,13 @@ if ($action === 'delete') {
         $conn->rollback();
 
         error_log(
-            "manage_user.php delete failed: " .
+            "manage_user.php archive failed: " .
             $e->getMessage()
         );
 
         echo json_encode([
             'status'  => 'error',
-            'message' => 'Failed to delete user.'
+            'message' => 'Failed to archive user.'
         ]);
     }
 

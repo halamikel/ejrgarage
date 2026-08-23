@@ -42,17 +42,12 @@ if (!isset($data['appointment_id'])) {
 // Kept in this file rather than a new endpoint: same JWT-admin gate above
 // already applies, and it's the only place appointment_id is authorized.
 if (($data['action'] ?? '') === 'delete') {
-    $del = $conn->prepare("DELETE FROM appointments WHERE id = ?");
-    $del->bind_param("i", $data['appointment_id']);
-    if (!$del->execute()) {
-        echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
-        exit;
+    $appointmentId = (int)$data['appointment_id'];
+    if (ejr_archive_row($conn, 'appointments', $appointmentId, $adminId)) {
+        echo json_encode(['status' => 'success', 'message' => 'Appointment archived.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Appointment not found or already archived.']);
     }
-    if ($del->affected_rows <= 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Appointment not found']);
-        exit;
-    }
-    echo json_encode(['status' => 'success', 'message' => 'Appointment deleted.']);
     exit;
 }
 

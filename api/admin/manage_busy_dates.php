@@ -31,6 +31,8 @@ $current_user_id  = $adminId;
 $current_admin_id = $adminId;
 $is_admin         = true;
 
+ejr_ensure_archive_columns($conn, 'appointment_dates');
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
@@ -51,6 +53,7 @@ if ($method === 'GET') {
 
     $result = $conn->query("
         SELECT * FROM appointment_dates 
+        WHERE (is_archived IS NULL OR is_archived = 0)
         ORDER BY appointment_date ASC
     ");
 
@@ -76,7 +79,7 @@ if ($action === 'block') {
     $stmt = $conn->prepare("
         INSERT INTO appointment_dates (appointment_date, slot_limit, current_bookings, is_busy)
         VALUES (?, ?, 0, 1)
-        ON DUPLICATE KEY UPDATE slot_limit = ?, is_busy = 1
+        ON DUPLICATE KEY UPDATE slot_limit = ?, is_busy = 1, is_archived = 0, archived_at = NULL, archived_by = NULL
     ");
     $stmt->bind_param("sii", $date, $limit, $limit);
     $stmt->execute();
@@ -112,10 +115,11 @@ if ($action === 'toggle_busy') {
 
 if ($action === 'delete') {
     $id = (int)$data['id'];
-    $stmt = $conn->prepare("DELETE FROM appointment_dates WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    echo json_encode(['status' => 'success', 'message' => 'Date removed.']);
+    if (ejr_archive_row($conn, 'appointment_dates', $id, $adminId)) {
+        echo json_encode(['status' => 'success', 'message' => 'Date removed.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Date not found or already removed.']);
+    }
     exit;
 }
 

@@ -60,14 +60,17 @@ if ($tableIsNew) {
     }
 }
 
+ejr_ensure_archive_columns($conn, 'ejr_services');
+
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'list';
 
 if ($method === 'GET') {
     $activeOnly = ($_GET['active_only'] ?? '0') === '1';
-    $where = $activeOnly ? 'WHERE is_active = 1' : '';
-    $result = $conn->query("SELECT * FROM ejr_services $where ORDER BY category, name ASC");
+    $where = '(is_archived IS NULL OR is_archived = 0)';
+    if ($activeOnly) $where .= ' AND is_active = 1';
+    $result = $conn->query("SELECT * FROM ejr_services WHERE $where ORDER BY category, name ASC");
     $rows = [];
     while ($r = $result->fetch_assoc()) $rows[] = $r;
     echo json_encode(['status'=>'success','services'=>$rows]);
@@ -117,10 +120,11 @@ if ($method === 'POST') {
             if ($count > 0) {
                 echo json_encode(['status'=>'error','message'=>'Cannot delete: this service has active appointments. Deactivate it instead.']); exit;
             }
-            $del = $conn->prepare("DELETE FROM ejr_services WHERE id=?");
-            $del->bind_param("i", $id);
-            $del->execute();
-            echo json_encode(['status'=>'success']);
+            if (ejr_archive_row($conn, 'ejr_services', $id, $adminId)) {
+                echo json_encode(['status'=>'success']);
+            } else {
+                echo json_encode(['status'=>'error','message'=>'Service not found or already archived.']);
+            }
             break;
 
         case 'toggle':

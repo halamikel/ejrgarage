@@ -62,11 +62,15 @@ if ($colCheck && $colCheck->num_rows === 0) {
 ejr_sync_leave_statuses($conn);
 
 // ── Staff directory: admins + mechanics only, never customers ──────
+ejr_ensure_archive_columns($conn, 'users');
+ejr_ensure_archive_columns($conn, 'mechanics');
+
 $query = "SELECT u.id, u.full_name, u.email, u.role_id, u.profile_picture,
                  m.status AS mechanic_status
           FROM users u
-          LEFT JOIN mechanics m ON m.user_id = u.id
+          LEFT JOIN mechanics m ON m.user_id = u.id AND (m.is_archived IS NULL OR m.is_archived = 0)
           WHERE u.role_id IN (2, 3)
+            AND (u.is_archived IS NULL OR u.is_archived = 0)
           ORDER BY u.role_id ASC, u.full_name ASC";
 
 $result = $conn->query($query);

@@ -35,12 +35,15 @@ if (!ejr_admin_authorized()) {
 $input  = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? $_GET['action'] ?? 'get';
 
-// ── GET all vehicles ─────────────────────────────────────────────
+ejr_ensure_archive_columns($conn, 'vehicles');
+
+// ── GET all vehicles (excluding archived) ─────────────────────────
 if ($action === 'get' || $_SERVER['REQUEST_METHOD'] === 'GET') {
     $result   = $conn->query("
         SELECT v.*, u.full_name AS owner_name
         FROM vehicles v
         LEFT JOIN users u ON u.id = v.user_id
+        WHERE (v.is_archived IS NULL OR v.is_archived = 0)
         ORDER BY v.created_at DESC
     ");
     $vehicles = $result->fetch_all(MYSQLI_ASSOC);
@@ -60,7 +63,7 @@ if ($action === 'add') {
 
     $plate = strtoupper($input['plate_number']);
 
-    $check = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ?");
+    $check = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ? AND (is_archived IS NULL OR is_archived = 0)");
     $check->bind_param("s", $plate);
     $check->execute();
     if ($check->get_result()->num_rows > 0) {
@@ -99,7 +102,7 @@ if ($action === 'edit') {
     $plate = strtoupper($input['plate_number']);
     $id    = (int)$input['id'];
 
-    $check = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ? AND id != ?");
+    $check = $conn->prepare("SELECT id FROM vehicles WHERE plate_number = ? AND id != ? AND (is_archived IS NULL OR is_archived = 0)");
     $check->bind_param("si", $plate, $id);
     $check->execute();
     if ($check->get_result()->num_rows > 0) {
@@ -137,14 +140,13 @@ if ($action === 'delete') {
         exit();
     }
 
-    $id   = (int)$input['id'];
-    $stmt = $conn->prepare("DELETE FROM vehicles WHERE id = ?");
-    $stmt->bind_param("i", $id);
+    $id = (int)$input['id'];
+    $adminId = (int)($_SESSION['user_id'] ?? 0);
 
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Vehicle deleted successfully.']);
+    if (ejr_archive_row($conn, 'vehicles', $id, $adminId)) {
+        echo json_encode(['status' => 'success', 'message' => 'Vehicle archived successfully.']);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Database error.']);
+        echo json_encode(['status' => 'error', 'message' => 'Vehicle not found or already archived.']);
     }
     exit();
 }

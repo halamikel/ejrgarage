@@ -2,6 +2,8 @@
 header('Content-Type: application/json');
 require_once 'db_config.php';
 
+ejr_ensure_archive_columns($conn, 'appointment_dates');
+
 // Sync appointment_dates from actual appointments table
 $conn->query("
     INSERT INTO appointment_dates (appointment_date, current_bookings, is_busy)
@@ -24,6 +26,7 @@ $result = $conn->query("
     FROM appointment_dates 
     WHERE is_busy = 1 
     AND appointment_date >= CURDATE()
+    AND (is_archived IS NULL OR is_archived = 0)
 ");
 
 $busyDates = [];

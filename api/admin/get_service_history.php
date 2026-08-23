@@ -37,10 +37,21 @@ if ($method === 'POST') {
     $action = $data['action'] ?? '';
 
     if ($action === 'delete') {
-        $stmt = $conn->prepare("DELETE FROM appointments WHERE id = ? AND status = 'Completed'");
-        $stmt->bind_param("i", $data['id']);
+        $historyId = (int)($data['id'] ?? 0);
+        ejr_ensure_archive_columns($conn, 'appointments');
+        $stmt = $conn->prepare("
+            UPDATE appointments
+            SET is_archived = 1, archived_at = NOW(), archived_by = ?
+            WHERE id = ? AND status = 'Completed'
+              AND (is_archived IS NULL OR is_archived = 0)
+        ");
+        $stmt->bind_param("ii", $adminId, $historyId);
         $stmt->execute();
-        echo json_encode(['status' => 'success', 'message' => 'Record deleted']);
+        if ($stmt->affected_rows > 0) {
+            echo json_encode(['status' => 'success', 'message' => 'Record archived']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Record not found or already archived']);
+        }
         exit;
     }
 
@@ -57,6 +68,7 @@ if ($method === 'POST') {
 }
 
 // ── GET ALL COMPLETED ─────────────────────────────────────────
+ejr_ensure_archive_columns($conn, 'appointments');
 $stmt = $conn->prepare("
     SELECT a.id, a.service_type, a.appointment_date AS service_date,
            u.full_name,
@@ -67,6 +79,7 @@ $stmt = $conn->prepare("
     LEFT JOIN vehicles v ON v.id = a.vehicle_id
     LEFT JOIN mechanics m ON m.id = a.mechanic_id
     WHERE a.status = 'Completed'
+      AND (a.is_archived IS NULL OR a.is_archived = 0)
     ORDER BY a.appointment_date DESC
 ");
 $stmt->execute();

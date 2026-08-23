@@ -66,6 +66,9 @@ $data   = json_decode(
 
 $action = $data['action'] ?? $_GET['action'] ?? '';
 
+ejr_ensure_archive_columns($conn, 'parts');
+ejr_ensure_archive_columns($conn, 'part_inquiries');
+
 
 switch ($action) {
 
@@ -101,6 +104,7 @@ switch ($action) {
         ON pi.part_id = p.id
     LEFT JOIN users u
         ON u.id = pi.user_id
+    WHERE (pi.is_archived IS NULL OR pi.is_archived = 0)
     ORDER BY pi.created_at DESC
 ";
 
@@ -232,27 +236,24 @@ switch ($action) {
 
     case 'delete':
 
-        $stmt = $conn->prepare("
-            DELETE FROM parts
-            WHERE id = ?
-        ");
+        $partId = (int)($data['id'] ?? 0);
 
-        $stmt->bind_param(
-            "i",
-            $data['id']
-        );
+        // Archive the part instead of deleting it, and archive its
+        // inquiries along with it (matches the admin UI's warning
+        // that deleting a part also removes its inquiries).
+        $archived = ejr_archive_row($conn, 'parts', $partId, $adminId);
+        ejr_archive_where($conn, 'part_inquiries', 'part_id', $partId, $adminId);
 
-
-        echo $stmt->execute()
+        echo $archived
 
             ? json_encode([
                 'status' => 'success',
-                'message' => 'Part deleted.'
+                'message' => 'Part archived.'
             ])
 
             : json_encode([
                 'status' => 'error',
-                'message' => $conn->error
+                'message' => 'Part not found or already archived.'
             ]);
 
         break;
@@ -319,27 +320,18 @@ switch ($action) {
 
     case 'delete_inquiry':
 
-        $stmt = $conn->prepare("
-            DELETE FROM part_inquiries
-            WHERE id = ?
-        ");
+        $inquiryId = (int)($data['id'] ?? 0);
 
-        $stmt->bind_param(
-            "i",
-            $data['id']
-        );
-
-
-        echo $stmt->execute()
+        echo ejr_archive_row($conn, 'part_inquiries', $inquiryId, $adminId)
 
             ? json_encode([
                 'status' => 'success',
-                'message' => 'Inquiry deleted.'
+                'message' => 'Inquiry archived.'
             ])
 
             : json_encode([
                 'status' => 'error',
-                'message' => $conn->error
+                'message' => 'Inquiry not found or already archived.'
             ]);
 
         break;
@@ -354,6 +346,7 @@ switch ($action) {
         $result = $conn->query("
             SELECT *
             FROM parts
+            WHERE (is_archived IS NULL OR is_archived = 0)
             ORDER BY created_at DESC
         ");
 
