@@ -90,9 +90,10 @@
       <div class="mini-line mx-auto"></div>
     </div>
     
+    <!-- Replaced Elfsight with Jotform Widget -->
     <div id="JFWebsiteWidget-01a032ad4f7070008426079b5956f32824a3"></div>
     <script src="https://www.jotform.com/website-widgets/embed/01a032ad4f7070008426079b5956f32824a3"></script>
-
+    
   </div>
 </section>
 

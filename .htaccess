@@ -22,9 +22,9 @@
 
     # Content-Security-Policy — allow-listed to the third-party assets
     # this site actually loads (jsDelivr, cdnjs, jQuery CDN, Google Fonts,
-    # Elfsight review widget, Google Maps embed). Tighten further if any
+    # Jotform review widget, Google Maps embed). Tighten further if any
     # of these integrations are removed.
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://elfsightcdn.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://elfsightcdn.com https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https://elfsightcdn.com https://core.service.elfsight.com https://static.elfsight.com; frame-src 'self' https://www.google.com https://elfsightcdn.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://www.jotform.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://maps.gstatic.com https://maps.googleapis.com https://www.jotform.com https://*.googleusercontent.com; connect-src 'self' https://www.jotform.com; frame-src 'self' https://www.google.com https://www.jotform.com https://form.jotform.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
 
     # ZAP-flagged: X-Powered-By leaks the exact PHP version to attackers.
     # expose_php can't be set in .htaccess (it's PHP_INI_SYSTEM), so it's
