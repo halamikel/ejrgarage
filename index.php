@@ -82,15 +82,17 @@
   </div>
 </section>
 
-<!-- Google Reviews -->
+<!-- Google Reviews / Jotform Widget -->
 <section class="py-5" style="background: #f8f9fa;">
   <div class="container">
     <div class="text-center mb-4">
       <h2 class="section-title">What Our Customers Say</h2>
       <div class="mini-line mx-auto"></div>
     </div>
-    <script src="https://elfsightcdn.com/platform.js" async></script>
-    <div class="elfsight-app-42c48d19-9181-41ed-a819-6491c71fb8e8" data-elfsight-app-lazy></div>
+    
+    <div id="JFWebsiteWidget-01a032ad4f7070008426079b5956f32824a3"></div>
+    <script src="https://www.jotform.com/website-widgets/embed/01a032ad4f7070008426079b5956f32824a3"></script>
+
   </div>
 </section>
 
