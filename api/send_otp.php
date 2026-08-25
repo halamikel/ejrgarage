@@ -53,21 +53,24 @@ if (empty($phone)) {
     exit;
 }
 
-// ✅ Generate OTP and store in session
-$otp = rand(100000, 999999);
-$_SESSION['pending_otp']   = $otp;
-$_SESSION['pending_phone'] = $phone;
-$_SESSION['otp_user_id']   = $userId;
-$_SESSION['otp_expires']   = time() + 300; // 5 minutes
-
-// ✅ Send via SMS (Semaphore) — code goes to the number being verified,
-// not the user's registered email.
+// ✅ Send via Semaphore's dedicated OTP endpoint — code goes to the
+// number being verified, not the user's registered email. Semaphore
+// generates the code itself; we store whatever it returns, since
+// that's the only value guaranteed to match what was actually texted.
+// (Using the regular /messages endpoint here caused the code to get
+// silently filtered by telco anti-smishing rules — Semaphore would
+// still report a successful send, but nothing arrived on the phone.)
 try {
-    $smsText = "EJR Garage: Your phone verification code is {$otp}. It expires in 5 minutes. Don't share this code with anyone.";
+    $smsTemplate = "EJR Garage: Your phone verification code is {otp}. It expires in 5 minutes. Don't share this code with anyone.";
 
-    $smsResult = sendSmsViaSemaphore($phone, $smsText);
+    $smsResult = sendOtpViaSemaphore($phone, $smsTemplate);
 
     if ($smsResult['status'] === 'success') {
+        $_SESSION['pending_otp']   = $smsResult['code'];
+        $_SESSION['pending_phone'] = $phone;
+        $_SESSION['otp_user_id']   = $userId;
+        $_SESSION['otp_expires']   = time() + 300; // 5 minutes
+
         echo json_encode(['status' => 'success', 'message' => 'OTP sent to your phone']);
     } else {
         error_log("EJR PHONE VERIFY SMS: user_id={$userId} phone={$phone} FAILED — " . $smsResult['message']);

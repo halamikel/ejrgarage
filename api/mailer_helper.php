@@ -194,3 +194,95 @@ function sendSmsViaSemaphore(string $toPhone, string $message, ?string $senderNa
 
     return ['status' => 'success', 'message' => 'SMS queued to ' . $phone];
 }
+
+// ── OTP via Semaphore's dedicated OTP endpoint ──────────────────
+// Docs: https://semaphore.co/docs — POST to /api/v4/otp (NOT /messages).
+//
+// Regular /messages traffic carrying OTP-style wording ("verification
+// code", "expires in", "don't share this code") gets silently filtered
+// by PH telcos' anti-smishing rules even when Semaphore reports the
+// send as successful — the message never reaches the phone. The /otp
+// endpoint routes through a channel dedicated to OTP traffic so it
+// isn't caught by that filtering.
+//
+// Pass a $messageTemplate containing the literal placeholder "{otp}"
+// (e.g. "EJR Garage: Your code is {otp}. It expires in 5 minutes.").
+// Semaphore generates the code itself and substitutes it in — the
+// generated code comes back in the response as 'code', and THAT is
+// the value that must be stored/checked, not a locally-generated one,
+// since it's the only code guaranteed to match what was actually sent.
+//
+// Returns ['status' => 'success'|'error', 'message' => string, 'code' => string|null]
+function sendOtpViaSemaphore(string $toPhone, string $messageTemplate, ?string $senderName = null): array {
+    if (!defined('SEMAPHORE_API_KEY')) require_once __DIR__ . '/env.php';
+
+    if (!SEMAPHORE_API_KEY) {
+        error_log("EJR OTP: SEMAPHORE_API_KEY is not configured.");
+        return ['status' => 'error', 'message' => 'SMS is not configured (missing Semaphore API key).', 'code' => null];
+    }
+
+    $phone = ejrNormalizePhPhone($toPhone);
+    if (!$phone) {
+        error_log("EJR OTP: invalid phone number '{$toPhone}', skipping send.");
+        return ['status' => 'error', 'message' => 'Invalid phone number.', 'code' => null];
+    }
+
+    if (strpos($messageTemplate, '{otp}') === false) {
+        // Not fatal — Semaphore will append the code to the end — but
+        // worth knowing about, since it usually means a template got
+        // copy-pasted from the old self-generated flow.
+        error_log("EJR OTP: message template has no {otp} placeholder, Semaphore will append the code.");
+    }
+
+    $payload = [
+        'apikey'     => SEMAPHORE_API_KEY,
+        'number'     => $phone,
+        'message'    => $messageTemplate,
+        'sendername' => $senderName ?: (defined('SEMAPHORE_SENDER_NAME') ? SEMAPHORE_SENDER_NAME : 'SEMAPHORE'),
+    ];
+
+    $ch = curl_init('https://api.semaphore.co/api/v4/otp');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query($payload),
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        error_log("EJR OTP cURL error: $curlError");
+        return ['status' => 'error', 'message' => 'Connection error: ' . $curlError, 'code' => null];
+    }
+
+    $decoded = json_decode($response, true);
+    error_log("EJR OTP Semaphore HTTP {$httpCode} response: {$response}");
+
+    if ($httpCode < 200 || $httpCode >= 300) {
+        $apiMsg = $decoded['message'] ?? (is_array($decoded) ? json_encode($decoded) : $response);
+        return ['status' => 'error', 'message' => "Semaphore OTP API error ({$httpCode}): {$apiMsg}", 'code' => null];
+    }
+
+    if (!is_array($decoded) || empty($decoded) || !isset($decoded[0])) {
+        $apiMsg = is_array($decoded) ? ($decoded['message'] ?? json_encode($decoded)) : $response;
+        error_log("EJR OTP: Semaphore returned HTTP 200 but no message was queued — {$apiMsg}");
+        return ['status' => 'error', 'message' => $apiMsg ?: 'Semaphore did not confirm the OTP was queued.', 'code' => null];
+    }
+
+    $first = $decoded[0];
+    if (isset($first['status']) && strtolower($first['status']) === 'failed') {
+        return ['status' => 'error', 'message' => 'Semaphore reported delivery failure for ' . $phone, 'code' => null];
+    }
+
+    if (empty($first['code'])) {
+        error_log("EJR OTP: Semaphore response had no 'code' field — " . $response);
+        return ['status' => 'error', 'message' => 'Semaphore did not return an OTP code.', 'code' => null];
+    }
+
+    return ['status' => 'success', 'message' => 'OTP sent to ' . $phone, 'code' => (string) $first['code']];
+}
