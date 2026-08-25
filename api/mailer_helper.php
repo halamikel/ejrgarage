@@ -167,13 +167,30 @@ function sendSmsViaSemaphore(string $toPhone, string $message, ?string $senderNa
 
     $decoded = json_decode($response, true);
 
+    // Always log the raw response so real failures are visible in the
+    // server logs, even when Semaphore answers with HTTP 200.
+    error_log("EJR SMS Semaphore HTTP {$httpCode} response: {$response}");
+
     if ($httpCode < 200 || $httpCode >= 300) {
-        error_log("EJR SMS Semaphore HTTP {$httpCode}: {$response}");
         $apiMsg = $decoded['message'] ?? (is_array($decoded) ? json_encode($decoded) : $response);
         return ['status' => 'error', 'message' => "Semaphore API error ({$httpCode}): {$apiMsg}"];
     }
 
-    // Success responses are a JSON array (single number) or object; either
-    // way, a 2xx with no clear error means Semaphore queued the message.
+    // Semaphore can respond with HTTP 200 while still failing to queue the
+    // message (bad/unapproved sender name, no account balance, malformed
+    // number, etc). A real success is a JSON array of message objects.
+    // Anything else — an object, an empty body, or a non-array — means it
+    // did NOT actually queue, even though the HTTP status looks fine.
+    if (!is_array($decoded) || empty($decoded) || !isset($decoded[0])) {
+        $apiMsg = is_array($decoded) ? ($decoded['message'] ?? json_encode($decoded)) : $response;
+        error_log("EJR SMS: Semaphore returned HTTP 200 but no message was queued — {$apiMsg}");
+        return ['status' => 'error', 'message' => $apiMsg ?: 'Semaphore did not confirm the message was queued.'];
+    }
+
+    $first = $decoded[0];
+    if (isset($first['status']) && strtolower($first['status']) === 'failed') {
+        return ['status' => 'error', 'message' => 'Semaphore reported delivery failure for ' . $phone];
+    }
+
     return ['status' => 'success', 'message' => 'SMS queued to ' . $phone];
 }
