@@ -60,45 +60,27 @@ $_SESSION['pending_phone'] = $phone;
 $_SESSION['otp_user_id']   = $userId;
 $_SESSION['otp_expires']   = time() + 300; // 5 minutes
 
-// ✅ Send email via Brevo
+// ✅ Send via SMS (Semaphore) — code goes to the number being verified,
+// not the user's registered email.
 try {
-    $emailSubject = 'EJR Garage - Phone Verification Code';
-    $emailBody = '
-    <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
-        <div style="background:#ffffff;border-radius:12px;max-width:480px;margin:auto;padding:30px;text-align:center;border:1px solid #e3e8ef;">
-            
-            <h2 style="color:#1e2a36;margin-bottom:10px;">
-                Phone Verification
-            </h2>
-    
-            <p style="color:#5f6b7a;margin-bottom:10px;">
-                Hi ' . htmlspecialchars($user['full_name']) . ',
-            </p>
-    
-            <p style="color:#5f6b7a;margin-bottom:20px;">
-                Enter this code to verify your phone number.<br>
-                <strong>Expires in 5 minutes</strong>
-            </p>
-    
-            <div style="font-size:36px;font-weight:bold;letter-spacing:6px;
-                        color:#e62429;background:#f8f9fa;border-radius:8px;
-                        padding:15px;margin:20px 0;">
-                ' . $otp . '
-            </div>
-    
-            <p style="color:#a0aab5;font-size:12px;">
-                If you didn’t request this, you can ignore this email.
-            </p>
-    
-        </div>
-    </div>';
+    $smsText = "EJR Garage: Your phone verification code is {$otp}. It expires in 5 minutes. Don't share this code with anyone.";
 
-    sendEmailViaBrevo($user['email'], $user['full_name'], $emailSubject, $emailBody);
-    echo json_encode(['status' => 'success', 'message' => 'OTP sent to your email']);
+    $smsResult = sendSmsViaSemaphore($phone, $smsText);
+
+    if ($smsResult['status'] === 'success') {
+        echo json_encode(['status' => 'success', 'message' => 'OTP sent to your phone']);
+    } else {
+        error_log("EJR PHONE VERIFY SMS: user_id={$userId} phone={$phone} FAILED — " . $smsResult['message']);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => $smsResult['message'] ?: 'Failed to send verification code. Please try again.'
+        ]);
+    }
 
 } catch (\Throwable $e) {
+    error_log('EJR PHONE VERIFY SMS error: ' . $e->getMessage());
     echo json_encode([
         'status'  => 'error',
-        'message' => 'Mail error: ' . $e->getMessage()
+        'message' => 'SMS error: ' . $e->getMessage()
     ]);
 }

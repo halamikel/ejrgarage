@@ -27,7 +27,7 @@ try {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, full_name, email, phone, address, profile_picture, role_id, is_verified, is_phone_verified, created_at FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, full_name, email, phone, address, profile_picture, role_id, is_verified, is_phone_verified, notif_email, notif_sms, created_at FROM users WHERE id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -52,6 +52,8 @@ echo json_encode([
         "role_id"          => $user['role_id'],
         "is_verified"      => $user['is_verified'],
         "is_phone_verified"=> $user['is_phone_verified'],
+        "notif_email"      => $user['notif_email'],
+        "notif_sms"        => $user['notif_sms'],
         "created_at"       => $user['created_at'],
     ]
 ]);
