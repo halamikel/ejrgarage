@@ -576,7 +576,119 @@ document.getElementById("passwordUpdateForm").addEventListener("submit", async f
 
 // ── NOTIFICATION TOGGLES ─────────────────────────────────────
 document.getElementById("notifEmail").addEventListener("change", saveNotificationPrefs);
-document.getElementById("notifSms").addEventListener("change",   saveNotificationPrefs);
+document.getElementById("notifSms").addEventListener("change",   handleSmsToggle);
+
+// Turning SMS reminders ON requires proving the user actually owns the
+// phone number on file, so we send + verify an OTP before persisting
+// notif_sms = 1. Turning it OFF needs no verification.
+async function handleSmsToggle() {
+    const smsCheckbox = document.getElementById("notifSms");
+
+    if (!smsCheckbox.checked) {
+        saveNotificationPrefs();
+        return;
+    }
+
+    const token = localStorage.getItem("jwt_token");
+    const user  = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // Prefer whatever's currently in the phone field; fall back to the
+    // phone already on file for this user.
+    const phoneInputVal = document.getElementById("setPhone").value.trim();
+    let phone = '';
+    if (/^9\d{9}$/.test(phoneInputVal)) {
+        phone = toStoredPhone(phoneInputVal);
+    } else if (user.phone) {
+        phone = user.phone;
+    }
+
+    if (!phone) {
+        smsCheckbox.checked = false;
+        Swal.fire('Add a phone number first', 'Please enter your phone number above before enabling SMS reminders.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Sending code...',
+        text: 'We are sending a verification code to your phone via SMS.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const sendResp = await fetch('api/send_otp.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ phone })
+        });
+        const sendResult = await sendResp.json();
+
+        if (sendResult.status !== 'success') {
+            smsCheckbox.checked = false;
+            Swal.fire('Error', sendResult.message || 'Failed to send code.', 'error');
+            return;
+        }
+
+        const displayDigits = phone.replace(/^63/, '');
+        const { value: otpCode } = await Swal.fire({
+            title: 'Verify Your Phone',
+            html: `
+                <p>A 6-digit verification code was sent via SMS to <strong>0${displayDigits}</strong>.</p>
+                <p class="text-muted" style="font-size:0.85rem;">
+                    &#9432; Enter it below to enable SMS reminders. Code expires in 5 minutes.
+                </p>`,
+            input: 'text',
+            inputPlaceholder: 'Enter 6-digit code',
+            inputAttributes: { maxlength: 6, autocomplete: 'off' },
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Verify & Enable',
+            allowOutsideClick: false,
+            inputValidator: (value) => {
+                if (!value || value.length !== 6) return 'Please enter the 6-digit code';
+            }
+        });
+
+        if (!otpCode) {
+            smsCheckbox.checked = false;
+            return;
+        }
+
+        Swal.fire({ title: 'Verifying...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const verifyResp = await fetch('api/verify_otp.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ otp: otpCode, phone: phone })
+        });
+        const verifyResult = await verifyResp.json();
+
+        if (verifyResult.status === 'success') {
+            // Phone is now confirmed — reflect it in the UI and localStorage,
+            // then persist the notification preference.
+            updatePhoneUI(1, phone);
+            user.is_phone_verified = 1;
+            user.phone = phone;
+            localStorage.setItem("user", JSON.stringify(user));
+
+            await saveNotificationPrefs();
+        } else {
+            smsCheckbox.checked = false;
+            Swal.fire('Error', verifyResult.message || 'Invalid code.', 'error');
+        }
+
+    } catch (error) {
+        console.error(error);
+        smsCheckbox.checked = false;
+        Swal.fire('Error', 'Failed to connect to the server.', 'error');
+    }
+}
 
 async function saveNotificationPrefs() {
     const token = localStorage.getItem("jwt_token");
