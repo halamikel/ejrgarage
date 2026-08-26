@@ -8,4 +8,4 @@ uploads/avatars/avatars.htaccess
 # ignore a whole folder
 node_modules/
 vendor/
-uploads/
+uploads/api/.env.testing
