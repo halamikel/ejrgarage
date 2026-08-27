@@ -237,7 +237,7 @@ if ($action === 'update_status') {
                             <p style="color:#842029;margin:6px 0 0;font-size:14px;">' . htmlspecialchars($cancellationReply) . '</p>
                         </div>' : '') . '
                         <div style="text-align:center;margin-top:24px;">
-                            <a href="https://ejrgarage.onrender.com/my_orders.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                            <a href="https://ejrgarage-staging.onrender.commy_orders.php" style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
                                 View My Orders
                             </a>
                         </div>
@@ -301,7 +301,7 @@ function sendOrderReceipt($order) {
     $total       = '₱' . number_format($order['total_price'], 2);
     
     $receiptToken = hash('sha256', 'parts-receipt-' . $order['id'] . '-EJR2026');
-    $receiptLink = "https://ejrgarage.onrender.com/api/admin/generate_parts_receipt.php?id=" . $order['id'] . "&token=" . $receiptToken;
+    $receiptLink = "https://ejrgarage-staging.onrender.comapi/admin/generate_parts_receipt.php?id=" . $order['id'] . "&token=" . $receiptToken;
 
     $itemsHtml = '';
     if (is_array($items)) {

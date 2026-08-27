@@ -44,7 +44,7 @@ if ($user) {
     $upd->bind_param("ssi", $token, $expires, $user['id']);
     $upd->execute();
 
-    $resetLink = "https://ejrgarage.onrender.com/reset-password.php?token=" . urlencode($token);
+    $resetLink = "https://ejrgarage-staging.onrender.comreset-password.php?token=" . urlencode($token);
     $html = "
     <div style='background:#f4f6f8;padding:40px;font-family:Arial,sans-serif;'>
       <div style='background:#fff;border-radius:12px;max-width:480px;margin:auto;padding:36px;border:1px solid #e3e8ef;text-align:center;'>

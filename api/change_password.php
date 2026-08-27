@@ -85,7 +85,7 @@ if ($update->affected_rows > 0) {
         'Password Changed',
         $body,
         'Reset Password',
-        'https://ejrgarage.onrender.com/login.php'
+        'https://ejrgarage-staging.onrender.comlogin.php'
     );
     // Errors are logged inside sendEmailViaBrevo(); password is already changed either way.
 

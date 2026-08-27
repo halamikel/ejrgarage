@@ -115,7 +115,7 @@ if ($emailChanged) {
     }
 
     // Build verification link
-    $verifyLink = "https://ejrgarage.onrender.com/api/confirm_email_change.php?token=" . urlencode($token);
+    $verifyLink = "https://ejrgarage-staging.onrender.comapi/confirm_email_change.php?token=" . urlencode($token);
 
     $html = "
     <div style='background:#f4f6f8;padding:40px;font-family:Arial,sans-serif;'>

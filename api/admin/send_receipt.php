@@ -71,7 +71,7 @@ $receiptNo     = 'EJR-' . date('Y') . '-' . str_pad($appt['id'], 5, '0', STR_PAD
 $formattedDate = date("F j, Y", strtotime($appt['appointment_date']));
 $vehicle       = trim(($appt['brand'] ?? '') . ' ' . ($appt['model'] ?? ''));
 $receiptToken  = hash('sha256', 'receipt-' . $appt['id'] . '-EJR2026');
-$receiptLink   = "https://ejrgarage.onrender.com/api/admin/generate_receipt.php?id=" . $appt['id'] . "&token=" . $receiptToken;
+$receiptLink   = "https://ejrgarage-staging.onrender.comapi/admin/generate_receipt.php?id=" . $appt['id'] . "&token=" . $receiptToken;
 
 $html = '
 <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">

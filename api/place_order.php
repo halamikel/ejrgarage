@@ -118,8 +118,8 @@ $stmt->bind_param(
             $order_id,
             "EJR Garage Parts Order #{$order_id}",
             $total_price,
-            "https://ejrgarage.onrender.com/payment_success.php?order_id={$order_id}",
-            "https://ejrgarage.onrender.com/payment_cancelled.php?order_id={$order_id}"
+            "https://ejrgarage-staging.onrender.compayment_success.php?order_id={$order_id}",
+            "https://ejrgarage-staging.onrender.compayment_cancelled.php?order_id={$order_id}"
         );
 
         if ($checkout['ok']) {
