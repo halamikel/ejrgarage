@@ -336,7 +336,8 @@ function renderCart() {
                 <div class="d-flex align-items-center gap-2">
                     <button class="btn btn-outline-secondary qty-btn" onclick="changeQty(${idx}, -1)">−</button>
                     <span class="fw-bold px-1">${item.qty}</span>
-                    <button class="btn btn-outline-secondary qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+                    <button class="btn btn-outline-secondary qty-btn" onclick="changeQty(${idx}, 1)"
+                            ${(item.stock !== undefined && item.qty >= item.stock) ? 'disabled title="Maximum available stock reached"' : ''}>+</button>
                     <span class="fw-bold text-danger ms-3" style="min-width:80px;text-align:right;">
                         ₱${(item.price * item.qty).toLocaleString('en-PH', {minimumFractionDigits:2})}
                     </span>
@@ -359,8 +360,20 @@ function saveCart() {
 }
 
 function changeQty(idx, delta) {
-    cart[idx].qty += delta;
-    if (cart[idx].qty <= 0) cart.splice(idx, 1);
+    const item = cart[idx];
+
+    if (delta > 0 && item.stock !== undefined && item.qty >= item.stock) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Stock Limit Reached',
+            text: `Only ${item.stock} unit(s) of "${item.name}" available.`,
+            confirmButtonColor: '#e62429'
+        });
+        return;
+    }
+
+    item.qty += delta;
+    if (item.qty <= 0) cart.splice(idx, 1);
     saveCart();
     renderCart();
 }

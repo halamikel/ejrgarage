@@ -252,7 +252,7 @@ function renderParts(parts) {
                     ${p.stock > 0 ? `
                     <div class="d-flex gap-2">
                         <button class="btn btn-dark btn-sm fw-bold flex-fill add-cart-btn"
-                                data-id="${p.id}" data-name="${p.name}" data-price="${p.price}">
+                                data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" data-stock="${p.stock}">
                             <i class="bi bi-cart-plus me-1"></i>Add to Cart
                         </button>
                         <button class="btn btn-outline-danger btn-sm fw-bold inquire-btn"
@@ -299,12 +299,26 @@ function renderParts(parts) {
             const id    = this.dataset.id;
             const name  = this.dataset.name;
             const price = parseFloat(this.dataset.price);
+            const stock = parseInt(this.dataset.stock, 10) || 0;
 
             const existing = cart.find(item => item.id === id);
+            const currentQty = existing ? existing.qty : 0;
+
+            if (currentQty >= stock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock Limit Reached',
+                    text: `Only ${stock} unit(s) of "${name}" available. You already have the maximum in your cart.`,
+                    confirmButtonColor: '#e62429'
+                });
+                return;
+            }
+
             if (existing) {
                 existing.qty += 1;
+                existing.stock = stock;
             } else {
-                cart.push({ id, name, price, qty: 1 });
+                cart.push({ id, name, price, qty: 1, stock });
             }
 
             localStorage.setItem('ejr_cart', JSON.stringify(cart));
