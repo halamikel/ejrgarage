@@ -1,10 +1,10 @@
 # ignore a specific file
 includes/mail_config.php
 uploads/avatars/avatars.htaccess
-
+api/.env.testing
 # ignore all .env files
 .env
-
+.env.testing
 # ignore a whole folder
 node_modules/
 vendor/
