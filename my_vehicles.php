@@ -182,6 +182,105 @@
     </div>
 </section>
 
+<!-- Edit Vehicle Modal -->
+<div class="modal fade" id="editVehicleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 p-4" style="background: linear-gradient(135deg, #1e2a36, #2d3f50); color: white; border-radius: 15px 15px 0 0;">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-pencil-square me-2"></i>Edit Vehicle
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editVehicleForm" onsubmit="handleUpdateVehicle(event)">
+        <div class="modal-body p-4">
+          <input type="hidden" id="editVehicleId">
+
+          <div class="row g-3">
+
+            <!-- CAR BRAND -->
+            <div class="col-6">
+              <label class="form-label" for="editBrand">Car Brand</label>
+              <select class="form-select" id="editBrand">
+                <option value="">Select brand</option>
+                <option value="Toyota">Toyota</option>
+                <option value="Honda">Honda</option>
+                <option value="Mitsubishi">Mitsubishi</option>
+                <option value="Nissan">Nissan</option>
+                <option value="Ford">Ford</option>
+                <option value="Suzuki">Suzuki</option>
+                <option value="Isuzu">Isuzu</option>
+                <option value="Hyundai">Hyundai</option>
+                <option value="Kia">Kia</option>
+                <option value="Mazda">Mazda</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <!-- CAR MODEL -->
+            <div class="col-6">
+              <label class="form-label" for="editModel">Car Model</label>
+              <select class="form-select" id="editModel" disabled>
+                <option value="">Select a brand first</option>
+              </select>
+              <input type="text" class="form-control" id="editModelOther" placeholder="Enter your car model" style="display:none;" disabled autocomplete="off">
+              <small class="text-muted d-block mt-1" id="editModelHelpText">
+                Models are based on vehicles commonly sold/registered in the Philippines.
+              </small>
+            </div>
+
+            <!-- YEAR -->
+            <div class="col-6">
+              <label class="form-label" for="editYear">Year Model</label>
+              <select class="form-select" id="editYear">
+                <option value="">Select year</option>
+                <?php for ($y = date("Y"); $y >= 1990; $y--): ?>
+                    <option><?php echo $y; ?></option>
+                <?php endfor; ?>
+              </select>
+            </div>
+
+            <!-- PLATE NUMBER -->
+            <div class="col-6">
+              <label class="form-label" for="editPlate">Plate Number</label>
+              <input type="text" class="form-control" id="editPlate" placeholder="e.g. ABC 1234" autocomplete="off">
+            </div>
+
+            <!-- TRANSMISSION -->
+            <div class="col-6">
+              <label class="form-label" for="editTransmission">Transmission</label>
+              <select class="form-select" id="editTransmission">
+                <option value="">Select transmission</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+                <option value="CVT">CVT</option>
+              </select>
+            </div>
+
+            <!-- FUEL TYPE -->
+            <div class="col-6">
+              <label class="form-label" for="editFuel">Fuel Type</label>
+              <select class="form-select" id="editFuel">
+                <option value="">Select fuel type</option>
+                <option value="Gasoline">Gasoline</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Electric">Electric</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" id="updateVehicleBtn" class="btn fw-bold px-4" style="background-color:#dc3545; color:#fff; border:none;">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -190,6 +289,13 @@ document.addEventListener("DOMContentLoaded", () => {
         modelId: "model",
         modelOtherId: "modelOther",
         modelHelpId: "modelHelpText"
+    });
+
+    initVehicleBrandModel({
+        brandId: "editBrand",
+        modelId: "editModel",
+        modelOtherId: "editModelOther",
+        modelHelpId: "editModelHelpText"
     });
 
     const token = localStorage.getItem("jwt_token");

@@ -333,6 +333,8 @@ function showNotification(message, type = 'success') {
 // --- VEHICLE MANAGEMENT ---
 // ==========================================
 
+let currentVehicles = [];
+
 async function loadVehicles() {
     const token = localStorage.getItem("jwt_token");
     const container = document.getElementById("vehicleList");
@@ -347,6 +349,8 @@ async function loadVehicles() {
         
         const data = await response.json();
         if (data.status === "success") {
+            currentVehicles = data.vehicles || [];
+
             if (data.vehicles.length === 0) {
                 container.innerHTML = '<p class="text-center text-muted py-4">No vehicles found in your garage.</p>';
                 return;
@@ -358,14 +362,108 @@ async function loadVehicles() {
                         <h6 class="fw-bold mb-1">${v.brand} ${v.model}</h6>
                         <p class="small text-muted mb-0">${v.plate_number} • ${v.year_model}</p>
                     </div>
-                    <button onclick="handleRemoveVehicle(${v.id})" class="btn btn-sm btn-outline-danger border-0">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button onclick="openEditVehicleModal(${v.id})" class="btn btn-sm btn-outline-secondary border-0">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button onclick="handleRemoveVehicle(${v.id})" class="btn btn-sm btn-outline-danger border-0">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
     } catch (err) {
         container.innerHTML = `<p class="text-danger text-center py-4 small">Connection error. Please check api/get_vehicles.php.</p>`;
+    }
+}
+
+function openEditVehicleModal(vehicleId) {
+    const vehicle = currentVehicles.find(v => v.id == vehicleId);
+    if (!vehicle) return;
+
+    const brandSelect = document.getElementById("editBrand");
+    const modelSelect = document.getElementById("editModel");
+    const modelOtherInput = document.getElementById("editModelOther");
+
+    if (!brandSelect || !modelSelect) return;
+
+    document.getElementById("editVehicleId").value = vehicle.id;
+    document.getElementById("editPlate").value = vehicle.plate_number || "";
+    document.getElementById("editYear").value = vehicle.year_model || "";
+    document.getElementById("editTransmission").value = vehicle.transmission || "";
+    document.getElementById("editFuel").value = vehicle.fuel_type || "";
+
+    const knownBrands = Array.from(brandSelect.options).map(o => o.value).filter(Boolean);
+    brandSelect.value = knownBrands.includes(vehicle.brand) ? vehicle.brand : "Other";
+    brandSelect.dispatchEvent(new Event("change"));
+
+    if (brandSelect.value === "Other") {
+        if (modelOtherInput) modelOtherInput.value = vehicle.model || "";
+    } else {
+        const knownModels = Array.from(modelSelect.options).map(o => o.value).filter(Boolean);
+        if (knownModels.includes(vehicle.model)) {
+            modelSelect.value = vehicle.model;
+            modelSelect.dispatchEvent(new Event("change"));
+        } else {
+            modelSelect.value = "Other";
+            modelSelect.dispatchEvent(new Event("change"));
+            if (modelOtherInput) modelOtherInput.value = vehicle.model || "";
+        }
+    }
+
+    new bootstrap.Modal(document.getElementById("editVehicleModal")).show();
+}
+
+async function handleUpdateVehicle(event) {
+    event.preventDefault();
+    const token = localStorage.getItem("jwt_token");
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+
+    const formData = {
+        id: document.getElementById("editVehicleId").value,
+        brand: document.getElementById("editBrand").value,
+        model: (typeof getVehicleModelValue === "function")
+            ? getVehicleModelValue({ brandId: "editBrand", modelId: "editModel", modelOtherId: "editModelOther" })
+            : document.getElementById("editModel").value,
+        year: document.getElementById("editYear").value,
+        plate: document.getElementById("editPlate").value.trim(),
+        transmission: document.getElementById("editTransmission").value,
+        fuel: document.getElementById("editFuel").value
+    };
+
+    if (!formData.brand || !formData.model || !formData.year || !formData.plate || !formData.transmission || !formData.fuel) {
+        showNotification("Please fill in all vehicle fields before saving.", "error");
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+    try {
+        const response = await fetch('api/update_vehicle.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            bootstrap.Modal.getInstance(document.getElementById("editVehicleModal")).hide();
+            showSuccessModal("Your vehicle details have been updated!");
+            loadVehicles();
+        } else {
+            showNotification(result.message, "error");
+        }
+    } catch (error) {
+        showNotification("Connection to server failed.", "error");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Save Changes";
     }
 }
 
