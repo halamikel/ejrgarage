@@ -63,11 +63,12 @@ if ($usingRender) {
 // Local .env (InfinityFree / Localhost)
 // ------------------------------------------------------------
 
-$envPath = __DIR__ . '/.env';
+$envFile = (getenv('APP_ENV') === 'testing') ? '.env.testing' : '.env';
+$envPath = __DIR__ . '/' . $envFile;
 
 if (!file_exists($envPath)) {
     http_response_code(500);
-    die('Server misconfigured: missing environment configuration.');
+    die("Server misconfigured: missing {$envFile}.");
 }
 
 foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {

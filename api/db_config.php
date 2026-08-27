@@ -61,7 +61,11 @@ foreach ($required as $key => $value) {
 // ----------------------------------------------------------------
 try {
 
-    $cert = __DIR__ . '/../certificates/isrgrootx1.pem';
+    // Defaults to TiDB's cert for production; staging (Azure Database for
+    // MySQL) sets DB_SSL_CA in .env.testing to point at Azure's CA bundle
+    // instead, since the two providers don't share a root CA.
+    $certFile = defined('DB_SSL_CA') && DB_SSL_CA !== '' ? DB_SSL_CA : 'isrgrootx1.pem';
+    $cert = __DIR__ . '/../certificates/' . $certFile;
 
     if (!file_exists($cert)) {
         throw new Exception("CA certificate not found: {$cert}");
