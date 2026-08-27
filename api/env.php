@@ -35,6 +35,11 @@ if ($usingRender) {
     define('DB_USERNAME', getenv('DB_USER'));
     define('DB_PASSWORD', getenv('DB_PASS'));
 
+    // Optional: CA cert filename (in ../certificates/) for the DB's SSL chain.
+    // TiDB works with the default in db_config.php; Azure Database for MySQL
+    // needs its own bundle — set DB_SSL_CA in Render's dashboard to override.
+    define('DB_SSL_CA', getenv('DB_SSL_CA') ?: '');
+
     // JWT
     define('JWT_SECRET', getenv('JWT_SECRET'));
 
