@@ -37,13 +37,28 @@ class TestDb
 
         $env = parse_ini_file($envPath);
 
-        $conn = new mysqli(
+        $certFile = !empty($env['DB_SSL_CA']) ? $env['DB_SSL_CA'] : 'isrgrootx1.pem';
+        $cert     = __DIR__ . '/../../certificates/' . $certFile;
+
+        if (!file_exists($cert)) {
+            throw new \RuntimeException("CA certificate not found: {$cert}");
+        }
+
+        $conn = mysqli_init();
+        mysqli_ssl_set($conn, null, null, $cert, null, null);
+
+        if (!mysqli_real_connect(
+            $conn,
             $env['DB_HOST'],
             $env['DB_USERNAME'],
             $env['DB_PASSWORD'],
             $env['DB_DATABASE'],
-            (int) ($env['DB_PORT'] ?? 3306)
-        );
+            (int) ($env['DB_PORT'] ?? 3306),
+            null,
+            MYSQLI_CLIENT_SSL
+        )) {
+            throw new \RuntimeException('TestDb SSL connection failed: ' . mysqli_connect_error());
+        }
 
         $conn->set_charset('utf8mb4');
 
