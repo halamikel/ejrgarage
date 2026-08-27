@@ -12,9 +12,9 @@
 $renderVars = [
     'DB_HOST',
     'DB_PORT',
-    'DB_NAME',
-    'DB_USER',
-    'DB_PASS'
+    'DB_DATABASE',
+    'DB_USERNAME',
+    'DB_PASSWORD'
 ];
 
 $usingRender = true;
@@ -31,9 +31,9 @@ if ($usingRender) {
     // Database
     define('DB_HOST', getenv('DB_HOST'));
     define('DB_PORT', getenv('DB_PORT'));
-    define('DB_DATABASE', getenv('DB_NAME'));
-    define('DB_USERNAME', getenv('DB_USER'));
-    define('DB_PASSWORD', getenv('DB_PASS'));
+    define('DB_DATABASE', getenv('DB_DATABASE'));
+    define('DB_USERNAME', getenv('DB_USERNAME'));
+    define('DB_PASSWORD', getenv('DB_PASSWORD'));
 
     // Optional: CA cert filename (in ../certificates/) for the DB's SSL chain.
     // TiDB works with the default in db_config.php; Azure Database for MySQL
