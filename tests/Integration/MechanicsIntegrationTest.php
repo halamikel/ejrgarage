@@ -37,9 +37,15 @@ class MechanicsIntegrationTest extends TestCase
         $this->plate = 'TEST-' . strtoupper(substr(uniqid(), -6));
 
         // Mechanic fixture — created directly, since register.php can't.
+        // full_name is unique per run (not just the email) because
+        // update_availability.php / get_mechanic_jobs.php self-heal a
+        // missing roster row by matching on full_name when no row is
+        // linked to this user_id yet — a fixed literal name here risks
+        // matching a stale/orphaned roster row left by an earlier run.
         $mechEmail = 'integration_mechanic_' . uniqid() . '@example.com';
+        $mechName  = 'Integration Test Mechanic ' . uniqid();
         $this->mechanicUserId = TestDb::insertTestUser([
-            'full_name' => 'Integration Test Mechanic',
+            'full_name' => $mechName,
             'email'     => $mechEmail,
             'role_id'   => 3,
         ]);

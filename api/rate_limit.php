@@ -57,6 +57,16 @@ function ejr_get_ip(): string {
  * @param int    $windowSecs  Sliding window size in seconds
  */
 function ejr_rate_limit(mysqli $conn, string $action, string $key, int $maxAttempts, int $windowSecs): void {
+    // Skip entirely during automated testing. The integration suite logs in
+    // dozens of times per run, well over any sane production threshold, and
+    // this isn't the thing under test — it would just make every fixture
+    // login flaky depending on how recently the suite last ran.
+    // Requires the server to be started with APP_ENV=testing, e.g.:
+    //   APP_ENV=testing php -S localhost:8000 -t .
+    if (getenv('APP_ENV') === 'testing') {
+        return;
+    }
+
     // Ensure table exists (runs fast after first call due to IF NOT EXISTS)
     $conn->query("
         CREATE TABLE IF NOT EXISTS rate_limits (
