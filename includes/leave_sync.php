@@ -84,10 +84,23 @@ function ejr_sync_leave_statuses(mysqli $conn): void {
     // 'available' — this is what makes leave "end" automatically on
     // the day after end_date, without an admin having to remember to
     // edit them back.
+    //
+    // Scoped to mechanics who have at least one approved leave_requests
+    // row at all: 'on_break' can also be set manually by the mechanic
+    // themself via update_availability.php, completely unrelated to the
+    // leave system. Without this EXISTS guard, that manual toggle gets
+    // silently reverted the moment any endpoint calls this function,
+    // since a mechanic with zero leave history trivially satisfies
+    // "no approved leave currently covers them" too.
     $conn->query("
         UPDATE mechanics m
         SET m.status = 'available'
         WHERE m.status = 'on_break'
+          AND EXISTS (
+              SELECT 1 FROM leave_requests lr2
+              WHERE lr2.mechanic_id = m.id
+                AND lr2.status = 'approved'
+          )
           AND NOT EXISTS (
               SELECT 1 FROM leave_requests lr
               WHERE lr.mechanic_id = m.id

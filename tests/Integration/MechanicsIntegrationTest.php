@@ -85,7 +85,11 @@ class MechanicsIntegrationTest extends TestCase
         $employees = $this->api->get('get_employees.php', ['Authorization' => "Bearer {$this->mechanicJwt}"]);
 
         $this->assertSame('success', $employees['body']['status'], $employees['raw']);
-        $ids = array_column($employees['body']['employees'], 'id');
+        // Cast: get_employees.php doesn't (int) its id column, and
+        // PHPUnit 11's assertContains() is strict (===), so a numeric
+        // string here would fail against an int needle even though the
+        // value is genuinely present.
+        $ids = array_map('intval', array_column($employees['body']['employees'], 'id'));
         $this->assertContains($this->mechanicUserId, $ids);
     }
 
