@@ -27,6 +27,9 @@ $data = ejr_validate($raw, [
 
 $email = $data['email'];
 
+// Auto-cleanup expired tokens
+$conn->query("DELETE FROM password_resets WHERE expires_at < NOW()");
+
 $stmt = $conn->prepare("SELECT id, full_name FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
@@ -37,14 +40,19 @@ $user = $stmt->get_result()->fetch_assoc();
 $genericMessage = "If an account with that email exists, a reset link has been sent.";
 
 if ($user) {
-    $token   = bin2hex(random_bytes(50));
-    $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour
+    $token = bin2hex(random_bytes(50));
 
-    $upd = $conn->prepare("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?");
-    $upd->bind_param("ssi", $token, $expires, $user['id']);
-    $upd->execute();
+    // Token lives in password_resets (not on the users row) — this is
+    // the same table/shape that api/update-password.php reads from.
+    $del = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
+    $del->bind_param("s", $email);
+    $del->execute();
 
-    $resetLink = "https://ejrgarage.onrender.com/reset-password.php?token=" . urlencode($token);
+    $ins = $conn->prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))");
+    $ins->bind_param("ss", $email, $token);
+    $ins->execute();
+
+    $resetLink = "https://ejrgarage-staging.onrender.com/reset-password.php?token=" . urlencode($token);
     $html = "
     <div style='background:#f4f6f8;padding:40px;font-family:Arial,sans-serif;'>
       <div style='background:#fff;border-radius:12px;max-width:480px;margin:auto;padding:36px;border:1px solid #e3e8ef;text-align:center;'>

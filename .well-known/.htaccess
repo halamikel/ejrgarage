@@ -1,0 +1,7 @@
+# Android's App Links verifier fetches this file directly and expects
+# JSON — make sure Apache doesn't serve it as text/plain or octet-stream.
+<IfModule mod_headers.c>
+    <FilesMatch "^assetlinks\.json$">
+        ForceType application/json
+    </FilesMatch>
+</IfModule>
