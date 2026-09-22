@@ -445,28 +445,4 @@ function handleLogout() {
 }
 </script>
 
-<style>
-.nav-link-custom {
-    padding: 12px 18px;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    color: #495057;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.nav-link-custom:hover {
-    background-color: #f8f9fa;
-    color: #b30000;
-}
-
-.nav-link-custom.active {
-    background-color: #b30000;
-    color: #ffffff !important;
-    font-weight: 600;
-}
-</style>
-
 <?php include 'includes/footer.php'; ?>
