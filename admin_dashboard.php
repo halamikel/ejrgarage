@@ -182,7 +182,7 @@ include 'includes/header.php';
                     >
 
                         <i
-                            class="bi bi-people-fill-fill"
+                            class="bi bi-people-fill"
                             style="color:#10b981;"
                         ></i>
 
@@ -227,7 +227,7 @@ include 'includes/header.php';
                     >
 
                         <i
-                            class="bi bi-car-front-fill-front-fill"
+                            class="bi bi-truck-front-fill"
                             style="color:#3b82f6;"
                         ></i>
 
@@ -285,7 +285,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-appointments"
             >
 
-                <i class="bi bi-calendar-check-fill"></i>
+                <i class="bi bi-calendar-event"></i>
 
                 <span>
                     Appointments
@@ -308,7 +308,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-users"
             >
 
-                <i class="bi bi-people-fill"></i>
+                <i class="bi bi-people"></i>
 
                 <span>
                     Users
@@ -331,7 +331,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-vehicles"
             >
 
-                <i class="bi bi-car-front-fill"></i>
+                <i class="bi bi-truck"></i>
 
                 <span>
                     Vehicles
@@ -354,7 +354,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-history"
             >
 
-                <i class="bi bi-clipboard2-check-fill"></i>
+                <i class="bi bi-clock-history"></i>
 
                 <span>
                     History
@@ -385,7 +385,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-parts"
             >
 
-                <i class="bi bi-box-seam-fill"></i>
+                <i class="bi bi-box-seam"></i>
 
                 <span>
                     Parts
@@ -408,7 +408,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-inquiries"
             >
 
-                <i class="bi bi-chat-left-text-fill"></i>
+                <i class="bi bi-envelope-open"></i>
 
                 <span>
                     Part Inquiries
@@ -431,7 +431,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-orders"
             >
 
-                <i class="bi bi-cart-check-fill"></i>
+                <i class="bi bi-bag-check"></i>
 
                 <span>
                     Orders
@@ -454,7 +454,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-busy-dates"
             >
 
-                <i class="bi bi-calendar-x-fill"></i>
+                <i class="bi bi-calendar-x"></i>
 
                 <span>
                     Busy Dates
@@ -493,7 +493,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-mechanics"
             >
 
-                <i class="bi bi-person-workspace"></i>
+                <i class="bi bi-person-gear"></i>
 
                 <span>
                     Mechanics
@@ -695,6 +695,17 @@ include 'includes/header.php';
 
                         </select>
 
+                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
+                            <label class="small text-muted fw-semibold mb-0">Date:</label>
+                            <input type="month" id="appointmentsMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments by month" title="Filter by month">
+                            <input type="date" id="appointmentsFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments from date" title="From date">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="appointmentsToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments to date" title="To date">
+                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('appointments')" title="Clear date filters">
+                                <i class="bi bi-x-circle me-1"></i>Clear Dates
+                            </button>
+                        </div>
+
                     </div>
 
 
@@ -796,7 +807,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-people-fill-fill"
+                                    class="bi bi-people-fill"
                                     style="color:#10b981;"
                                 ></i>
 
@@ -807,16 +818,33 @@ include 'includes/header.php';
                         </div>
 
 
-                        <button
-                            class="ejr-btn ejr-btn--outline"
-                            onclick="exportCSV('users')"
-                        >
+                        <div class="d-flex gap-2 flex-wrap">
 
-                            <i class="bi bi-download me-1"></i>
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportCSV('users')"
+                                title="Export the currently filtered users"
+                            >
 
-                            Export CSV
+                                <i class="bi bi-filetype-csv me-1"></i>
 
-                        </button>
+                                Export CSV
+
+                            </button>
+
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportPDF('users')"
+                                title="Export the currently filtered users"
+                            >
+
+                                <i class="bi bi-filetype-pdf me-1"></i>
+
+                                Export PDF
+
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -847,6 +875,17 @@ include 'includes/header.php';
                             </option>
 
                         </select>
+
+                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
+                            <label class="small text-muted fw-semibold mb-0">Date:</label>
+                            <input type="month" id="usersMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users by month" title="Filter by month">
+                            <input type="date" id="usersFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users from date" title="From date">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="usersToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users to date" title="To date">
+                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('users')" title="Clear date filters">
+                                <i class="bi bi-x-circle me-1"></i>Clear Dates
+                            </button>
+                        </div>
 
                     </div>
 
@@ -925,7 +964,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-car-front-fill-front-fill"
+                                    class="bi bi-truck-front-fill"
                                     style="color:#3b82f6;"
                                 ></i>
 
@@ -935,10 +974,40 @@ include 'includes/header.php';
 
                         </div>
 
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button class="ejr-btn ejr-btn--outline" onclick="exportCSV('vehicles')" title="Export the currently filtered vehicles">
+                            <i class="bi bi-filetype-csv me-1"></i>
+                            Export CSV
+                        </button>
+
+                        <button class="ejr-btn ejr-btn--outline" onclick="exportPDF('vehicles')" title="Export the currently filtered vehicles">
+                            <i class="bi bi-filetype-pdf me-1"></i>
+                            Export PDF
+                        </button>
+
+                    </div>
+
+                    </div>
+
+                    <div class="ejr-filter-bar mb-3">
+
+                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
+                            <label class="small text-muted fw-semibold mb-0">Date:</label>
+                            <input type="month" id="vehiclesMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles by month" title="Filter by month">
+                            <input type="date" id="vehiclesFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles from date" title="From date">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="vehiclesToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles to date" title="To date">
+                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('vehicles')" title="Clear date filters">
+                                <i class="bi bi-x-circle me-1"></i>Clear Dates
+                            </button>
+                        </div>
+
                     </div>
 
 
-                    <div class="table-responsive">
+<div class="table-responsive">
 
                         <table class="ejr-table">
 
@@ -1013,7 +1082,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-clipboard2-check-fill"
+                                    class="bi bi-clock-history"
                                     style="color:#f59e0b;"
                                 ></i>
 
@@ -1024,16 +1093,48 @@ include 'includes/header.php';
                         </div>
 
 
-                        <button
-                            class="ejr-btn ejr-btn--outline"
-                            onclick="exportCSV('history')"
-                        >
+                        <div class="d-flex gap-2 flex-wrap">
 
-                            <i class="bi bi-download me-1"></i>
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportCSV('history')"
+                                title="Export the currently filtered history"
+                            >
 
-                            Export CSV
+                                <i class="bi bi-filetype-csv me-1"></i>
 
-                        </button>
+                                Export CSV
+
+                            </button>
+
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportPDF('history')"
+                                title="Export the currently filtered history"
+                            >
+
+                                <i class="bi bi-filetype-pdf me-1"></i>
+
+                                Export PDF
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div class="ejr-filter-bar mb-3">
+
+                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
+                            <label class="small text-muted fw-semibold mb-0">Date:</label>
+                            <input type="month" id="historyMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history by month" title="Filter by month">
+                            <input type="date" id="historyFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history from date" title="From date">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="historyToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history to date" title="To date">
+                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('history')" title="Clear date filters">
+                                <i class="bi bi-x-circle me-1"></i>Clear Dates
+                            </button>
+                        </div>
 
                     </div>
 
@@ -1124,7 +1225,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-box-seam-fill-fill text-danger"
+                                    class="bi bi-box-seam-fill text-danger"
                                 ></i>
 
                             </span>
@@ -1184,6 +1285,17 @@ include 'includes/header.php';
                             </option>
 
                         </select>
+
+                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
+                            <label class="small text-muted fw-semibold mb-0">Date:</label>
+                            <input type="month" id="ordersMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders by month" title="Filter by month">
+                            <input type="date" id="ordersFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders from date" title="From date">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="ordersToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders to date" title="To date">
+                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('orders')" title="Clear date filters">
+                                <i class="bi bi-x-circle me-1"></i>Clear Dates
+                            </button>
+                        </div>
 
                     </div>
 
@@ -1262,7 +1374,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-chat-left-text-fill-fill"
+                                    class="bi bi-envelope-open-fill"
                                     style="color:#f59e0b;"
                                 ></i>
 
@@ -1378,7 +1490,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-cart-check-fill-fill"
+                                    class="bi bi-bag-check-fill"
                                     style="color:#3b82f6;"
                                 ></i>
 
@@ -1388,10 +1500,25 @@ include 'includes/header.php';
 
                         </div>
 
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button class="ejr-btn ejr-btn--outline" onclick="exportCSV('orders')" title="Export the currently filtered orders">
+                            <i class="bi bi-filetype-csv me-1"></i>
+                            Export CSV
+                        </button>
+
+                        <button class="ejr-btn ejr-btn--outline" onclick="exportPDF('orders')" title="Export the currently filtered orders">
+                            <i class="bi bi-filetype-pdf me-1"></i>
+                            Export PDF
+                        </button>
+
+                    </div>
+
                     </div>
 
 
-                    <div class="ejr-filter-bar mb-3">
+<div class="ejr-filter-bar mb-3">
 
                         <select
                             id="ordersStatusFilter"
@@ -1509,7 +1636,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-calendar-x-fill-fill text-danger"
+                                    class="bi bi-calendar-x-fill text-danger"
                                 ></i>
 
                             </span>
@@ -1901,7 +2028,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-person-workspace text-danger"
+                                    class="bi bi-person-gear text-danger"
                                 ></i>
 
                             </span>
