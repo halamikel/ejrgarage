@@ -1286,17 +1286,6 @@ include 'includes/header.php';
 
                         </select>
 
-                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
-                            <label class="small text-muted fw-semibold mb-0">Date:</label>
-                            <input type="month" id="ordersMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders by month" title="Filter by month">
-                            <input type="date" id="ordersFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders from date" title="From date">
-                            <span class="text-muted small">to</span>
-                            <input type="date" id="ordersToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter orders to date" title="To date">
-                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('orders')" title="Clear date filters">
-                                <i class="bi bi-x-circle me-1"></i>Clear Dates
-                            </button>
-                        </div>
-
                     </div>
 
 
@@ -1556,6 +1545,108 @@ include 'includes/header.php';
                             </option>
 
                         </select>
+
+                    </div>
+
+                    <div
+                        class="mt-3 p-3 rounded-3"
+                        style="
+                            background:rgba(59,130,246,0.06);
+                            border:1px solid rgba(59,130,246,0.16);
+                        "
+                    >
+
+                        <div
+                            class="d-flex align-items-center gap-2 mb-2"
+                            style="color:#2563eb;"
+                        >
+
+                            <i class="bi bi-file-earmark-arrow-down-fill"></i>
+
+                            <strong>Export Filters</strong>
+
+                        </div>
+
+                        <div class="small text-muted mb-3">
+                            Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered orders.
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap align-items-center">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <i class="bi bi-calendar3 text-primary"></i>
+
+                                <label
+                                    for="ordersMonthFilter"
+                                    class="small fw-semibold mb-0"
+                                >
+                                    Month
+                                </label>
+
+                                <input
+                                    type="month"
+                                    id="ordersMonthFilter"
+                                    class="form-control form-control-sm"
+                                    style="min-width:150px;"
+                                    onchange="applyAllFilters()"
+                                    aria-label="Filter orders by month"
+                                    title="Filter by month"
+                                >
+
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <label
+                                    for="ordersFromDate"
+                                    class="small fw-semibold mb-0"
+                                >
+                                    From
+                                </label>
+
+                                <input
+                                    type="date"
+                                    id="ordersFromDate"
+                                    class="form-control form-control-sm"
+                                    onchange="applyAllFilters()"
+                                    aria-label="Filter orders from date"
+                                    title="From date"
+                                >
+
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <label
+                                    for="ordersToDate"
+                                    class="small fw-semibold mb-0"
+                                >
+                                    To
+                                </label>
+
+                                <input
+                                    type="date"
+                                    id="ordersToDate"
+                                    class="form-control form-control-sm"
+                                    onchange="applyAllFilters()"
+                                    aria-label="Filter orders to date"
+                                    title="To date"
+                                >
+
+                            </div>
+
+                            <button
+                                type="button"
+                                class="ejr-btn ejr-btn--outline btn-sm"
+                                onclick="clearDateFilters('orders')"
+                                title="Clear order export date filters"
+                            >
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                Clear Filters
+                            </button>
+
+                        </div>
 
                     </div>
 
