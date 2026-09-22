@@ -2096,10 +2096,35 @@ function endLiveSession() {
 // respected when CSV/PDF is generated.
 
 function getExportData(type) {
+    // IMPORTANT: Export the SAME records currently shown after filtering.
+    // Do not use a separate/looser filter here, otherwise CSV/PDF can contain
+    // records that are hidden on the dashboard.
     const term = (globalSearchTerm || '').toLowerCase().trim();
+
+    const getMonthFilter = (...ids) => {
+        for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el && el.value) return el.value;
+        }
+        return '';
+    };
+
+    const matchesMonth = (value, monthFilter) => {
+        if (!monthFilter) return true;
+        if (!value) return false;
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return false;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}` === monthFilter;
+    };
 
     if (type === 'appointments') {
         const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'appointmentsMonth', 'appointmentsDateFilter', 'appointmentsMonthFilter'
+        );
+
         return masterData.appointments.filter(a => {
             const matchesTerm = !term ||
                 (a.full_name && a.full_name.toLowerCase().includes(term)) ||
@@ -2107,45 +2132,76 @@ function getExportData(type) {
                 (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
                 (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
             const matchesStatus = !statusFilter || a.status === statusFilter;
-            return matchesTerm && matchesStatus;
+            const matchesDate = matchesMonth(a.appointment_date, monthFilter);
+            return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     if (type === 'users') {
         const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'usersMonth', 'usersDateFilter', 'usersMonthFilter'
+        );
+
         return masterData.users.filter(u => {
             const matchesTerm = !term ||
                 (u.full_name && u.full_name.toLowerCase().includes(term)) ||
                 (u.email && u.email.toLowerCase().includes(term)) ||
                 (u.phone && u.phone.toLowerCase().includes(term));
             const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
-            return matchesTerm && matchesRole;
+            const matchesDate = matchesMonth(u.created_at, monthFilter);
+            return matchesTerm && matchesRole && matchesDate;
         });
     }
 
     if (type === 'vehicles') {
-        return masterData.vehicles.filter(v =>
-            !term ||
-            (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
-            (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
-            (v.model && v.model.toLowerCase().includes(term)) ||
-            (v.brand && v.brand.toLowerCase().includes(term))
+        const monthFilter = getMonthFilter(
+            'vehiclesMonth', 'vehiclesDateFilter', 'vehiclesMonthFilter'
         );
+
+        return masterData.vehicles.filter(v => {
+            const matchesTerm = !term ||
+                (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
+                (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
+                (v.model && v.model.toLowerCase().includes(term)) ||
+                (v.brand && v.brand.toLowerCase().includes(term));
+
+            // Vehicles normally do not have a creation date. If a date/month
+            // filter exists in the page, use the first available date field.
+            const vehicleDate = v.created_at || v.date_created || v.registration_date || '';
+            const matchesDate = matchesMonth(vehicleDate, monthFilter);
+            return matchesTerm && matchesDate;
+        });
     }
 
     if (type === 'history') {
-        return historyData.filter(h =>
-            !term ||
-            (h.full_name && h.full_name.toLowerCase().includes(term)) ||
-            (h.service_type && h.service_type.toLowerCase().includes(term)) ||
-            (h.plate_number && h.plate_number.toLowerCase().includes(term)) ||
-            (h.brand && h.brand.toLowerCase().includes(term)) ||
-            (h.model && h.model.toLowerCase().includes(term))
-        );
+        // History has its own search + month controls in the dashboard.
+        const historySearch = (document.getElementById('historySearch')?.value || '')
+            .toLowerCase().trim();
+        const historyMonth = document.getElementById('historyMonth')?.value || '';
+        const combinedTerm = historySearch || term;
+
+        return historyData.filter(h => {
+            const matchesTerm = !combinedTerm ||
+                (h.full_name && h.full_name.toLowerCase().includes(combinedTerm)) ||
+                (h.service_type && h.service_type.toLowerCase().includes(combinedTerm)) ||
+                (h.plate_number && h.plate_number.toLowerCase().includes(combinedTerm)) ||
+                (h.brand && h.brand.toLowerCase().includes(combinedTerm)) ||
+                (h.model && h.model.toLowerCase().includes(combinedTerm));
+
+            const matchesDate = !historyMonth ||
+                (h.service_date && String(h.service_date).startsWith(historyMonth));
+
+            return matchesTerm && matchesDate;
+        });
     }
 
     if (type === 'orders') {
         const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'ordersMonth', 'ordersDateFilter', 'ordersMonthFilter'
+        );
+
         return ordersData.filter(o => {
             const year = new Date(o.created_at).getFullYear();
             const orderNo = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`.toLowerCase();
@@ -2156,11 +2212,12 @@ function getExportData(type) {
                 (o.address && o.address.toLowerCase().includes(term)) ||
                 orderNo.includes(term);
 
-            const matchesStatus =
-                !statusFilter ||
+            const matchesStatus = !statusFilter ||
                 String(o.status || '').toLowerCase() === statusFilter.toLowerCase();
 
-            return matchesTerm && matchesStatus;
+            const matchesDate = matchesMonth(o.created_at, monthFilter);
+
+            return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
