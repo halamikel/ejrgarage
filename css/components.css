@@ -62,15 +62,20 @@
 }
 
 .btn-outline-orange {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     border: 1px solid var(--accent-orange);
     color: var(--accent-orange);
-    padding: 10px 22px;
+    padding: 10px 20px;
     border-radius: 8px;
     background: transparent;
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: 1px;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    white-space: nowrap;
     transition: 0.3s;
 }
 
@@ -154,9 +159,35 @@ textarea {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 15px;
+    padding: 20px 16px;
+}
+
+.contact-info-item .contact-card-icon {
+    margin-bottom: 18px;
+}
+
+.contact-info-item h5 {
+    margin-bottom: 10px;
+}
+
+.contact-info-item p {
+    font-size: 0.92rem;
+    overflow-wrap: break-word;
+}
+
+.contact-info-item small {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contact-info-item .btn-outline-orange {
+    margin-top: 14px;
 }
 
 @media (min-width: 768px) {

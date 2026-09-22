@@ -28,10 +28,12 @@
           <p>ejrgaragetest@gmail.com</p>
         </div>
         <div class="col-md-4 contact-info-item contact-info-divider">
-          <div class="contact-card-icon"><i class="bi bi-telephone-fill"></i></div>
+          <div class="contact-card-icon"><i class="bi bi-facebook"></i></div>
           <h5>Message Us</h5>
           <p>Raymond Dale Yandan</p>
-          <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&rdid=QOKimwkysEpBxhhR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr" target="_blank" class="btn btn-outline-orange mt-2">Chat on Facebook</a>
+          <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&rdid=QOKimwkysEpBxhhR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr" target="_blank" class="btn btn-outline-orange">
+            <i class="bi bi-facebook"></i> Chat on Facebook
+          </a>
         </div>
       </div>
     </div>
