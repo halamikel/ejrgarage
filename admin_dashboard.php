@@ -182,7 +182,7 @@ include 'includes/header.php';
                     >
 
                         <i
-                            class="bi bi-people-fill"
+                            class="bi bi-people-fill-fill"
                             style="color:#10b981;"
                         ></i>
 
@@ -227,7 +227,7 @@ include 'includes/header.php';
                     >
 
                         <i
-                            class="bi bi-truck-front-fill"
+                            class="bi bi-car-front-fill-front-fill"
                             style="color:#3b82f6;"
                         ></i>
 
@@ -285,7 +285,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-appointments"
             >
 
-                <i class="bi bi-calendar-event"></i>
+                <i class="bi bi-calendar-check-fill"></i>
 
                 <span>
                     Appointments
@@ -308,7 +308,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-users"
             >
 
-                <i class="bi bi-people"></i>
+                <i class="bi bi-people-fill"></i>
 
                 <span>
                     Users
@@ -331,7 +331,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-vehicles"
             >
 
-                <i class="bi bi-truck"></i>
+                <i class="bi bi-car-front-fill"></i>
 
                 <span>
                     Vehicles
@@ -354,7 +354,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-history"
             >
 
-                <i class="bi bi-clock-history"></i>
+                <i class="bi bi-clipboard2-check-fill"></i>
 
                 <span>
                     History
@@ -385,7 +385,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-parts"
             >
 
-                <i class="bi bi-box-seam"></i>
+                <i class="bi bi-box-seam-fill"></i>
 
                 <span>
                     Parts
@@ -408,7 +408,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-inquiries"
             >
 
-                <i class="bi bi-envelope-open"></i>
+                <i class="bi bi-chat-left-text-fill"></i>
 
                 <span>
                     Part Inquiries
@@ -431,7 +431,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-orders"
             >
 
-                <i class="bi bi-bag-check"></i>
+                <i class="bi bi-cart-check-fill"></i>
 
                 <span>
                     Orders
@@ -454,7 +454,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-busy-dates"
             >
 
-                <i class="bi bi-calendar-x"></i>
+                <i class="bi bi-calendar-x-fill"></i>
 
                 <span>
                     Busy Dates
@@ -493,7 +493,7 @@ include 'includes/header.php';
                 data-ejr-tab="tab-mechanics"
             >
 
-                <i class="bi bi-person-gear"></i>
+                <i class="bi bi-person-workspace"></i>
 
                 <span>
                     Mechanics
@@ -796,7 +796,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-people-fill"
+                                    class="bi bi-people-fill-fill"
                                     style="color:#10b981;"
                                 ></i>
 
@@ -925,7 +925,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-truck-front-fill"
+                                    class="bi bi-car-front-fill-front-fill"
                                     style="color:#3b82f6;"
                                 ></i>
 
@@ -1013,7 +1013,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-clock-history"
+                                    class="bi bi-clipboard2-check-fill"
                                     style="color:#f59e0b;"
                                 ></i>
 
@@ -1124,7 +1124,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-box-seam-fill text-danger"
+                                    class="bi bi-box-seam-fill-fill text-danger"
                                 ></i>
 
                             </span>
@@ -1262,7 +1262,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-envelope-open-fill"
+                                    class="bi bi-chat-left-text-fill-fill"
                                     style="color:#f59e0b;"
                                 ></i>
 
@@ -1378,7 +1378,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-bag-check-fill"
+                                    class="bi bi-cart-check-fill-fill"
                                     style="color:#3b82f6;"
                                 ></i>
 
@@ -1509,7 +1509,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-calendar-x-fill text-danger"
+                                    class="bi bi-calendar-x-fill-fill text-danger"
                                 ></i>
 
                             </span>
@@ -1901,7 +1901,7 @@ include 'includes/header.php';
                             >
 
                                 <i
-                                    class="bi bi-person-gear text-danger"
+                                    class="bi bi-person-workspace text-danger"
                                 ></i>
 
                             </span>
