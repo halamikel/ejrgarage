@@ -2793,12 +2793,6 @@ function sendAdminEndSession() {
 
     .then(data => {
 
-        console.log(
-            'Admin end session response:',
-            data
-        );
-
-
         if (
             data.status !== 'success'
         ) {
@@ -4674,11 +4668,6 @@ document.addEventListener(
     'DOMContentLoaded',
     function() {
 
-        console.log(
-            'EJR Chat JavaScript loaded.'
-        );
-
-
         const pill =
             document.getElementById(
                 'chatPill'
@@ -4696,30 +4685,10 @@ document.addEventListener(
                 'chatBody'
             );
 
-
-        console.log(
-            'Chat pill:',
-            pill
-        );
-
-
-        console.log(
-            'Chat box:',
-            box
-        );
-
-
-        console.log(
-            'Chat body:',
-            body
-        );
-
     }
 );
 
 initializeEJRChatSecurityNotice();
-
-</script>
 
 </script>
 
