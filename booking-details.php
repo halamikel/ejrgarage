@@ -469,34 +469,6 @@
 
 
         <!-- =====================================================
-             ADDITIONAL NOTES
-        ====================================================== -->
-
-        <div class="col-12 mt-3">
-
-          <label
-            class="form-label fw-bold"
-            for="notes"
-          >
-
-            <i class="bi bi-chat-left-text me-1 text-danger"></i>
-
-            Additional Notes
-
-          </label>
-
-
-          <textarea
-            class="form-control"
-            id="notes"
-            rows="3"
-            placeholder="Enter any special requests or issues with your vehicle..."
-          ></textarea>
-
-        </div>
-
-
-        <!-- =====================================================
              ERROR MESSAGE
         ====================================================== -->
 
