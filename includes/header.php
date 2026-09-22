@@ -82,7 +82,14 @@ if (session_status() === PHP_SESSION_NONE) {
     var btn   = document.getElementById('navAuthBtn');
     if (!btn) return;
     if (token) {
-        btn.textContent = 'My Account';
+        var firstName = 'My Account';
+        try {
+            var user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.name) {
+                firstName = user.name.trim().split(' ')[0];
+            }
+        } catch (e) {}
+        btn.textContent = firstName;
         btn.href        = '/account.php';
     } else {
         btn.textContent = 'Get Started';
