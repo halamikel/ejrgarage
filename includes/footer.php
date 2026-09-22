@@ -861,6 +861,21 @@ if (localStorage.getItem('jwt_token')) {
             </button>
 
 
+            <button
+                type="button"
+                onclick="askQuickQuestion('Roadside Rescue')"
+                class="opt-btn opt-btn-rescue"
+            >
+
+                <i
+                    class="bi bi-life-preserver me-1"
+                ></i>
+
+                Rescue
+
+            </button>
+
+
             <div
                 id="dynamicButtonContainer"
                 style="
@@ -1037,6 +1052,217 @@ if (localStorage.getItem('jwt_token')) {
 .opt-btn:hover {
 
     background:#e62429;
+
+    color:#fff;
+
+}
+
+
+.opt-btn-rescue {
+
+    border-color:#e62429;
+
+    color:#e62429;
+
+}
+
+
+.ejr-rescue-chat-card {
+
+    margin-top:8px;
+
+    padding:12px;
+
+    background:#fff;
+
+    border:1px solid #e3e8ef;
+
+    border-left:4px solid #e62429;
+
+    border-radius:12px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+
+}
+
+
+.ejr-rescue-chat-title {
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    color:#1e2a36;
+
+    font-weight:800;
+
+    font-size:13px;
+
+    margin-bottom:8px;
+
+}
+
+
+.ejr-rescue-chat-title i {
+
+    color:#e62429;
+
+}
+
+
+.ejr-rescue-chat-step {
+
+    display:flex;
+
+    gap:8px;
+
+    margin-top:8px;
+
+    color:#4b5b6d;
+
+    font-size:12px;
+
+    line-height:1.5;
+
+}
+
+
+.ejr-rescue-chat-number {
+
+    width:21px;
+
+    height:21px;
+
+    min-width:21px;
+
+    border-radius:50%;
+
+    background:#e62429;
+
+    color:#fff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:10px;
+
+    font-weight:800;
+
+}
+
+
+.ejr-rescue-chat-contact {
+
+    margin-top:10px;
+
+    padding:9px;
+
+    background:#fff5f5;
+
+    border-radius:9px;
+
+    color:#1e2a36;
+
+    font-size:12px;
+
+}
+
+
+.ejr-rescue-chat-actions {
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:6px;
+
+    margin-top:10px;
+
+}
+
+
+.ejr-rescue-chat-action {
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:5px;
+
+    padding:7px 10px;
+
+    border-radius:8px;
+
+    text-decoration:none;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    transition:all 0.2s ease;
+
+}
+
+
+.ejr-rescue-chat-call {
+
+    background:#e62429;
+
+    color:#fff;
+
+}
+
+
+.ejr-rescue-chat-call:hover {
+
+    background:#c91f24;
+
+    color:#fff;
+
+}
+
+
+.ejr-rescue-chat-message {
+
+    background:#fff;
+
+    color:#e62429;
+
+    border:1px solid #e62429;
+
+}
+
+
+.ejr-rescue-chat-message:hover {
+
+    background:#e62429;
+
+    color:#fff;
+
+}
+
+
+.ejr-rescue-chat-facebook {
+
+    background:#fff;
+
+    color:#0866ff;
+
+    border:1px solid #0866ff;
+
+}
+
+
+.ejr-rescue-chat-facebook:hover {
+
+    background:#0866ff;
 
     color:#fff;
 
@@ -3918,6 +4144,88 @@ function startBookingFromChat() {
 
 
 /* ============================================================
+   ROADSIDE RESCUE INSTRUCTIONS
+============================================================ */
+
+function showRescueInstructions() {
+
+    const body =
+        document.getElementById('chatBody');
+
+    if (!body) {
+        return;
+    }
+
+    const rescueHtml = `
+
+        <div class="ejr-rescue-chat-card">
+
+            <div class="ejr-rescue-chat-title">
+                <i class="bi bi-life-preserver"></i>
+                Need Roadside Rescue?
+            </div>
+
+            <div style="font-size:12px;color:#4b5b6d;line-height:1.5;">
+                Follow these steps so our rescuers can locate you and respond as quickly as possible.
+            </div>
+
+            <div class="ejr-rescue-chat-step">
+                <span class="ejr-rescue-chat-number">1</span>
+                <span><strong>Find your current location.</strong> Check your phone's location and identify a nearby landmark that rescuers can easily recognize.</span>
+            </div>
+
+            <div class="ejr-rescue-chat-step">
+                <span class="ejr-rescue-chat-number">2</span>
+                <span><strong>Contact the rescue team.</strong> Call or message <strong>0906-704-5422</strong>, or message <strong>Raymond Dale Yandan</strong> through Facebook.</span>
+            </div>
+
+            <div class="ejr-rescue-chat-step">
+                <span class="ejr-rescue-chat-number">3</span>
+                <span><strong>Coordinate with the rescuers.</strong> Provide your exact location, nearby landmark, vehicle information, and any other information they request.</span>
+            </div>
+
+            <div class="ejr-rescue-chat-step">
+                <span class="ejr-rescue-chat-number">4</span>
+                <span><strong>Wait for the rescue.</strong> Stay in a safe location and keep your phone available while waiting for the rescuers.</span>
+            </div>
+
+            <div class="ejr-rescue-chat-contact">
+                <strong><i class="bi bi-telephone-fill me-1"></i> Rescue Contact:</strong>
+                0906-704-5422
+            </div>
+
+            <div class="ejr-rescue-chat-actions">
+
+                <a href="tel:09067045422" class="ejr-rescue-chat-action ejr-rescue-chat-call">
+                    <i class="bi bi-telephone-fill"></i>
+                    Call Now
+                </a>
+
+                <a href="sms:09067045422" class="ejr-rescue-chat-action ejr-rescue-chat-message">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    Send Message
+                </a>
+
+                <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&rdid=YwStBGAirOZJu1Bs&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr" target="_blank" rel="noopener noreferrer" class="ejr-rescue-chat-action ejr-rescue-chat-facebook">
+                    <i class="bi bi-facebook"></i>
+                    Message on Facebook
+                </a>
+
+            </div>
+
+        </div>
+
+    `;
+
+    appendMessage(
+        rescueHtml,
+        'admin'
+    );
+
+}
+
+
+/* ============================================================
    SEND CUSTOMER CHAT MESSAGE
 ============================================================ */
 
@@ -3968,6 +4276,34 @@ function sendChatMessage() {
 
     const lowerMessage =
         msg.toLowerCase();
+
+
+    /* ========================================================
+       ROADSIDE RESCUE QUICK RESPONSE
+       Keep this local so rescue instructions are always
+       available even if the bot keyword table is unavailable.
+    ======================================================== */
+
+    const isRescueRequest =
+        lowerMessage.includes('rescue') ||
+        lowerMessage.includes('roadside') ||
+        lowerMessage.includes('emergency') ||
+        lowerMessage.includes('stranded') ||
+        lowerMessage.includes('breakdown') ||
+        lowerMessage.includes('towing') ||
+        lowerMessage.includes('tow truck') ||
+        lowerMessage.includes('car broke down');
+
+
+    if (isRescueRequest) {
+
+        showTyping(false);
+
+        showRescueInstructions();
+
+        return;
+
+    }
 
 
     const isBookingRequest =
