@@ -39,7 +39,7 @@ if (session_status() === PHP_SESSION_NONE) {
         echo '<link rel="stylesheet" href="/css/' . $cssFile . '?v=' . $v . '">' . "\n  ";
     }
   ?>
-  <link rel="stylesheet" href="/css/account.css?v=4">
+  <link rel="stylesheet" href="/css/account.css?v=5">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/js/global.js"></script>
@@ -71,16 +71,16 @@ if (session_status() === PHP_SESSION_NONE) {
 
       <a href="/login.php" class="btn btn-quote" id="navAuthBtn">Get Started</a>
 
-      <div class="nav-account-dropdown" id="navAccountDropdown" style="display:none;">
-        <button type="button" class="nav-avatar-btn" id="navAvatarBtn" aria-haspopup="true" aria-expanded="false">
-          <img id="navAvatarImg" alt="Profile photo" style="display:none;">
+      <div class="nav-account-dropdown" id="navAccountDropdown" style="display:none; position:relative;">
+        <button type="button" class="nav-avatar-btn" id="navAvatarBtn" aria-haspopup="true" aria-expanded="false" style="width:42px; height:42px; border-radius:50%; overflow:hidden;">
+          <img id="navAvatarImg" alt="Profile photo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
           <i class="bi bi-person-fill" id="navAvatarIcon"></i>
         </button>
 
-        <div class="nav-account-menu" id="navAccountMenu">
+        <div class="nav-account-menu" id="navAccountMenu" style="display:none; position:absolute; top:calc(100% + 12px); right:0;">
           <div class="nav-account-menu-header">
-            <div class="nav-account-menu-avatar">
-              <img id="navMenuAvatarImg" alt="Profile photo" style="display:none;">
+            <div class="nav-account-menu-avatar" style="width:48px; height:48px; border-radius:50%; overflow:hidden;">
+              <img id="navMenuAvatarImg" alt="Profile photo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
               <i class="bi bi-person-fill" id="navMenuAvatarIcon"></i>
             </div>
             <div class="nav-account-menu-info">
@@ -189,22 +189,25 @@ if (session_status() === PHP_SESSION_NONE) {
         .catch(function () {});
 
         if (avatarBtn && menu) {
+            function openMenu() {
+                menu.classList.add('show');
+                menu.style.display = 'block';
+                avatarBtn.setAttribute('aria-expanded', 'true');
+            }
+            function closeMenu() {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+                avatarBtn.setAttribute('aria-expanded', 'false');
+            }
             avatarBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                var isOpen = menu.classList.toggle('show');
-                avatarBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (menu.classList.contains('show')) { closeMenu(); } else { openMenu(); }
             });
             document.addEventListener('click', function (e) {
-                if (!dropdown.contains(e.target)) {
-                    menu.classList.remove('show');
-                    avatarBtn.setAttribute('aria-expanded', 'false');
-                }
+                if (!dropdown.contains(e.target)) closeMenu();
             });
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    menu.classList.remove('show');
-                    avatarBtn.setAttribute('aria-expanded', 'false');
-                }
+                if (e.key === 'Escape') closeMenu();
             });
         }
 
