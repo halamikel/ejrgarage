@@ -148,8 +148,6 @@ textarea {
 }
 
 /* Contact info card stays static (no lift/hover effect) so it doesn't read as clickable */
-
-/* Contact info card stays static (no lift/hover effect) so it doesn't read as clickable */
 .contact-info-card:hover {
     transform: none;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
