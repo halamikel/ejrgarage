@@ -97,19 +97,6 @@
               >
             </div>
 
-            <div class="col-12">
-              <label class="form-label" for="contactAddress2">
-                Address Line 2 <span class="fw-normal text-muted">(optional)</span>
-              </label>
-              <input
-                type="text"
-                class="form-control"
-                id="contactAddress2"
-                placeholder="Barangay, Subdivision, Landmark"
-                autocomplete="off"
-              >
-            </div>
-
             <div class="col-6 col-md-5">
               <label class="form-label" for="contactCity">City / Town</label>
               <input type="text" class="form-control" id="contactCity" placeholder="e.g. Santo Tomas" autocomplete="off">
