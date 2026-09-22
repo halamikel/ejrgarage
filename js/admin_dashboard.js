@@ -2096,34 +2096,36 @@ function endLiveSession() {
 // respected when CSV/PDF is generated.
 
 function getExportData(type) {
-    // IMPORTANT: Export the SAME records currently shown after filtering.
-    // Do not use a separate/looser filter here, otherwise CSV/PDF can contain
-    // records that are hidden on the dashboard.
     const term = (globalSearchTerm || '').toLowerCase().trim();
 
-    const getMonthFilter = (...ids) => {
-        for (const id of ids) {
-            const el = document.getElementById(id);
-            if (el && el.value) return el.value;
-        }
-        return '';
-    };
+    const getDateFilters = (prefix) => ({
+        month: document.getElementById(`${prefix}MonthFilter`)?.value || '',
+        from: document.getElementById(`${prefix}FromDate`)?.value || '',
+        to: document.getElementById(`${prefix}ToDate`)?.value || ''
+    });
 
-    const matchesMonth = (value, monthFilter) => {
-        if (!monthFilter) return true;
+    const matchesDateFilters = (value, filters) => {
+        if (!filters.month && !filters.from && !filters.to) return true;
         if (!value) return false;
+
         const d = new Date(value);
         if (Number.isNaN(d.getTime())) return false;
+
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
-        return `${yyyy}-${mm}` === monthFilter;
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateString = `${yyyy}-${mm}-${dd}`;
+
+        if (filters.month && `${yyyy}-${mm}` !== filters.month) return false;
+        if (filters.from && dateString < filters.from) return false;
+        if (filters.to && dateString > filters.to) return false;
+
+        return true;
     };
 
     if (type === 'appointments') {
         const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
-        const monthFilter = getMonthFilter(
-            'appointmentsMonth', 'appointmentsDateFilter', 'appointmentsMonthFilter'
-        );
+        const dateFilters = getDateFilters('appointments');
 
         return masterData.appointments.filter(a => {
             const matchesTerm = !term ||
@@ -2132,16 +2134,14 @@ function getExportData(type) {
                 (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
                 (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
             const matchesStatus = !statusFilter || a.status === statusFilter;
-            const matchesDate = matchesMonth(a.appointment_date, monthFilter);
+            const matchesDate = matchesDateFilters(a.appointment_date, dateFilters);
             return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     if (type === 'users') {
         const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
-        const monthFilter = getMonthFilter(
-            'usersMonth', 'usersDateFilter', 'usersMonthFilter'
-        );
+        const dateFilters = getDateFilters('users');
 
         return masterData.users.filter(u => {
             const matchesTerm = !term ||
@@ -2149,15 +2149,13 @@ function getExportData(type) {
                 (u.email && u.email.toLowerCase().includes(term)) ||
                 (u.phone && u.phone.toLowerCase().includes(term));
             const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
-            const matchesDate = matchesMonth(u.created_at, monthFilter);
+            const matchesDate = matchesDateFilters(u.created_at, dateFilters);
             return matchesTerm && matchesRole && matchesDate;
         });
     }
 
     if (type === 'vehicles') {
-        const monthFilter = getMonthFilter(
-            'vehiclesMonth', 'vehiclesDateFilter', 'vehiclesMonthFilter'
-        );
+        const dateFilters = getDateFilters('vehicles');
 
         return masterData.vehicles.filter(v => {
             const matchesTerm = !term ||
@@ -2165,21 +2163,16 @@ function getExportData(type) {
                 (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
                 (v.model && v.model.toLowerCase().includes(term)) ||
                 (v.brand && v.brand.toLowerCase().includes(term));
-
-            // Vehicles normally do not have a creation date. If a date/month
-            // filter exists in the page, use the first available date field.
             const vehicleDate = v.created_at || v.date_created || v.registration_date || '';
-            const matchesDate = matchesMonth(vehicleDate, monthFilter);
+            const matchesDate = matchesDateFilters(vehicleDate, dateFilters);
             return matchesTerm && matchesDate;
         });
     }
 
     if (type === 'history') {
-        // History has its own search + month controls in the dashboard.
-        const historySearch = (document.getElementById('historySearch')?.value || '')
-            .toLowerCase().trim();
-        const historyMonth = document.getElementById('historyMonth')?.value || '';
+        const historySearch = (document.getElementById('historySearch')?.value || '').toLowerCase().trim();
         const combinedTerm = historySearch || term;
+        const dateFilters = getDateFilters('history');
 
         return historyData.filter(h => {
             const matchesTerm = !combinedTerm ||
@@ -2188,19 +2181,32 @@ function getExportData(type) {
                 (h.plate_number && h.plate_number.toLowerCase().includes(combinedTerm)) ||
                 (h.brand && h.brand.toLowerCase().includes(combinedTerm)) ||
                 (h.model && h.model.toLowerCase().includes(combinedTerm));
-
-            const matchesDate = !historyMonth ||
-                (h.service_date && String(h.service_date).startsWith(historyMonth));
-
+            const matchesDate = matchesDateFilters(h.service_date, dateFilters);
             return matchesTerm && matchesDate;
+        });
+    }
+
+    if (type === 'inquiries') {
+        const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
+        const dateFilters = getDateFilters('inquiries');
+
+        return inquiriesData.filter(i => {
+            const matchesTerm = !term ||
+                (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
+                (i.part_name && i.part_name.toLowerCase().includes(term)) ||
+                (i.contact && i.contact.toLowerCase().includes(term)) ||
+                (i.message && i.message.toLowerCase().includes(term));
+            const matchesStatus = statusFilter === 'all' ||
+                (statusFilter === 'pending' && i.status !== 'responded') ||
+                (statusFilter === 'responded' && i.status === 'responded');
+            const matchesDate = matchesDateFilters(i.created_at, dateFilters);
+            return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     if (type === 'orders') {
         const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
-        const monthFilter = getMonthFilter(
-            'ordersMonth', 'ordersDateFilter', 'ordersMonthFilter'
-        );
+        const dateFilters = getDateFilters('orders');
 
         return ordersData.filter(o => {
             const year = new Date(o.created_at).getFullYear();
@@ -2211,17 +2217,31 @@ function getExportData(type) {
                 (o.contact && o.contact.toLowerCase().includes(term)) ||
                 (o.address && o.address.toLowerCase().includes(term)) ||
                 orderNo.includes(term);
-
             const matchesStatus = !statusFilter ||
                 String(o.status || '').toLowerCase() === statusFilter.toLowerCase();
-
-            const matchesDate = matchesMonth(o.created_at, monthFilter);
+            const matchesDate = matchesDateFilters(o.created_at, dateFilters);
 
             return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     return [];
+}
+
+// Clears only the export/date filters for the selected tab.
+function clearDateFilters(type) {
+    const ids = [
+        `${type}MonthFilter`,
+        `${type}FromDate`,
+        `${type}ToDate`
+    ];
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    if (typeof applyAllFilters === 'function') applyAllFilters();
 }
 
 function getExportConfig(type) {
@@ -2249,6 +2269,12 @@ function getExportConfig(type) {
             csvFilename: 'service_history.csv',
             pdfFilename: 'service_history.pdf',
             headers: ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date']
+        },
+        inquiries: {
+            title: 'Part Inquiries',
+            csvFilename: 'part_inquiries.csv',
+            pdfFilename: 'part_inquiries.pdf',
+            headers: ['Part', 'Customer', 'Contact', 'Message', 'Date', 'Status']
         },
         orders: {
             title: 'Parts Orders',
@@ -2313,6 +2339,19 @@ function getExportRows(type, data) {
             h.service_date
                 ? new Date(h.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : '—'
+        ]);
+    }
+
+    if (type === 'inquiries') {
+        return data.map(i => [
+            i.part_name || '—',
+            i.customer_name || '—',
+            i.contact || '—',
+            i.message || '—',
+            i.created_at
+                ? new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—',
+            i.status === 'responded' ? 'Responded' : 'Pending'
         ]);
     }
 

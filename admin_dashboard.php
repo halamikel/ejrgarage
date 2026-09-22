@@ -695,16 +695,31 @@ include 'includes/header.php';
 
                         </select>
 
-                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
-                            <label class="small text-muted fw-semibold mb-0">Date:</label>
-                            <input type="month" id="appointmentsMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments by month" title="Filter by month">
-                            <input type="date" id="appointmentsFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments from date" title="From date">
-                            <span class="text-muted small">to</span>
-                            <input type="date" id="appointmentsToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter appointments to date" title="To date">
-                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('appointments')" title="Clear date filters">
-                                <i class="bi bi-x-circle me-1"></i>Clear Dates
-                            </button>
-                        </div>
+                        <div class="mt-3 p-3 rounded-3" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.16);">
+    <div class="d-flex align-items-center gap-2 mb-2" style="color:#2563eb;">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+        <strong>Export Filters</strong>
+    </div>
+    <div class="small text-muted mb-3">Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered appointments.</div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <label for="appointmentsMonthFilter" class="small fw-semibold mb-0">Month</label>
+            <input type="month" id="appointmentsMonthFilter" class="form-control form-control-sm" style="min-width:150px;" onchange="applyAllFilters()" aria-label="Filter appointments by month" title="Filter by month">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="appointmentsFromDate" class="small fw-semibold mb-0">From</label>
+            <input type="date" id="appointmentsFromDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter appointments from date" title="From date">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="appointmentsToDate" class="small fw-semibold mb-0">To</label>
+            <input type="date" id="appointmentsToDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter appointments to date" title="To date">
+        </div>
+        <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('appointments')" title="Clear appointments export date filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
 
                     </div>
 
@@ -876,16 +891,31 @@ include 'includes/header.php';
 
                         </select>
 
-                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
-                            <label class="small text-muted fw-semibold mb-0">Date:</label>
-                            <input type="month" id="usersMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users by month" title="Filter by month">
-                            <input type="date" id="usersFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users from date" title="From date">
-                            <span class="text-muted small">to</span>
-                            <input type="date" id="usersToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter users to date" title="To date">
-                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('users')" title="Clear date filters">
-                                <i class="bi bi-x-circle me-1"></i>Clear Dates
-                            </button>
-                        </div>
+                        <div class="mt-3 p-3 rounded-3" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.16);">
+    <div class="d-flex align-items-center gap-2 mb-2" style="color:#2563eb;">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+        <strong>Export Filters</strong>
+    </div>
+    <div class="small text-muted mb-3">Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered users.</div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <label for="usersMonthFilter" class="small fw-semibold mb-0">Month</label>
+            <input type="month" id="usersMonthFilter" class="form-control form-control-sm" style="min-width:150px;" onchange="applyAllFilters()" aria-label="Filter users by month" title="Filter by month">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="usersFromDate" class="small fw-semibold mb-0">From</label>
+            <input type="date" id="usersFromDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter users from date" title="From date">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="usersToDate" class="small fw-semibold mb-0">To</label>
+            <input type="date" id="usersToDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter users to date" title="To date">
+        </div>
+        <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('users')" title="Clear users export date filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
 
                     </div>
 
@@ -993,16 +1023,31 @@ include 'includes/header.php';
 
                     <div class="ejr-filter-bar mb-3">
 
-                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
-                            <label class="small text-muted fw-semibold mb-0">Date:</label>
-                            <input type="month" id="vehiclesMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles by month" title="Filter by month">
-                            <input type="date" id="vehiclesFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles from date" title="From date">
-                            <span class="text-muted small">to</span>
-                            <input type="date" id="vehiclesToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter vehicles to date" title="To date">
-                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('vehicles')" title="Clear date filters">
-                                <i class="bi bi-x-circle me-1"></i>Clear Dates
-                            </button>
-                        </div>
+                        <div class="mt-3 p-3 rounded-3" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.16);">
+    <div class="d-flex align-items-center gap-2 mb-2" style="color:#2563eb;">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+        <strong>Export Filters</strong>
+    </div>
+    <div class="small text-muted mb-3">Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered vehicles.</div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <label for="vehiclesMonthFilter" class="small fw-semibold mb-0">Month</label>
+            <input type="month" id="vehiclesMonthFilter" class="form-control form-control-sm" style="min-width:150px;" onchange="applyAllFilters()" aria-label="Filter vehicles by month" title="Filter by month">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="vehiclesFromDate" class="small fw-semibold mb-0">From</label>
+            <input type="date" id="vehiclesFromDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter vehicles from date" title="From date">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="vehiclesToDate" class="small fw-semibold mb-0">To</label>
+            <input type="date" id="vehiclesToDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter vehicles to date" title="To date">
+        </div>
+        <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('vehicles')" title="Clear vehicles export date filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
 
                     </div>
 
@@ -1125,16 +1170,31 @@ include 'includes/header.php';
 
                     <div class="ejr-filter-bar mb-3">
 
-                        <div class="d-flex gap-2 flex-wrap align-items-center mt-2">
-                            <label class="small text-muted fw-semibold mb-0">Date:</label>
-                            <input type="month" id="historyMonthFilter" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history by month" title="Filter by month">
-                            <input type="date" id="historyFromDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history from date" title="From date">
-                            <span class="text-muted small">to</span>
-                            <input type="date" id="historyToDate" class="ejr-filter-select" onchange="applyAllFilters()" aria-label="Filter history to date" title="To date">
-                            <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('history')" title="Clear date filters">
-                                <i class="bi bi-x-circle me-1"></i>Clear Dates
-                            </button>
-                        </div>
+                        <div class="mt-3 p-3 rounded-3" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.16);">
+    <div class="d-flex align-items-center gap-2 mb-2" style="color:#2563eb;">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+        <strong>Export Filters</strong>
+    </div>
+    <div class="small text-muted mb-3">Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered history.</div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <label for="historyMonthFilter" class="small fw-semibold mb-0">Month</label>
+            <input type="month" id="historyMonthFilter" class="form-control form-control-sm" style="min-width:150px;" onchange="applyAllFilters()" aria-label="Filter history by month" title="Filter by month">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="historyFromDate" class="small fw-semibold mb-0">From</label>
+            <input type="date" id="historyFromDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter history from date" title="From date">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="historyToDate" class="small fw-semibold mb-0">To</label>
+            <input type="date" id="historyToDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter history to date" title="To date">
+        </div>
+        <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('history')" title="Clear history export date filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
 
                     </div>
 
@@ -1373,36 +1433,53 @@ include 'includes/header.php';
 
                         </div>
 
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="ejr-btn ejr-btn--outline" onclick="exportCSV('inquiries')" title="Export the currently filtered inquiries">
+                                <i class="bi bi-filetype-csv me-1"></i>
+                                Export CSV
+                            </button>
+                            <button class="ejr-btn ejr-btn--outline" onclick="exportPDF('inquiries')" title="Export the currently filtered inquiries">
+                                <i class="bi bi-filetype-pdf me-1"></i>
+                                Export PDF
+                            </button>
+                        </div>
+
                     </div>
 
 
                     <div class="ejr-filter-bar mb-3">
+    <select id="inquiriesStatusFilter" class="ejr-filter-select" aria-label="Filter inquiries by status" onchange="applyAllFilters()">
+        <option value="pending" selected>Pending Only</option>
+        <option value="responded">Responded Only</option>
+        <option value="all">All Inquiries</option>
+    </select>
+</div>
 
-                        <select
-                            id="inquiriesStatusFilter"
-                            class="ejr-filter-select"
-                            aria-label="Filter inquiries by status"
-                            onchange="applyAllFilters()"
-                        >
-
-                            <option
-                                value="pending"
-                                selected
-                            >
-                                Pending Only
-                            </option>
-
-                            <option value="responded">
-                                Responded Only
-                            </option>
-
-                            <option value="all">
-                                All Inquiries
-                            </option>
-
-                        </select>
-
-                    </div>
+<div class="mt-3 p-3 rounded-3" style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.16);">
+    <div class="d-flex align-items-center gap-2 mb-2" style="color:#2563eb;">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>
+        <strong>Export Filters</strong>
+    </div>
+    <div class="small text-muted mb-3">Choose a month or date range before exporting. The CSV and PDF exports will use the currently filtered inquiries.</div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <label for="inquiriesMonthFilter" class="small fw-semibold mb-0">Month</label>
+            <input type="month" id="inquiriesMonthFilter" class="form-control form-control-sm" style="min-width:150px;" onchange="applyAllFilters()" aria-label="Filter inquiries by month" title="Filter by month">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="inquiriesFromDate" class="small fw-semibold mb-0">From</label>
+            <input type="date" id="inquiriesFromDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter inquiries from date" title="From date">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="inquiriesToDate" class="small fw-semibold mb-0">To</label>
+            <input type="date" id="inquiriesToDate" class="form-control form-control-sm" onchange="applyAllFilters()" aria-label="Filter inquiries to date" title="To date">
+        </div>
+        <button type="button" class="ejr-btn ejr-btn--outline btn-sm" onclick="clearDateFilters('inquiries')" title="Clear inquiries export date filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+        </button>
+    </div>
+</div>
 
 
                     <div class="table-responsive">
