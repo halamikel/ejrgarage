@@ -13,23 +13,23 @@
 
 <section class="contact-details-section">
   <div class="container">
-    <h2 class="contact-section-title text-center">Contact Information</h2>
+    <h2 class="contact-section-title section-title text-center">Contact Information</h2>
     <div class="contact-info-card mt-4">
-      <div class="row g-4 g-md-0">
+      <div class="row g-4">
         <div class="col-md-4 contact-info-item">
-          <div class="contact-card-icon"><i class="bi bi-telephone-fill"></i></div>
-          <h5>Call Us</h5>
+          <div class="contact-info-icon">📞</div>
+          <h6>Call Us</h6>
           <p>0906-704-5422</p>
           <small>Emergency Line</small>
         </div>
-        <div class="col-md-4 contact-info-item contact-info-divider">
-          <div class="contact-card-icon"><i class="bi bi-envelope-fill"></i></div>
-          <h5>Email Us</h5>
+        <div class="col-md-4 contact-info-item">
+          <div class="contact-info-icon">✉️</div>
+          <h6>Email Us</h6>
           <p>ejrgaragetest@gmail.com</p>
         </div>
-        <div class="col-md-4 contact-info-item contact-info-divider">
-          <div class="contact-card-icon"><i class="bi bi-facebook"></i></div>
-          <h5>Message Us</h5>
+        <div class="col-md-4 contact-info-item">
+          <div class="contact-info-icon"><i class="bi bi-facebook"></i></div>
+          <h6>Message Us</h6>
           <p>Raymond Dale Yandan</p>
           <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&rdid=QOKimwkysEpBxhhR&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr" target="_blank" class="btn btn-outline-orange">
             <i class="bi bi-facebook"></i> Chat on Facebook

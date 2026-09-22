@@ -154,35 +154,46 @@ textarea {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
-/* Tighter padding than the shared card style so there's no empty space at the bottom */
+/* Match the flat "Our Services" panel style: light background, border, no shadow */
 .contact-info-card {
-    padding: 22px 20px;
+    background: #fafbfc;
+    border: 1px solid var(--border-light);
+    box-shadow: none;
+    padding: 30px 20px;
 }
 
-/* CONTACT INFO - unified card with internal items instead of 3 separate cards */
+/* CONTACT INFO - unified panel with internal items instead of 3 separate cards */
 .contact-info-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 14px 16px;
+    padding: 10px;
 }
 
-.contact-info-item .contact-card-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 20px;
+.contact-info-icon {
+    font-size: 2.2rem;
+    line-height: 1;
     margin-bottom: 12px;
 }
 
-.contact-info-item h5 {
-    margin-bottom: 6px;
-    font-size: 1rem;
+.contact-info-icon .bi-facebook {
+    color: #1877f2;
+}
+
+.contact-info-item h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    color: var(--text-dark);
 }
 
 .contact-info-item p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
     margin-bottom: 0;
     overflow-wrap: break-word;
 }
@@ -198,19 +209,6 @@ textarea {
 
 .contact-info-item .btn-outline-orange {
     margin-top: 12px;
-}
-
-@media (min-width: 768px) {
-    .contact-info-item.contact-info-divider {
-        border-left: 1px solid var(--border-light);
-    }
-}
-
-@media (max-width: 767.98px) {
-    .contact-info-item.contact-info-divider {
-        border-top: 1px solid var(--border-light);
-        padding-top: 25px;
-    }
 }
 
 .contact-form-card {
