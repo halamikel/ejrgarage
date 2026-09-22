@@ -492,9 +492,13 @@ function renderAppointments(apps) {
                         <button class="btn btn-sm btn-outline-dark" onclick="manageApp(${a.id}, '${a.status}')">
                             <i class="bi bi-pencil-square"></i> Manage
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
-                            <i class="bi bi-person-gear"></i>
-                        </button>
+                        ${a.status === 'Pending'
+                            ? `<button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
+                                   <i class="bi bi-person-gear"></i>
+                               </button>`
+                            : `<button class="btn btn-sm btn-outline-secondary" disabled title="Mechanic is locked once the appointment is ${a.status.toLowerCase()}">
+                                   <i class="bi bi-lock-fill"></i>
+                               </button>`}
                     </div>
                 </td>
             </tr>`;
@@ -2109,6 +2113,67 @@ function exportCSV(type) {
     const a    = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
+}
+
+// =============================================================
+// EXPORT PDF
+// =============================================================
+
+function exportPDF(type) {
+    let rows = [], headers = [], filename = '', title = '';
+    if (type === 'appointments') {
+        title    = 'Service Appointments';
+        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Mechanic', 'Notes', 'Status'];
+        rows     = masterData.appointments.map(a => [
+            a.full_name || 'Guest',
+            a.service_type,
+            a.vehicle_info || '—',
+            a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+            a.mechanic_name || 'Unassigned',
+            a.notes || '—',
+            a.status
+        ]);
+        filename = 'appointments.pdf';
+    } else if (type === 'users') {
+        title    = 'Users';
+        headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];
+        rows     = masterData.users.map(u => [u.id, u.full_name, u.email, u.phone || '—', u.role_id == 2 ? 'Admin' : 'Customer', u.created_at || '—']);
+        filename = 'users.pdf';
+    } else if (type === 'history') {
+        title    = 'Service History';
+        headers  = ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date'];
+        rows     = historyData.map(h => [h.full_name || '—', h.service_type || '—', h.brand && h.model ? `${h.brand} ${h.model} (${h.year_model || '—'})` : '—', h.plate_number || '—', h.service_date || '—']);
+        filename = 'service_history.pdf';
+    }
+
+    if (typeof window.jspdf === 'undefined') {
+        Swal.fire('Error', 'PDF library failed to load. Check your connection and try again.', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+
+    doc.setFontSize(14);
+    doc.setTextColor(179, 0, 0);
+    doc.text('EJR Garage', 14, 15);
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.text(title, 14, 22);
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Generated ' + new Date().toLocaleString('en-US'), 14, 27);
+
+    doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 32,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [179, 0, 0], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [248, 248, 248] }
+    });
+
+    doc.save(filename);
 }
 
 

@@ -220,6 +220,19 @@ $stmt->bind_param(
             // Ensure column exists
             $conn->query("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS mechanic_id INT NULL");
 
+            // Mechanic can only be assigned/changed while the appointment
+            // is still Pending. Once the admin confirms or cancels it,
+            // the mechanic is locked.
+            $apStmt = $conn->prepare("SELECT status FROM appointments WHERE id = ?");
+            $apStmt->bind_param("i", $apptId);
+            $apStmt->execute();
+            $apRow = $apStmt->get_result()->fetch_assoc();
+            if (!$apRow) { echo json_encode(['status'=>'error','message'=>'Appointment not found.']); exit; }
+            if ($apRow['status'] !== 'Pending') {
+                echo json_encode(['status'=>'error','message'=>'Mechanic can no longer be changed — this appointment is already '.strtolower($apRow['status']).'.']);
+                exit;
+            }
+
             if ($mechanicId === 0) {
                 // Unassign
                 $unassign = $conn->prepare("UPDATE appointments SET mechanic_id = NULL WHERE id = ?");

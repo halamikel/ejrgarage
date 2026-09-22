@@ -21,6 +21,8 @@ include 'includes/header.php';
 
 <link rel="stylesheet" href="css/admin_dashboard.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <!-- ── HERO HEADER ─────────────────────────────────────────── -->
 <div class="ejr-admin-header">
@@ -633,16 +635,31 @@ include 'includes/header.php';
                         </div>
 
 
-                        <button
-                            class="ejr-btn ejr-btn--outline"
-                            onclick="exportCSV('appointments')"
-                        >
+                        <div class="d-flex gap-2">
 
-                            <i class="bi bi-download me-1"></i>
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportCSV('appointments')"
+                            >
 
-                            Export CSV
+                                <i class="bi bi-filetype-csv me-1"></i>
 
-                        </button>
+                                Export CSV
+
+                            </button>
+
+                            <button
+                                class="ejr-btn ejr-btn--outline"
+                                onclick="exportPDF('appointments')"
+                            >
+
+                                <i class="bi bi-filetype-pdf me-1"></i>
+
+                                Export PDF
+
+                            </button>
+
+                        </div>
 
                     </div>
 
