@@ -183,7 +183,7 @@
                 </div>
 
                 <div class="card border border-danger shadow-sm p-4 bg-white">
-                    <h5 class="text-danger mb-3 fw-bold">Danger Zone</h5>
+                    <h5 class="text-danger mb-3 fw-bold">Delete Account</h5>
                     <p class="text-secondary mb-4">Deleting your account is permanent. Verification code will be sent to your email.</p>
                     <div>
                         <button class="btn btn-outline-danger" onclick="handleAccountDeletion()">Delete Account</button>

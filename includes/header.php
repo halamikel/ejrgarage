@@ -61,7 +61,7 @@ if (session_status() === PHP_SESSION_NONE) {
       <ul class="navbar-nav ms-auto align-items-lg-center me-lg-3">
         <li class="nav-item"><a class="nav-link" href="/index.php">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="/booking-details.php">Book Appointment</a></li>
-         <li class="nav-item"><a class="nav-link" href="/available_parts.php">Available Parts</a></li>
+         <li class="nav-item"><a class="nav-link" href="/available_parts.php">Shop</a></li>
         <li class="nav-item"><a class="nav-link" href="/about-us.php">About Us</a></li>
         <li class="nav-item"><a class="nav-link" href="/contact.php">Contact</a></li>
         <li class="nav-item"><a class="nav-link" href="/download-app.php"><i class="bi bi-android2 me-1"></i>Get the App</a></li>
