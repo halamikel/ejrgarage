@@ -660,9 +660,21 @@ const CANCELLATION_REPLIES = {
 
 function manageApp(id, currentStatus) {
     const status = (currentStatus || '').toLowerCase();
-    const appt   = masterData.appointments.find(a => a.id === id);
-    const name   = appt?.full_name || 'this customer';
-    const hasMechanic = !!(appt && (appt.mechanic_id || appt.mechanic_name));
+
+    // Appointment IDs can arrive from PHP as numbers or strings. Use a
+    // string comparison so an assigned mechanic is not lost just because
+    // the ID types differ between the rendered row and masterData.
+    const appt = (masterData.appointments || []).find(a => String(a.id) === String(id));
+    const name = appt?.full_name || 'this customer';
+
+    // Some API responses provide mechanic_id, while others provide the
+    // joined mechanic_name. Treat either as an assigned mechanic.
+    const hasMechanic = !!(
+        appt && (
+            (appt.mechanic_id !== null && appt.mechanic_id !== undefined && String(appt.mechanic_id).trim() !== '' && String(appt.mechanic_id) !== '0') ||
+            (appt.mechanic_name && String(appt.mechanic_name).trim() !== '')
+        )
+    );
 
     if (status === 'completed') {
         Swal.fire({ title: 'Already Completed', html: `Appointment for <b>${name}</b> has already been completed.`, icon: 'info', confirmButtonColor: '#b30000' });
@@ -673,52 +685,39 @@ function manageApp(id, currentStatus) {
         return;
     }
 
-    // A Pending booking can only be accepted/Confirmed after a mechanic
-    // has been assigned. Cancellation remains available without one.
-    // Every appointment status change now requires an assigned mechanic.
-    // Keep the current status visible, but do not allow the admin to
-    // submit a new status until a mechanic has been assigned.
-    if (!hasMechanic) {
-        Swal.fire({
-            title: 'Assign a Mechanic First',
-            html: `Appointment for <b>${name}</b> cannot be updated yet.<br><br>
-                   <span class="text-muted">A mechanic must be assigned before the appointment status can be changed.</span>`,
-            icon: 'warning',
-            confirmButtonColor: '#e62429',
-            confirmButtonText: 'Assign Mechanic'
-        }).then(result => {
-            if (result.isConfirmed && typeof assignMechanic === 'function') {
-                assignMechanic(id);
-            }
-        });
-        return;
-    }
-
-    const inputOptions = {
-        'Pending': 'Pending',
-        'Confirmed': 'Confirmed',
-        'Completed': 'Completed',
-        'Cancelled': 'Cancelled',
-        'In Progress': 'In Progress',
-        'No Show': 'No Show'
-    };
+    // A booking cannot have its status changed until a mechanic has been
+    // assigned. Keep the current status visible, but do not offer any
+    // other status while the appointment is unassigned.
+    const inputOptions = hasMechanic
+        ? {
+            'Pending': 'Pending',
+            'Confirmed': 'Confirmed',
+            'Completed': 'Completed',
+            'Cancelled': 'Cancelled'
+        }
+        : {
+            [currentStatus]: currentStatus
+        };
 
     Swal.fire({
         title: 'Update Appointment Status',
         input: 'select',
         inputOptions,
         inputValue: currentStatus,
-        footer: '<span class="text-success fw-semibold"><i class="bi bi-person-check-fill me-1"></i>Mechanic assigned — status changes are enabled.</span>',
+        footer: !hasMechanic
+            ? '<span class="text-warning fw-semibold"><i class="bi bi-person-plus-fill me-1"></i>Assign a mechanic first before changing the appointment status.</span>'
+            : '',
         showCancelButton: true,
         confirmButtonColor: '#b30000',
         confirmButtonText: 'Update'
     }).then(result => {
         if (!result.isConfirmed || !result.value) return;
 
-        if (result.value === 'Confirmed' && status !== 'pending') {
+        // Extra client-side guard before sending ANY status change.
+        if (!hasMechanic && result.value !== currentStatus) {
             Swal.fire({
-                title: 'Cannot Accept This Appointment',
-                text: 'Only pending appointments can be accepted as Confirmed.',
+                title: 'Assign a Mechanic First',
+                text: 'You must assign a mechanic before changing the appointment status.',
                 icon: 'warning',
                 confirmButtonColor: '#e62429'
             });

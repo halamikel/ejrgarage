@@ -88,10 +88,10 @@ if (!$appt) {
     exit;
 }
 
-// ── MECHANIC REQUIREMENT FOR ALL STATUS CHANGES ──────────────
-// An appointment cannot have its status changed unless a mechanic
-// has already been assigned. This is enforced server-side so the
-// rule cannot be bypassed by calling the API directly.
+// ── MECHANIC REQUIREMENT FOR ALL STATUS CHANGES ───────────────
+// An appointment must have a mechanic assigned before ANY status
+// change is allowed. This is enforced server-side as well as in the
+// dashboard UI so the rule cannot be bypassed by calling the API directly.
 if (empty($appt['mechanic_id'])) {
     echo json_encode([
         'status'  => 'error',
