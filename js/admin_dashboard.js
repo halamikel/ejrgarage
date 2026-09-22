@@ -227,11 +227,11 @@ function renderInquiries(inquiries) {
             <td><span class="badge ${i.status === 'responded' ? 'bg-success' : 'bg-warning text-dark'}">${i.status === 'responded' ? 'responded' : 'pending'}</span></td>
             <td>
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})">
-                        <i class="bi bi-check-lg"></i>
+                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})" title="Reply to Inquiry" aria-label="Reply to Inquiry">
+                        <i class="bi bi-chat-left-text-fill"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})">
-                        <i class="bi bi-trash"></i>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})" title="Delete Inquiry" aria-label="Delete Inquiry">
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                 </div>
             </td>
@@ -320,26 +320,26 @@ function renderOrders(orders) {
                 <div class="btn-group">
                     ${isPending ? `
                         <button class="btn btn-sm btn-outline-success"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Approve / Decline">
-                            <i class="bi bi-pencil-square"></i>
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Review Order Status" aria-label="Review Order Status">
+                            <i class="bi bi-clipboard-check-fill"></i>
                         </button>` : ''}
                     ${isApproved ? `
                         <button class="btn btn-sm btn-outline-info"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Shipped">
-                            <i class="bi bi-truck"></i> Ship
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Shipped" aria-label="Mark as Shipped">
+                            <i class="bi bi-truck-front-fill"></i> Ship
                         </button>` : ''}
                     ${isShipped ? `
                         <button class="btn btn-sm btn-outline-primary"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Delivered">
-                            <i class="bi bi-box-seam"></i> Deliver
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Delivered" aria-label="Mark as Delivered">
+                            <i class="bi bi-box-seam-fill"></i> Deliver
                         </button>` : ''}
                     <button class="btn btn-sm btn-outline-secondary"
-                            onclick="deleteOrder(${o.id})" title="Delete">
-                        <i class="bi bi-trash"></i>
+                            onclick="deleteOrder(${o.id})" title="Delete Order" aria-label="Delete Order">
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                     <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
-                       class="btn btn-sm btn-outline-primary" title="View Invoice">
-                        <i class="bi bi-receipt"></i>
+                       class="btn btn-sm btn-outline-primary" title="View Order Receipt" aria-label="View Order Receipt">
+                        <i class="bi bi-receipt-cutoff"></i>
                     </a>
                 </div>
             </td>
@@ -494,7 +494,7 @@ function renderAppointments(apps) {
                         </button>
                         ${a.status === 'Pending'
                             ? `<button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
-                                   <i class="bi bi-person-gear"></i>
+                                   <i class="bi bi-person-plus-fill"></i>
                                </button>`
                             : `<button class="btn btn-sm btn-outline-secondary" disabled title="Mechanic is locked once the appointment is ${a.status.toLowerCase()}">
                                    <i class="bi bi-lock-fill"></i>
@@ -619,8 +619,8 @@ function renderHistory(data) {
             <td>
                 <div class="btn-group">
                     <a href="api/admin/generate_receipt.php?id=${h.id}" target="_blank"
-                       class="btn btn-sm btn-outline-primary" title="View Invoice">
-                        <i class="bi bi-receipt"></i>
+                       class="btn btn-sm btn-outline-primary" title="View Order Receipt" aria-label="View Order Receipt">
+                        <i class="bi bi-receipt-cutoff"></i>
                     </a>
                     <button class="btn btn-sm btn-outline-success"
                             onclick="sendReceiptToUser(${h.id}, '${custName}')" title="Send Receipt">
@@ -2096,36 +2096,34 @@ function endLiveSession() {
 // respected when CSV/PDF is generated.
 
 function getExportData(type) {
+    // IMPORTANT: Export the SAME records currently shown after filtering.
+    // Do not use a separate/looser filter here, otherwise CSV/PDF can contain
+    // records that are hidden on the dashboard.
     const term = (globalSearchTerm || '').toLowerCase().trim();
 
-    const getDateFilters = (prefix) => ({
-        month: document.getElementById(`${prefix}MonthFilter`)?.value || '',
-        from: document.getElementById(`${prefix}FromDate`)?.value || '',
-        to: document.getElementById(`${prefix}ToDate`)?.value || ''
-    });
+    const getMonthFilter = (...ids) => {
+        for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el && el.value) return el.value;
+        }
+        return '';
+    };
 
-    const matchesDateFilters = (value, filters) => {
-        if (!filters.month && !filters.from && !filters.to) return true;
+    const matchesMonth = (value, monthFilter) => {
+        if (!monthFilter) return true;
         if (!value) return false;
-
         const d = new Date(value);
         if (Number.isNaN(d.getTime())) return false;
-
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const dateString = `${yyyy}-${mm}-${dd}`;
-
-        if (filters.month && `${yyyy}-${mm}` !== filters.month) return false;
-        if (filters.from && dateString < filters.from) return false;
-        if (filters.to && dateString > filters.to) return false;
-
-        return true;
+        return `${yyyy}-${mm}` === monthFilter;
     };
 
     if (type === 'appointments') {
         const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
-        const dateFilters = getDateFilters('appointments');
+        const monthFilter = getMonthFilter(
+            'appointmentsMonth', 'appointmentsDateFilter', 'appointmentsMonthFilter'
+        );
 
         return masterData.appointments.filter(a => {
             const matchesTerm = !term ||
@@ -2134,14 +2132,16 @@ function getExportData(type) {
                 (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
                 (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
             const matchesStatus = !statusFilter || a.status === statusFilter;
-            const matchesDate = matchesDateFilters(a.appointment_date, dateFilters);
+            const matchesDate = matchesMonth(a.appointment_date, monthFilter);
             return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     if (type === 'users') {
         const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
-        const dateFilters = getDateFilters('users');
+        const monthFilter = getMonthFilter(
+            'usersMonth', 'usersDateFilter', 'usersMonthFilter'
+        );
 
         return masterData.users.filter(u => {
             const matchesTerm = !term ||
@@ -2149,13 +2149,15 @@ function getExportData(type) {
                 (u.email && u.email.toLowerCase().includes(term)) ||
                 (u.phone && u.phone.toLowerCase().includes(term));
             const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
-            const matchesDate = matchesDateFilters(u.created_at, dateFilters);
+            const matchesDate = matchesMonth(u.created_at, monthFilter);
             return matchesTerm && matchesRole && matchesDate;
         });
     }
 
     if (type === 'vehicles') {
-        const dateFilters = getDateFilters('vehicles');
+        const monthFilter = getMonthFilter(
+            'vehiclesMonth', 'vehiclesDateFilter', 'vehiclesMonthFilter'
+        );
 
         return masterData.vehicles.filter(v => {
             const matchesTerm = !term ||
@@ -2163,16 +2165,21 @@ function getExportData(type) {
                 (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
                 (v.model && v.model.toLowerCase().includes(term)) ||
                 (v.brand && v.brand.toLowerCase().includes(term));
+
+            // Vehicles normally do not have a creation date. If a date/month
+            // filter exists in the page, use the first available date field.
             const vehicleDate = v.created_at || v.date_created || v.registration_date || '';
-            const matchesDate = matchesDateFilters(vehicleDate, dateFilters);
+            const matchesDate = matchesMonth(vehicleDate, monthFilter);
             return matchesTerm && matchesDate;
         });
     }
 
     if (type === 'history') {
-        const historySearch = (document.getElementById('historySearch')?.value || '').toLowerCase().trim();
+        // History has its own search + month controls in the dashboard.
+        const historySearch = (document.getElementById('historySearch')?.value || '')
+            .toLowerCase().trim();
+        const historyMonth = document.getElementById('historyMonth')?.value || '';
         const combinedTerm = historySearch || term;
-        const dateFilters = getDateFilters('history');
 
         return historyData.filter(h => {
             const matchesTerm = !combinedTerm ||
@@ -2181,32 +2188,19 @@ function getExportData(type) {
                 (h.plate_number && h.plate_number.toLowerCase().includes(combinedTerm)) ||
                 (h.brand && h.brand.toLowerCase().includes(combinedTerm)) ||
                 (h.model && h.model.toLowerCase().includes(combinedTerm));
-            const matchesDate = matchesDateFilters(h.service_date, dateFilters);
+
+            const matchesDate = !historyMonth ||
+                (h.service_date && String(h.service_date).startsWith(historyMonth));
+
             return matchesTerm && matchesDate;
-        });
-    }
-
-    if (type === 'inquiries') {
-        const statusFilter = document.getElementById('inquiriesStatusFilter')?.value || 'pending';
-        const dateFilters = getDateFilters('inquiries');
-
-        return inquiriesData.filter(i => {
-            const matchesTerm = !term ||
-                (i.customer_name && i.customer_name.toLowerCase().includes(term)) ||
-                (i.part_name && i.part_name.toLowerCase().includes(term)) ||
-                (i.contact && i.contact.toLowerCase().includes(term)) ||
-                (i.message && i.message.toLowerCase().includes(term));
-            const matchesStatus = statusFilter === 'all' ||
-                (statusFilter === 'pending' && i.status !== 'responded') ||
-                (statusFilter === 'responded' && i.status === 'responded');
-            const matchesDate = matchesDateFilters(i.created_at, dateFilters);
-            return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     if (type === 'orders') {
         const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
-        const dateFilters = getDateFilters('orders');
+        const monthFilter = getMonthFilter(
+            'ordersMonth', 'ordersDateFilter', 'ordersMonthFilter'
+        );
 
         return ordersData.filter(o => {
             const year = new Date(o.created_at).getFullYear();
@@ -2217,31 +2211,17 @@ function getExportData(type) {
                 (o.contact && o.contact.toLowerCase().includes(term)) ||
                 (o.address && o.address.toLowerCase().includes(term)) ||
                 orderNo.includes(term);
+
             const matchesStatus = !statusFilter ||
                 String(o.status || '').toLowerCase() === statusFilter.toLowerCase();
-            const matchesDate = matchesDateFilters(o.created_at, dateFilters);
+
+            const matchesDate = matchesMonth(o.created_at, monthFilter);
 
             return matchesTerm && matchesStatus && matchesDate;
         });
     }
 
     return [];
-}
-
-// Clears only the export/date filters for the selected tab.
-function clearDateFilters(type) {
-    const ids = [
-        `${type}MonthFilter`,
-        `${type}FromDate`,
-        `${type}ToDate`
-    ];
-
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-
-    if (typeof applyAllFilters === 'function') applyAllFilters();
 }
 
 function getExportConfig(type) {
@@ -2269,12 +2249,6 @@ function getExportConfig(type) {
             csvFilename: 'service_history.csv',
             pdfFilename: 'service_history.pdf',
             headers: ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date']
-        },
-        inquiries: {
-            title: 'Part Inquiries',
-            csvFilename: 'part_inquiries.csv',
-            pdfFilename: 'part_inquiries.pdf',
-            headers: ['Part', 'Customer', 'Contact', 'Message', 'Date', 'Status']
         },
         orders: {
             title: 'Parts Orders',
@@ -2339,19 +2313,6 @@ function getExportRows(type, data) {
             h.service_date
                 ? new Date(h.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : '—'
-        ]);
-    }
-
-    if (type === 'inquiries') {
-        return data.map(i => [
-            i.part_name || '—',
-            i.customer_name || '—',
-            i.contact || '—',
-            i.message || '—',
-            i.created_at
-                ? new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : '—',
-            i.status === 'responded' ? 'Responded' : 'Pending'
         ]);
     }
 
@@ -2649,13 +2610,14 @@ function renderBusyDates(dates) {
                     </button>
                     <button class="btn btn-sm ${isBusy ? 'btn-outline-success' : 'btn-outline-warning'}"
                             onclick="toggleBusy(${d.id}, ${isBusy ? 0 : 1})"
-                            title="${isBusy ? 'Mark as Available' : 'Mark as Busy'}">
-                        <i class="bi bi-${isBusy ? 'unlock' : 'lock'}"></i>
+                            title="${isBusy ? 'Make Date Available' : 'Block Date'}"
+                            aria-label="${isBusy ? 'Make Date Available' : 'Block Date'}">
+                        <i class="bi bi-${isBusy ? 'calendar-check-fill' : 'calendar-x-fill'}"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
                             onclick="deleteBusyDate(${d.id}, '${formatted}')"
-                            title="Delete">
-                        <i class="bi bi-trash"></i>
+                            title="Delete Busy Date" aria-label="Delete Busy Date">
+                        <i class="bi bi-calendar-minus-fill"></i>
                     </button>
                 </div>
             </td>
@@ -3111,8 +3073,8 @@ function renderMechanics(mechanics) {
             <td>${m.specialty || '—'}</td>
             <td><span class="badge ${mechanicStatusBadgeClass(m.status)}">${mechanicStatusLabel(m.status)}</span></td>
             <td>
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})" title="Edit Mechanic" aria-label="Edit Mechanic"><i class="bi bi-person-gear"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')" title="Remove Mechanic" aria-label="Remove Mechanic"><i class="bi bi-person-dash-fill"></i></button>
             </td>
         </tr>`).join('');
 }
@@ -3280,10 +3242,10 @@ function renderLeaveRequests(requests) {
             <td>${formatLeaveDate(r.requested_at ? r.requested_at.split(' ')[0] : '')}</td>
             <td>
                 ${r.status === 'pending' ? `
-                    <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve"><i class="bi bi-check-lg"></i></button>
-                    <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Reject"><i class="bi bi-x-lg"></i></button>
+                    <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve Leave Request"><i class="bi bi-check-circle-fill"></i></button>
+                    <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Decline Leave Request"><i class="bi bi-x-circle-fill"></i></button>
                 ` : ''}
-                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete Leave Request"><i class="bi bi-trash3-fill"></i></button>
             </td>
         </tr>`).join('');
 }
