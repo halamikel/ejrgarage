@@ -2236,18 +2236,43 @@ function renderBusyDates(dates) {
 
 function busyDateForm(v = {}) {
     const today = new Date().toISOString().split('T')[0];
+    const allowRange = !!v.allowRange; // only offered when adding, not editing
+
+    const rangeToggle = allowRange ? `
+            <div class="mb-3">
+                <div class="btn-group w-100" role="group" aria-label="Add mode">
+                    <input type="radio" class="btn-check" name="bd-mode" id="bd-mode-single" checked
+                           onchange="toggleBusyDateMode(false)">
+                    <label class="btn btn-outline-danger btn-sm" for="bd-mode-single">Single Date</label>
+
+                    <input type="radio" class="btn-check" name="bd-mode" id="bd-mode-range"
+                           onchange="toggleBusyDateMode(true)">
+                    <label class="btn btn-outline-danger btn-sm" for="bd-mode-range">Date Range</label>
+                </div>
+            </div>` : '';
+
+    const endDateField = allowRange ? `
+            <div class="mb-3" id="bd-end-date-wrap" style="display:none;">
+                <label class="form-label fw-semibold small">End Date</label>
+                <input type="date" id="bd-end-date" class="form-control"
+                       value="${v.date || ''}" min="${today}">
+                <small class="text-muted">All dates from Date to End Date (inclusive) will be updated</small>
+            </div>` : '';
+
     return `
         <div class="text-start">
+            ${rangeToggle}
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Date</label>
+                <label class="form-label fw-semibold small" id="bd-date-label">${allowRange ? 'Date' : 'Date'}</label>
                 <input type="date" id="bd-date" class="form-control"
                        value="${v.date || ''}" min="${today}">
             </div>
+            ${endDateField}
             <div class="mb-3">
                 <label class="form-label fw-semibold small">Slot Limit</label>
                 <input type="number" id="bd-limit" class="form-control"
                        value="${v.limit ?? 5}" min="1">
-                <small class="text-muted">Max appointments allowed on this day before marked busy</small>
+                <small class="text-muted">Max appointments allowed per day before marked busy</small>
             </div>
             <div class="mb-2">
                 <label class="form-label fw-semibold small">Status</label>
@@ -2259,12 +2284,33 @@ function busyDateForm(v = {}) {
         </div>`;
 }
 
+function toggleBusyDateMode(isRange) {
+    const wrap  = document.getElementById('bd-end-date-wrap');
+    const label = document.getElementById('bd-date-label');
+    if (!wrap || !label) return;
+    wrap.style.display = isRange ? '' : 'none';
+    label.textContent  = isRange ? 'Start Date' : 'Date';
+}
+
 function getBusyDateFormValues(action, id = null) {
+    const rangeModeEl = document.getElementById('bd-mode-range');
+    const isRange = !!(rangeModeEl && rangeModeEl.checked);
+
     const date    = document.getElementById('bd-date').value;
     const limit   = parseInt(document.getElementById('bd-limit').value);
     const is_busy = parseInt(document.getElementById('bd-busy').value);
-    if (!date) { Swal.showValidationMessage('Please select a date.'); return false; }
+
+    if (!date) { Swal.showValidationMessage(isRange ? 'Please select a start date.' : 'Please select a date.'); return false; }
     if (!limit || limit < 1) { Swal.showValidationMessage('Slot limit must be at least 1.'); return false; }
+
+    if (isRange) {
+        const endDateEl = document.getElementById('bd-end-date');
+        const end_date  = endDateEl ? endDateEl.value : '';
+        if (!end_date) { Swal.showValidationMessage('Please select an end date.'); return false; }
+        if (end_date < date) { Swal.showValidationMessage('End date must be on or after the start date.'); return false; }
+        return { action: 'block_range', start_date: date, end_date, limit, is_busy };
+    }
+
     const payload = { action, date, limit, is_busy };
     if (id) payload.id = id;
     return payload;
@@ -2273,7 +2319,7 @@ function getBusyDateFormValues(action, id = null) {
 function openBlockDate() {
     Swal.fire({
         title: '<i class="bi bi-calendar-plus me-2"></i> Add Busy Date',
-        html: busyDateForm(),
+        html: busyDateForm({ allowRange: true }),
         showCancelButton: true,
         confirmButtonColor: '#b30000',
         confirmButtonText: '<i class="bi bi-plus-lg me-1"></i> Add Date',
@@ -2925,4 +2971,3 @@ function assignMechanic(appointmentId) {
             });
         });
 }
-

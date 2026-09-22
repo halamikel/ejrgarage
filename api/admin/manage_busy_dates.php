@@ -87,6 +87,57 @@ if ($action === 'block') {
     exit;
 }
 
+if ($action === 'block_range') {
+    $startDate = $data['start_date'] ?? '';
+    $endDate   = $data['end_date']   ?? '';
+    $limit     = (int)($data['limit'] ?? 5);
+    $isBusy    = isset($data['is_busy']) ? (int)$data['is_busy'] : 1;
+
+    if (!$startDate || !$endDate) {
+        echo json_encode(['status' => 'error', 'message' => 'Start and end dates are required.']);
+        exit;
+    }
+
+    try {
+        $start = new DateTime($startDate);
+        $end   = new DateTime($endDate);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid date format.']);
+        exit;
+    }
+
+    if ($end < $start) {
+        echo json_encode(['status' => 'error', 'message' => 'End date must be on or after the start date.']);
+        exit;
+    }
+
+    // Safety cap so a mistyped range can't try to insert years of rows
+    $maxDays = 366;
+    $dayCount = (int)$start->diff($end)->days + 1;
+    if ($dayCount > $maxDays) {
+        echo json_encode(['status' => 'error', 'message' => "Range too large. Please limit to $maxDays days."]);
+        exit;
+    }
+
+    $stmt = $conn->prepare("
+        INSERT INTO appointment_dates (appointment_date, slot_limit, current_bookings, is_busy)
+        VALUES (?, ?, 0, ?)
+        ON DUPLICATE KEY UPDATE slot_limit = ?, is_busy = ?, is_archived = 0, archived_at = NULL, archived_by = NULL
+    ");
+
+    $period = new DatePeriod($start, new DateInterval('P1D'), (clone $end)->modify('+1 day'));
+    $updated = 0;
+    foreach ($period as $day) {
+        $d = $day->format('Y-m-d');
+        $stmt->bind_param("siiii", $d, $limit, $isBusy, $limit, $isBusy);
+        $stmt->execute();
+        $updated++;
+    }
+
+    echo json_encode(['status' => 'success', 'message' => "$updated date(s) updated successfully."]);
+    exit;
+}
+
 if ($action === 'update_limit') {
     $id    = (int)$data['id'];
     $limit = (int)$data['limit'];
