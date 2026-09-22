@@ -351,6 +351,29 @@ function fetchProfiles() {
     .catch(err => console.warn('Could not load saved profiles:', err));
 }
 
+// Fields inside #manualProfileForm that are marked `required` in the
+// markup. Because the form is a plain <form>, the browser runs native
+// constraint validation on submit even for fields hidden via
+// display:none — so whenever we hide the manual form (because the
+// shopper is using a saved profile instead) we must also drop the
+// `required` attribute, or the browser will silently block submission.
+const MANUAL_PROFILE_REQUIRED_FIELDS = [
+    'orderCustomerName', 'orderContact', 'orderAddress1',
+    'orderCity', 'orderProvince', 'orderZip'
+];
+
+function setManualProfileFieldsRequired(isRequired) {
+    MANUAL_PROFILE_REQUIRED_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (isRequired) {
+            el.setAttribute('required', 'required');
+        } else {
+            el.removeAttribute('required');
+        }
+    });
+}
+
 function renderProfileSelect() {
     const section = document.getElementById('savedProfilesSection');
     const manualForm = document.getElementById('manualProfileForm');
@@ -362,6 +385,7 @@ function renderProfileSelect() {
     if (!savedProfiles.length) {
         section.style.display = 'none';
         manualForm.style.display = 'block';
+        setManualProfileFieldsRequired(true);
         return;
     }
 
@@ -377,6 +401,7 @@ function renderProfileSelect() {
 
     section.style.display = 'block';
     manualForm.style.display = 'none';
+    setManualProfileFieldsRequired(false);
     if (backToProfilesContainer) backToProfilesContainer.style.display = 'none';
 }
 
@@ -406,6 +431,7 @@ function setupProfileControls() {
             clearManualFields();
             manualForm.style.display = 'block';
             savedSection.style.display = 'none';
+            setManualProfileFieldsRequired(true);
             if (savedSelect) savedSelect.value = '';
             if (backToProfilesContainer) backToProfilesContainer.style.display = savedProfiles.length ? 'block' : 'none';
         });
@@ -415,6 +441,7 @@ function setupProfileControls() {
         btnBack.addEventListener('click', function () {
             manualForm.style.display = 'none';
             savedSection.style.display = 'block';
+            setManualProfileFieldsRequired(false);
         });
     }
 

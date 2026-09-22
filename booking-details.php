@@ -46,34 +46,6 @@
              YOUR CONTACT DETAILS
         ====================================================== -->
 
-        <div id="savedContactProfilesSection" class="mb-4" style="display:none;">
-
-          <label class="form-label fw-bold text-dark" for="savedContactProfileSelect">
-            <i class="bi bi-person-lines-fill me-2 text-danger"></i>
-            Use a Saved Profile
-          </label>
-
-          <select
-            class="form-select form-select-lg"
-            id="savedContactProfileSelect"
-            style="border-color:#e62429;"
-          >
-            <option value="">-- Select a saved profile --</option>
-          </select>
-
-          <div class="text-end mt-2">
-            <button
-              type="button"
-              class="btn btn-sm text-danger fw-bold"
-              id="btnAddNewContactProfile"
-            >
-              <i class="bi bi-plus-circle me-1"></i>
-              Add a new profile
-            </button>
-          </div>
-
-        </div>
-
         <div id="manualContactForm" class="mb-4">
 
           <h6 class="fw-bold text-dark mb-1">
@@ -164,13 +136,6 @@
                 <label class="form-label" for="contactProfileLabel">Profile Label</label>
                 <input type="text" class="form-control" id="contactProfileLabel" placeholder="e.g. Home, Office" maxlength="50">
               </div>
-            </div>
-
-            <div class="col-12 text-end" id="backToContactProfilesContainer" style="display:none;">
-              <button type="button" class="btn btn-sm text-secondary" id="btnBackToContactProfiles">
-                <i class="bi bi-arrow-left me-1"></i>
-                Back to saved profiles
-              </button>
             </div>
 
           </div>
