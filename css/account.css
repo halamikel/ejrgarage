@@ -336,23 +336,25 @@
 }
 
 .nav-avatar-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 2px solid var(--border-light);
-  background: #eef1f4;
-  padding: 0;
-  overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 3px 8px 3px 3px;
+  border-radius: 999px;
+  border: 2px solid var(--border-light);
+  background: #eef1f4;
   cursor: pointer;
-  color: var(--text-muted);
-  font-size: 20px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 .nav-avatar-btn:hover {
   border-color: var(--primary-red);
+  background: #fff;
+}
+.nav-avatar-btn-photo {
+  color: var(--text-muted);
+  font-size: 20px;
+  background: #eef1f4;
+  flex-shrink: 0;
 }
 .nav-avatar-btn img {
   width: 100%;
@@ -361,6 +363,16 @@
   object-position: center top;
   border-radius: 50%;
   display: block;
+}
+.nav-avatar-caret {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+.nav-avatar-btn[aria-expanded="true"] .nav-avatar-caret {
+  transform: rotate(180deg);
+  color: var(--primary-red);
 }
 
 .nav-account-menu {

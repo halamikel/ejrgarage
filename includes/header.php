@@ -39,7 +39,7 @@ if (session_status() === PHP_SESSION_NONE) {
         echo '<link rel="stylesheet" href="/css/' . $cssFile . '?v=' . $v . '">' . "\n  ";
     }
   ?>
-  <link rel="stylesheet" href="/css/account.css?v=5">
+  <link rel="stylesheet" href="/css/account.css?v=6">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/js/global.js"></script>
@@ -72,9 +72,12 @@ if (session_status() === PHP_SESSION_NONE) {
       <a href="/login.php" class="btn btn-quote" id="navAuthBtn">Get Started</a>
 
       <div class="nav-account-dropdown" id="navAccountDropdown" style="display:none; position:relative;">
-        <button type="button" class="nav-avatar-btn" id="navAvatarBtn" aria-haspopup="true" aria-expanded="false" style="width:42px; height:42px; border-radius:50%; overflow:hidden;">
-          <img id="navAvatarImg" alt="Profile photo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
-          <i class="bi bi-person-fill" id="navAvatarIcon"></i>
+        <button type="button" class="nav-avatar-btn" id="navAvatarBtn" aria-haspopup="true" aria-expanded="false">
+          <span class="nav-avatar-btn-photo" style="width:42px; height:42px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <img id="navAvatarImg" alt="Profile photo" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+            <i class="bi bi-person-fill" id="navAvatarIcon"></i>
+          </span>
+          <i class="bi bi-chevron-down nav-avatar-caret" id="navAvatarCaret" aria-hidden="true"></i>
         </button>
 
         <div class="nav-account-menu" id="navAccountMenu" style="display:none; position:absolute; top:calc(100% + 12px); right:0;">
