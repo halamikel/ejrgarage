@@ -243,6 +243,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     "click",
                     function () {
 
+                        if (
+                            this.dataset.adminUnavailable === "true"
+                        ) {
+
+                            return;
+
+                        }
+
+
                         const serviceName =
                             (this.dataset.serviceName || this.textContent).trim();
 
@@ -374,8 +383,24 @@ document.addEventListener("DOMContentLoaded", function () {
             const isDisabled =
                 activeDetailsService.dataset.vehicleDisabled === "true";
 
+            const isAdminUnavailable =
+                activeDetailsService.dataset.adminUnavailable === "true";
+
             const isSelected =
                 activeDetailsService.classList.contains("selected");
+
+            if (isAdminUnavailable) {
+
+                detailsSelectBtn.textContent =
+                    "Temporarily Unavailable";
+
+                detailsSelectBtn.disabled = true;
+
+                detailsSelectBtn.classList.remove("is-selected");
+
+                return;
+
+            }
 
             if (isDisabled) {
 
@@ -436,11 +461,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
 
+            const isAdminUnavailable =
+                serviceEl.dataset.adminUnavailable === "true";
+
             if (detailsDescEl) {
 
-                detailsDescEl.textContent =
+                const baseText =
                     description ||
                     "No additional details are available for this service yet. Feel free to ask our team when you arrive.";
+
+                detailsDescEl.textContent =
+                    isAdminUnavailable
+                        ? "This service is temporarily unavailable and can't be booked right now. " + baseText
+                        : baseText;
 
             }
 
@@ -494,7 +527,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (
                 !activeDetailsService ||
-                activeDetailsService.dataset.vehicleDisabled === "true"
+                activeDetailsService.dataset.vehicleDisabled === "true" ||
+                activeDetailsService.dataset.adminUnavailable === "true"
             ) {
 
                 return;

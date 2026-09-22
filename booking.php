@@ -529,6 +529,8 @@ include 'includes/header.php';
                             const description =
                                 (service.description || '').trim();
 
+                            const isUnavailable =
+                                String(service.is_active) === '0';
 
                             html += `
 
@@ -537,12 +539,17 @@ include 'includes/header.php';
                                 >
 
                                     <div
-                                        class="service-item"
+                                        class="service-item${isUnavailable ? ' service-unavailable' : ''}"
                                         data-service-name="${escapeHtml(service.name)}"
                                         data-description="${escapeHtml(description)}"
                                         ${
                                             price > 0
                                                 ? `data-price="${price}"`
+                                                : ''
+                                        }
+                                        ${
+                                            isUnavailable
+                                                ? 'data-admin-unavailable="true" aria-disabled="true"'
                                                 : ''
                                         }
                                     >
@@ -559,6 +566,12 @@ include 'includes/header.php';
                                         <span class="service-name-text">${escapeHtml(
                                             service.name
                                         )}</span>
+
+                                        ${
+                                            isUnavailable
+                                                ? '<span class="service-unavailable-badge">Temporarily Unavailable</span>'
+                                                : ''
+                                        }
 
                                     </div>
 
@@ -756,6 +769,66 @@ include 'includes/header.php';
     pointer-events: none;
 
     opacity: 0.5;
+
+}
+
+
+
+/* ============================================================
+   SERVICE ITEM — TEMPORARILY UNAVAILABLE (admin-disabled)
+============================================================ */
+
+.service-item.service-unavailable {
+
+    cursor: not-allowed;
+
+    background: #f4f6f8;
+
+    border-color: var(--border-light);
+
+    color: #9aa4af;
+
+    opacity: 0.7;
+
+    padding-bottom: 28px;
+
+}
+
+.service-item.service-unavailable:hover {
+
+    background: #f4f6f8;
+
+    border-color: var(--border-light);
+
+}
+
+.service-item.service-unavailable .service-name-text {
+
+    color: #9aa4af;
+
+}
+
+.service-unavailable-badge {
+
+    position: absolute;
+
+    left: 0;
+
+    right: 0;
+
+    bottom: 6px;
+
+    display: block;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.4px;
+
+    color: #b3542d;
 
 }
 

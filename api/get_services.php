@@ -15,22 +15,22 @@ $conn->query("CREATE TABLE IF NOT EXISTS ejr_services (
 
 ejr_ensure_archive_columns($conn, 'ejr_services');
 
-$result = $conn->query("SELECT id, name, category, description, price_from FROM ejr_services WHERE is_active = 1 AND (is_archived IS NULL OR is_archived = 0) ORDER BY category, name ASC");
+$result = $conn->query("SELECT id, name, category, description, price_from, is_active FROM ejr_services WHERE (is_archived IS NULL OR is_archived = 0) ORDER BY category, name ASC");
 $services = [];
 while ($r = $result->fetch_assoc()) $services[] = $r;
 
 // If no services in DB yet, return the hardcoded defaults so booking still works
 if (empty($services)) {
     $defaults = [
-        ['id'=>null,'name'=>'PMS','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Change Oil','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Auto Electrical Transmission','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'EFI','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Carburator Services','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Decarbonizer','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Scanning Fault Codes','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Paint Services','category'=>'Popular Services','description'=>'','price_from'=>0],
-        ['id'=>null,'name'=>'Back to Zero (Anti-bacterial fogging)','category'=>'Popular Services','description'=>'','price_from'=>0],
+        ['id'=>null,'name'=>'PMS','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Change Oil','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Auto Electrical Transmission','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'EFI','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Carburator Services','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Decarbonizer','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Scanning Fault Codes','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Paint Services','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
+        ['id'=>null,'name'=>'Back to Zero (Anti-bacterial fogging)','category'=>'Popular Services','description'=>'','price_from'=>0,'is_active'=>1],
     ];
     echo json_encode(['status'=>'success','services'=>$defaults,'source'=>'defaults']);
     exit;
