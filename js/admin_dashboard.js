@@ -662,6 +662,7 @@ function manageApp(id, currentStatus) {
     const status = (currentStatus || '').toLowerCase();
     const appt   = masterData.appointments.find(a => a.id === id);
     const name   = appt?.full_name || 'this customer';
+    const hasMechanic = !!(appt && (appt.mechanic_id || appt.mechanic_name));
 
     if (status === 'completed') {
         Swal.fire({ title: 'Already Completed', html: `Appointment for <b>${name}</b> has already been completed.`, icon: 'info', confirmButtonColor: '#b30000' });
@@ -672,21 +673,39 @@ function manageApp(id, currentStatus) {
         return;
     }
 
+    // A Pending booking can only be accepted/Confirmed after a mechanic
+    // has been assigned. Cancellation remains available without one.
+    const inputOptions = {
+        'Pending': 'Pending',
+        ...(hasMechanic ? { 'Confirmed': 'Confirmed' } : {}),
+        'Completed': 'Completed',
+        'Cancelled': 'Cancelled'
+    };
+
     Swal.fire({
         title: 'Update Appointment Status',
         input: 'select',
-        inputOptions: {
-            'Pending':   'Pending',
-            'Confirmed': 'Confirmed',
-            'Completed': 'Completed',
-            'Cancelled': 'Cancelled'
-        },
+        inputOptions,
         inputValue: currentStatus,
+        footer: (!hasMechanic && status === 'pending')
+            ? '<span class="text-warning fw-semibold"><i class="bi bi-person-plus-fill me-1"></i>Assign a mechanic first to enable Confirmed.</span>'
+            : '',
         showCancelButton: true,
         confirmButtonColor: '#b30000',
         confirmButtonText: 'Update'
     }).then(result => {
         if (!result.isConfirmed || !result.value) return;
+
+        // Extra client-side guard before sending the request.
+        if (result.value === 'Confirmed' && !hasMechanic) {
+            Swal.fire({
+                title: 'Assign a Mechanic First',
+                text: 'You must assign a mechanic before accepting this booking.',
+                icon: 'warning',
+                confirmButtonColor: '#e62429'
+            });
+            return;
+        }
 
         if (result.value === 'Cancelled') {
             promptCancellationReply(id);

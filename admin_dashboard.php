@@ -1256,5 +1256,5 @@ include 'includes/header.php';
 <!-- ============================================================
      ADMIN DASHBOARD JAVASCRIPT
 ============================================================ -->
-<script src="js/admin_dashboard.js?v=20260713"></script>
+<script src="js/admin_dashboard.js?v=20260923"></script>
 <?php include 'includes/footer.php'; ?></div>
