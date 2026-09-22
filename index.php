@@ -176,6 +176,92 @@
   </div>
 </section>
 
+<!-- Rescue Instructions -->
+<section class="py-5 ejr-rescue-section" id="rescue">
+    <div class="container">
+        <div class="ejr-rescue-card">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-5">
+                    <div class="ejr-rescue-badge">
+                        <i class="bi bi-life-preserver me-2"></i>
+                        Emergency Rescue
+                    </div>
+                    <h2 class="fw-bold mb-3" style="font-family: var(--font-display);">
+                        Need Roadside Rescue?
+                    </h2>
+                    <p class="mb-0 text-muted">
+                        Follow these steps to help our rescuers locate you and respond as quickly as possible.
+                    </p>
+
+                    <div class="ejr-rescue-contact mt-4">
+                        <div class="ejr-rescue-contact-icon">
+                            <i class="bi bi-telephone-fill"></i>
+                        </div>
+                        <div>
+                            <div class="small text-muted">Rescue Contact</div>
+                            <div class="fw-bold">0906-704-5422</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <a href="tel:09067045422" class="btn btn-danger ejr-rescue-action">
+                            <i class="bi bi-telephone-fill me-1"></i>
+                            Call Now
+                        </a>
+                        <a href="sms:09067045422" class="btn btn-outline-danger ejr-rescue-action">
+                            <i class="bi bi-chat-dots-fill me-1"></i>
+                            Send Message
+                        </a>
+                        <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&amp;rdid=YwStBGAirOZJu1Bs&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-outline-primary ejr-rescue-action">
+                            <i class="bi bi-facebook me-1"></i>
+                            Message on Facebook
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="ejr-rescue-steps">
+                        <div class="ejr-rescue-step">
+                            <div class="ejr-rescue-number">1</div>
+                            <div>
+                                <h6>Find your current location</h6>
+                                <p>Check your phone's current location and identify a nearby landmark that rescuers can easily recognize.</p>
+                            </div>
+                        </div>
+
+                        <div class="ejr-rescue-step">
+                            <div class="ejr-rescue-number">2</div>
+                            <div>
+                                <h6>Contact the rescue team</h6>
+                                <p>Call or send a message to <strong>0906-704-5422</strong>, or message <strong>Raymond Dale Yandan</strong> through Facebook.</p>
+                            </div>
+                        </div>
+
+                        <div class="ejr-rescue-step">
+                            <div class="ejr-rescue-number">3</div>
+                            <div>
+                                <h6>Coordinate with the rescuers</h6>
+                                <p>Provide your exact location, nearby landmark, vehicle information, and any other necessary information requested by the rescuers.</p>
+                            </div>
+                        </div>
+
+                        <div class="ejr-rescue-step mb-0">
+                            <div class="ejr-rescue-number">4</div>
+                            <div>
+                                <h6>Wait for the rescue</h6>
+                                <p>Stay in a safe location and keep your phone available while waiting for the rescuers to arrive.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Ready to Book CTA -->
 <section class="py-5 text-center text-white" style="background:var(--accent-orange);">
     <div class="container">
@@ -250,6 +336,98 @@
     font-size: 0.85rem;
     flex-shrink: 0;
 }
+
+.ejr-rescue-section {
+    background: #f5f7fa;
+}
+.ejr-rescue-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    padding: 42px;
+    box-shadow: 0 8px 28px rgba(10, 17, 40, 0.07);
+}
+.ejr-rescue-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(230, 36, 41, 0.1);
+    color: #e62429;
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+}
+.ejr-rescue-contact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.ejr-rescue-contact-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #e62429;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ejr-rescue-action {
+    border-radius: 8px;
+    font-weight: 600;
+}
+.ejr-rescue-steps {
+    background: #fafbfc;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 22px;
+}
+.ejr-rescue-step {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+.ejr-rescue-step:last-child {
+    border-bottom: 0;
+}
+.ejr-rescue-number {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 50%;
+    background: #e62429;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.ejr-rescue-step h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--text-dark);
+}
+.ejr-rescue-step p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin: 0;
+    line-height: 1.6;
+}
+@media (max-width: 767.98px) {
+    .ejr-rescue-card {
+        padding: 26px 20px;
+    }
+    .ejr-rescue-action {
+        width: 100%;
+    }
+}
+
 </style>
 
 <?php 
