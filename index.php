@@ -203,20 +203,24 @@
                         </div>
                     </div>
 
-                    <div class="d-flex flex-wrap gap-2 mt-3">
-                        <a href="tel:09067045422" class="btn btn-danger ejr-rescue-action">
-                            <i class="bi bi-telephone-fill me-1"></i>
+                    <div class="ejr-rescue-actions mt-3">
+                        <a href="tel:09067045422"
+                           class="ejr-rescue-action ejr-rescue-action-call">
+                            <i class="bi bi-telephone-fill"></i>
                             Call Now
                         </a>
-                        <a href="sms:09067045422" class="btn btn-outline-danger ejr-rescue-action">
-                            <i class="bi bi-chat-dots-fill me-1"></i>
+
+                        <a href="sms:09067045422"
+                           class="ejr-rescue-action ejr-rescue-action-message">
+                            <i class="bi bi-chat-dots-fill"></i>
                             Send Message
                         </a>
+
                         <a href="https://www.facebook.com/raymonddale1?mibextid=wwXIfr&amp;rdid=YwStBGAirOZJu1Bs&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19a9uVQcDH%2F%3Fmibextid%3DwwXIfr"
                            target="_blank"
                            rel="noopener noreferrer"
-                           class="btn btn-outline-primary ejr-rescue-action">
-                            <i class="bi bi-facebook me-1"></i>
+                           class="ejr-rescue-action ejr-rescue-action-facebook">
+                            <i class="bi bi-facebook"></i>
                             Message on Facebook
                         </a>
                     </div>
@@ -375,9 +379,58 @@
     align-items: center;
     justify-content: center;
 }
+.ejr-rescue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
 .ejr-rescue-action {
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 16px;
     font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.ejr-rescue-action:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+.ejr-rescue-action-call {
+    color: #fff;
+    background: #ed1c24;
+    border: 1px solid #ed1c24;
+}
+.ejr-rescue-action-call:hover {
+    color: #fff;
+    background: #c9151c;
+    border-color: #c9151c;
+}
+.ejr-rescue-action-message {
+    color: #ed1c24;
+    background: #fff;
+    border: 1px solid #ed1c24;
+}
+.ejr-rescue-action-message:hover {
+    color: #fff;
+    background: #ed1c24;
+}
+.ejr-rescue-action-facebook {
+    color: #0866ff;
+    background: #fff;
+    border: 1px solid #0866ff;
+    width: fit-content;
+}
+.ejr-rescue-action-facebook:hover {
+    color: #fff;
+    background: #0866ff;
 }
 .ejr-rescue-steps {
     background: #fafbfc;
@@ -422,6 +475,12 @@
 @media (max-width: 767.98px) {
     .ejr-rescue-card {
         padding: 26px 20px;
+    }
+}
+@media (max-width: 575.98px) {
+    .ejr-rescue-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
     .ejr-rescue-action {
         width: 100%;
