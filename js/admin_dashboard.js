@@ -173,11 +173,11 @@ function renderParts(parts) {
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-dark"
                             onclick="openEditPart(${p.id},'${p.name.replace(/'/g,"\\'")}','${brand}','${(p.description||'').replace(/'/g,"\\'")}',${p.price},'${p.category}','${p.image_url||''}',${p.stock})">
-                        <i class="bi bi-pencil-fill"></i>
+                        <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
                             onclick="deletePart(${p.id},'${p.name.replace(/'/g,"\\'")}')">
-                        <i class="bi bi-trash3-fill"></i>
+                        <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </td>
@@ -231,7 +231,7 @@ function renderInquiries(inquiries) {
                         <i class="bi bi-chat-left-text-fill"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})" title="Delete Inquiry" aria-label="Delete Inquiry">
-                        <i class="bi bi-trash3-fill3-fill"></i>
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                 </div>
             </td>
@@ -335,7 +335,7 @@ function renderOrders(orders) {
                         </button>` : ''}
                     <button class="btn btn-sm btn-outline-secondary"
                             onclick="deleteOrder(${o.id})" title="Delete Order" aria-label="Delete Order">
-                        <i class="bi bi-trash3-fill3-fill"></i>
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                     <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
                        class="btn btn-sm btn-outline-primary" title="View Order Receipt" aria-label="View Order Receipt">
@@ -490,11 +490,11 @@ function renderAppointments(apps) {
                 <td>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-dark" onclick="manageApp(${a.id}, '${a.status}')">
-                            <i class="bi bi-pencil-fill"></i> Manage
+                            <i class="bi bi-pencil-square"></i> Manage
                         </button>
                         ${a.status === 'Pending'
                             ? `<button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
-                                   <i class="bi bi-person-workspace"></i>
+                                   <i class="bi bi-person-plus-fill"></i>
                                </button>`
                             : `<button class="btn btn-sm btn-outline-secondary" disabled title="Mechanic is locked once the appointment is ${a.status.toLowerCase()}">
                                    <i class="bi bi-lock-fill"></i>
@@ -540,11 +540,11 @@ function renderUsers(users) {
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-dark"
                             onclick="editUser(${u.id})">
-                        <i class="bi bi-pencil-fill"></i>
+                        <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
                             onclick="deleteUser(${u.id}, '${name}')">
-                        <i class="bi bi-trash3-fill"></i>
+                        <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </td>
@@ -574,12 +574,12 @@ function renderVehicles(vehs) {
                         <button class="btn btn-sm btn-outline-dark"
                                 onclick="editVehicle(${v.id}, ${v.user_id}, '${brand}', '${model}', '${v.year_model || ''}', '${plate}', '${fuel}', '${trans}')"
                                 title="Edit">
-                            <i class="bi bi-pencil-fill"></i>
+                            <i class="bi bi-pencil-square"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger"
                                 onclick="deleteVehicle(${v.id}, '${plate}')"
                                 title="Delete">
-                            <i class="bi bi-trash3-fill"></i>
+                            <i class="bi bi-trash"></i>
                         </button>
                     </div>
                 </td>
@@ -624,15 +624,15 @@ function renderHistory(data) {
                     </a>
                     <button class="btn btn-sm btn-outline-success"
                             onclick="sendReceiptToUser(${h.id}, '${custName}')" title="Send Receipt">
-                        <i class="bi bi-send-fill"></i>
+                        <i class="bi bi-send"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-dark"
                             onclick="editHistory(${h.id}, '${service}', '${rawDate}')">
-                        <i class="bi bi-pencil-fill"></i>
+                        <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
                             onclick="deleteHistory(${h.id}, '${custName}')">
-                        <i class="bi bi-trash3-fill"></i>
+                        <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </td>
@@ -924,7 +924,7 @@ function postVehicleData(payload) {
 
 function editVehicle(id, userId, brand, model, yearModel, plate, fuelType, transmission) {
     Swal.fire({
-        title: '<i class="bi bi-pencil-fill me-2"></i>Edit Vehicle',
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Vehicle',
         html: vehicleForm({ user_id: userId, brand, model, year_model: yearModel, plate_number: plate, fuel_type: fuelType, transmission }),
         showCancelButton: true,
         confirmButtonColor: '#b30000',
@@ -2663,7 +2663,7 @@ function renderBusyDates(dates) {
                     <button class="btn btn-sm btn-outline-dark"
                             onclick="editBusyDate(${d.id}, '${d.appointment_date}', ${d.slot_limit}, ${d.is_busy})"
                             title="Edit">
-                        <i class="bi bi-pencil-fill"></i>
+                        <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm ${isBusy ? 'btn-outline-success' : 'btn-outline-warning'}"
                             onclick="toggleBusy(${d.id}, ${isBusy ? 0 : 1})"
@@ -2779,7 +2779,7 @@ function openBlockDate() {
 
 function editBusyDate(id, date, limit, isBusy) {
     Swal.fire({
-        title: '<i class="bi bi-pencil-fill me-2"></i>Edit Busy Date',
+        title: '<i class="bi bi-pencil-square me-2"></i>Edit Busy Date',
         html: busyDateForm({ date, limit, isBusy }),
         showCancelButton: true,
         confirmButtonColor: '#b30000',
@@ -2944,7 +2944,7 @@ function renderServices(services) {
                 </button>
                 <button class="btn btn-sm btn-outline-danger"
                         onclick="deleteService(${s.id}, '${s.name.replace(/'/g,"\\'")}')" title="Remove Service">
-                    <i class="bi bi-trash3-fill"></i>
+                    <i class="bi bi-trash"></i>
                 </button>
             </td>
         </tr>`;
@@ -3302,7 +3302,7 @@ function renderLeaveRequests(requests) {
                     <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve Leave Request"><i class="bi bi-check-circle-fill"></i></button>
                     <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Decline Leave Request"><i class="bi bi-x-circle-fill"></i></button>
                 ` : ''}
-                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete Leave Request"><i class="bi bi-trash3-fill3-fill"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete Leave Request"><i class="bi bi-trash3-fill"></i></button>
             </td>
         </tr>`).join('');
 }
