@@ -142,11 +142,12 @@ textarea {
     transition: 0.3s ease;
 }
 
-.why-card:hover,
 .testimonial-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
 }
+
+/* Contact info card stays static (no lift/hover effect) so it doesn't read as clickable */
 
 /* Contact info card stays static (no lift/hover effect) so it doesn't read as clickable */
 .contact-info-card:hover {

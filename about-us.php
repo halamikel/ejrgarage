@@ -23,7 +23,7 @@
     <div class="row g-4 justify-content-center">
       <div class="col-md-6 col-lg-3 d-flex">
         <div class="why-card w-100">
-          <i class="bi bi-gear-fill"></i>
+          <div class="why-card-icon">⚙️</div>
           <h5>Quality Service & Parts</h5>
           <p>We provide reliable service using high quality automotive parts.</p>
         </div>
@@ -31,7 +31,7 @@
       
       <div class="col-md-6 col-lg-3 d-flex">
         <div class="why-card w-100">
-          <i class="bi bi-person-check-fill"></i>
+          <div class="why-card-icon">🧑‍🔧</div>
           <h5>Trusted Mechanics</h5>
           <p>Experienced professionals who ensure your vehicle is safe.</p>
         </div>
@@ -39,7 +39,7 @@
       
       <div class="col-md-6 col-lg-3 d-flex">
         <div class="why-card w-100">
-          <i class="bi bi-emoji-smile-fill"></i>
+          <div class="why-card-icon">😊</div>
           <h5>Customer Satisfaction</h5>
           <p>Your satisfaction and safety are always our top priority.</p>
         </div>
@@ -47,7 +47,7 @@
       
       <div class="col-md-6 col-lg-3 d-flex">
         <div class="why-card w-100">
-          <i class="peso-icon">₱</i>
+          <div class="why-card-icon">₱</div>
           <h5>Affordable Pricing</h5>
           <p>Fair pricing without sacrificing quality service.</p>
         </div>
@@ -55,6 +55,14 @@
     </div>
   </div>
 </section>
+
+<style>
+.why-card-icon {
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+</style>
 
 <section class="map-section">
   <div class="container text-center">
