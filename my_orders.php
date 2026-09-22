@@ -100,6 +100,7 @@ include 'includes/header.php';
 }
 .status-pending   { background:#fff3cd; color:#8a6d00; }
 .status-approved  { background:#d1f3df; color:#0f7b3e; }
+.status-shipped   { background:#cff4fc; color:#055160; }
 .status-delivered { background:#d1e7ff; color:#0a4a9e; }
 .status-cancelled { background:#fde2e2; color:#c0282d; }
 .pay-badge-paid    { background:#d1e7ff; color:#0a4a9e; }
@@ -174,7 +175,7 @@ include 'includes/header.php';
 
 <script>
 function statusStepIndex(status) {
-    return { pending: 0, approved: 1, delivered: 2, cancelled: -1 }[status] ?? 0;
+    return { pending: 0, approved: 1, shipped: 2, delivered: 3, cancelled: -1 }[status] ?? 0;
 }
 
 function renderSteps(status) {
@@ -191,6 +192,7 @@ function renderSteps(status) {
     const steps = [
         { label: 'Order Placed', icon: 'bi-bag-check' },
         { label: 'Approved',     icon: 'bi-check2'    },
+        { label: 'Shipped',      icon: 'bi-truck'     },
         { label: 'Delivered',    icon: 'bi-box-seam'  },
     ];
     return `
@@ -205,7 +207,7 @@ function renderSteps(status) {
 }
 
 function statusBadgeClass(status) {
-    return { pending: 'status-pending', approved: 'status-approved', delivered: 'status-delivered', cancelled: 'status-cancelled' }[status] || 'status-pending';
+    return { pending: 'status-pending', approved: 'status-approved', shipped: 'status-shipped', delivered: 'status-delivered', cancelled: 'status-cancelled' }[status] || 'status-pending';
 }
 
 function loadOrders() {
@@ -300,6 +302,11 @@ function loadOrders() {
 }
 
 document.addEventListener('DOMContentLoaded', loadOrders);
+
+// Orders auto-approve server-side after 5 minutes as 'pending', and the
+// admin can move them through Shipped → Delivered — poll so this page
+// reflects those changes without the customer needing to refresh.
+setInterval(loadOrders, 30000);
 
 async function handleCancelOrder(orderId) {
     const result = await Swal.fire({

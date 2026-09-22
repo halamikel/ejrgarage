@@ -46,6 +46,11 @@ try {
         $conn->query("ALTER TABLE part_orders ADD COLUMN cancellation_reply VARCHAR(255) NULL");
     }
 
+    // Same auto-approve as the admin dashboard, so a customer checking
+    // "My Orders" sees an up-to-date status even if no admin has opened
+    // their dashboard since the order was placed.
+    ejr_auto_approve_pending_orders($conn, 5);
+
     $stmt = $conn->prepare("
         SELECT id, items, total_price, status, payment_status, payment_method, created_at, cancellation_reply,
                ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at ASC) AS user_order_number

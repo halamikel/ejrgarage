@@ -40,6 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateLiveChatBadge();
     setInterval(updateLiveChatBadge, 20000);
 
+    // Orders auto-approve server-side after 5 minutes of sitting as
+    // 'pending' — poll so the table picks that up without a manual reload.
+    setInterval(loadOrders, 30000);
+
     // Enter key handled by onkeydown in HTML to avoid double-fire
 
     const adminSearch = document.getElementById("adminSearch");
@@ -288,8 +292,10 @@ function renderOrders(orders) {
             : o.items;
         const date      = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const safeName  = o.customer_name.replace(/'/g, "\\'");
-        const isPending  = o.status.toLowerCase() === 'pending';
-        const isApproved = o.status.toLowerCase() === 'approved';
+        const statusLower = o.status.toLowerCase();
+        const isPending  = statusLower === 'pending';
+        const isApproved = statusLower === 'approved';
+        const isShipped  = statusLower === 'shipped';
         const address   = o.address || '—';
         const replyHtml = (o.cancellation_reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
@@ -312,10 +318,20 @@ function renderOrders(orders) {
             </td>
             <td>
                 <div class="btn-group">
-                    ${(isPending || isApproved) ? `
+                    ${isPending ? `
                         <button class="btn btn-sm btn-outline-success"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Manage">
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Approve / Decline">
                             <i class="bi bi-pencil-square"></i>
+                        </button>` : ''}
+                    ${isApproved ? `
+                        <button class="btn btn-sm btn-outline-info"
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Shipped">
+                            <i class="bi bi-truck"></i> Ship
+                        </button>` : ''}
+                    ${isShipped ? `
+                        <button class="btn btn-sm btn-outline-primary"
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Delivered">
+                            <i class="bi bi-box-seam"></i> Deliver
                         </button>` : ''}
                     <button class="btn btn-sm btn-outline-secondary"
                             onclick="deleteOrder(${o.id})" title="Delete">
@@ -355,6 +371,7 @@ function statusBadge(status) {
         'approved':  'bg-success',
         'confirmed': 'bg-success',
         'completed': 'bg-success',
+        'shipped':   'bg-info text-dark',
         'delivered': 'bg-primary',
         'cancelled': 'bg-danger'
     };
@@ -1270,6 +1287,21 @@ function updateOrder(id, status, name) {
         return;
     }
     if (currentStatus === 'approved') {
+        Swal.fire({
+            title: 'Mark as Shipped?',
+            html: `Confirm that the order for <b>${name}</b> has been shipped out.`,
+            icon: 'question',
+            showConfirmButton: true,
+            confirmButtonText: '🚚 Mark Shipped',
+            confirmButtonColor: '#0dcaf0',
+            showCancelButton: true,
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) executeStatusUpdate(id, 'shipped', name);
+        });
+        return;
+    }
+    if (currentStatus === 'shipped') {
         Swal.fire({
             title: 'Mark as Delivered?',
             html: `Confirm that the order for <b>${name}</b> has been delivered/picked up.`,

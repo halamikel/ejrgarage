@@ -1395,6 +1395,10 @@ include 'includes/header.php';
                                 Approved
                             </option>
 
+                            <option value="Shipped">
+                                Shipped
+                            </option>
+
                             <option value="Delivered">
                                 Delivered
                             </option>

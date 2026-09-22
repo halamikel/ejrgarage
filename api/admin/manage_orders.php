@@ -60,6 +60,10 @@ if ($replyColCheck && $replyColCheck->num_rows === 0) {
 
 ejr_ensure_archive_columns($conn, 'part_orders');
 
+// Auto-approve any 'pending' order that's been sitting for 5+ minutes,
+// so the admin doesn't have to manually approve every single order.
+ejr_auto_approve_pending_orders($conn, 5);
+
 // ── GET ORDERS ────────────────────────────────────────────────
 // ── GET ORDERS ────────────────────────────────────────────────
 if ($method === 'GET') {
@@ -172,7 +176,7 @@ if ($method === 'GET') {
 
 if ($action === 'update_status') {
     $newStatus = $postData['status'] ?? '';
-    $allowed   = ['pending', 'approved', 'delivered', 'cancelled', 'completed'];
+    $allowed   = ['pending', 'approved', 'shipped', 'delivered', 'cancelled', 'completed'];
 
     if (!$order_id || !in_array($newStatus, $allowed, true)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid order or status.']);

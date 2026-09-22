@@ -209,6 +209,26 @@ function ejr_archive_where(mysqli $conn, string $table, string $whereCol, int $w
 }
 
 /**
+ * Auto-approve parts orders.
+ *
+ * Orders sit as 'pending' until an admin approves them. To avoid needing
+ * a real cron job on shared hosting, any endpoint that reads orders
+ * (admin dashboard, the customer's "My Orders" page) calls this first.
+ * It's a cheap, idempotent UPDATE — any 'pending' order older than the
+ * configured window flips to 'approved' automatically.
+ */
+function ejr_auto_approve_pending_orders(mysqli $conn, int $minutes = 5): void
+{
+    $minutes = max(1, $minutes);
+    $conn->query("
+        UPDATE part_orders
+        SET status = 'approved'
+        WHERE status = 'pending'
+          AND created_at <= (NOW() - INTERVAL {$minutes} MINUTE)
+    ");
+}
+
+/**
  * Restore a previously archived row.
  */
 function ejr_restore_row(mysqli $conn, string $table, int $id): bool

@@ -57,52 +57,84 @@ $items           = $data['items'] ?? [];
     exit;
 }
 
-    // --- NEW: PRE-ORDER STOCK CHECK ---
-    foreach ($items as $item) {
-        $id = (int)$item['id'];
-        $qty = (int)$item['qty'];
-        
-        $stockCheck = $conn->prepare("SELECT stock, name FROM parts WHERE id = ?");
-        $stockCheck->bind_param("i", $id);
-        $stockCheck->execute();
-        $result = $stockCheck->get_result()->fetch_assoc();
+    // --- PRE-ORDER STOCK CHECK + RESERVE STOCK ---
+    // Runs inside a transaction with row locks (FOR UPDATE) so two
+    // simultaneous orders can't both "pass" the check and oversell
+    // the same part.
+    $conn->begin_transaction();
 
-        if (!$result || $result['stock'] < $qty) {
-            $name = $result['name'] ?? 'Unknown Part';
-            echo json_encode(['status' => 'error', 'message' => "Sorry, $name is out of stock or insufficient."]);
+    try {
+        foreach ($items as $item) {
+            $id  = (int)$item['id'];
+            $qty = (int)$item['qty'];
+
+            $stockCheck = $conn->prepare("SELECT stock, name FROM parts WHERE id = ? FOR UPDATE");
+            $stockCheck->bind_param("i", $id);
+            $stockCheck->execute();
+            $result = $stockCheck->get_result()->fetch_assoc();
+
+            if (!$result || $result['stock'] < $qty) {
+                $name = $result['name'] ?? 'Unknown Part';
+                $conn->rollback();
+                echo json_encode(['status' => 'error', 'message' => "Sorry, $name is out of stock or insufficient."]);
+                exit;
+            }
+        }
+
+        $items_json = json_encode($items);
+
+        $stmt = $conn->prepare("
+        INSERT INTO part_orders (
+            user_id,
+            customer_name,
+            contact,
+            address,
+            items,
+            total_price,
+            status,
+            payment_method
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+    ");
+
+        $stmt->bind_param(
+            "issssds",
+            $user_id,
+            $customer_name,
+            $contact,
+            $address,
+            $items_json,
+            $total_price,
+            $payment_method
+        );
+
+        if (!$stmt->execute()) {
+            $conn->rollback();
+            echo json_encode(['status' => 'error', 'message' => 'Database execution failed.']);
             exit;
         }
-    }
 
-    $items_json = json_encode($items);
-
-    $stmt = $conn->prepare("
-    INSERT INTO part_orders (
-        user_id,
-        customer_name,
-        contact,
-        address,
-        items,
-        total_price,
-        status,
-        payment_method
-    )
-    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
-");
-
-$stmt->bind_param(
-    "issssds",
-    $user_id,
-    $customer_name,
-    $contact,
-    $address,
-    $items_json,
-    $total_price,
-    $payment_method
-);
-    if ($stmt->execute()) {
         $order_id = $stmt->insert_id;
 
+        // --- DECREASE STOCK NOW THAT THE ORDER EXISTS ---
+        $deductStmt = $conn->prepare("UPDATE parts SET stock = stock - ? WHERE id = ?");
+        foreach ($items as $item) {
+            $id  = (int)$item['id'];
+            $qty = (int)$item['qty'];
+            $deductStmt->bind_param("ii", $qty, $id);
+            $deductStmt->execute();
+        }
+
+        $conn->commit();
+    } catch (\Throwable $e) {
+        $conn->rollback();
+        error_log('EJR place_order stock error: ' . $e->getMessage());
+        echo json_encode(['status' => 'error', 'message' => 'Something went wrong placing your order. Please try again.']);
+        exit;
+    }
+
+    // Stock reserved & order saved — continue to payment/checkout below.
+    {
         // ── CASH ON DELIVERY: no online payment needed, order is just pending fulfillment ──
         if ($payment_method === 'cod') {
             echo json_encode([
@@ -141,8 +173,6 @@ $stmt->bind_param(
                 'checkout_url' => null
             ]);
         }
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Database execution failed.']);
     }
 
 } catch (Exception $e) {
