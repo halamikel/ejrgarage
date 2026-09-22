@@ -67,6 +67,8 @@ if (session_status() === PHP_SESSION_NONE) {
         <li class="nav-item"><a class="nav-link" href="/download-app.php"><i class="bi bi-android2 me-1"></i>Get the App</a></li>
       </ul>
       
+      <span class="nav-greeting me-3" id="navGreeting" style="display:none; color:#1e2a36; font-weight:600;"></span>
+
       <?php if(isset($_SESSION['user_id'])): ?>
           <a href="/account.php" class="btn btn-quote" id="navAuthBtn">My Account</a>
       <?php else: ?>
@@ -78,22 +80,32 @@ if (session_status() === PHP_SESSION_NONE) {
 
 <script>
 (function () {
-    var token = localStorage.getItem('jwt_token');
-    var btn   = document.getElementById('navAuthBtn');
+    var token    = localStorage.getItem('jwt_token');
+    var btn      = document.getElementById('navAuthBtn');
+    var greeting = document.getElementById('navGreeting');
     if (!btn) return;
     if (token) {
-        var firstName = 'My Account';
-        try {
-            var user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.name) {
-                firstName = user.name.trim().split(' ')[0];
-            }
-        } catch (e) {}
-        btn.textContent = firstName;
+        btn.textContent = 'My Account';
         btn.href        = '/account.php';
+
+        if (greeting) {
+            var firstName = '';
+            try {
+                var user = JSON.parse(localStorage.getItem('user'));
+                if (user && user.name) {
+                    firstName = user.name.trim().split(' ')[0];
+                }
+            } catch (e) {}
+
+            if (firstName) {
+                greeting.textContent = 'Hi, ' + firstName;
+                greeting.style.display = 'inline-block';
+            }
+        }
     } else {
         btn.textContent = 'Get Started';
         btn.href        = '/login.php';
+        if (greeting) greeting.style.display = 'none';
     }
 })();
 </script>
