@@ -61,6 +61,25 @@
     border-color: var(--primary-red);
 }
 
+.btn-outline-orange {
+    border: 1px solid var(--accent-orange);
+    color: var(--accent-orange);
+    padding: 10px 22px;
+    border-radius: 8px;
+    background: transparent;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: 0.3s;
+}
+
+.btn-outline-orange:hover {
+    background: var(--accent-orange);
+    color: #fff;
+    border-color: var(--accent-orange);
+}
+
 /* FORMS */
 .form-label,
 label {
@@ -119,10 +138,38 @@ textarea {
 }
 
 .why-card:hover,
-.contact-info-card:hover,
 .testimonial-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* Contact info card stays static (no lift/hover effect) so it doesn't read as clickable */
+.contact-info-card:hover {
+    transform: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* CONTACT INFO - unified card with internal items instead of 3 separate cards */
+.contact-info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 15px;
+}
+
+@media (min-width: 768px) {
+    .contact-info-item.contact-info-divider {
+        border-left: 1px solid var(--border-light);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .contact-info-item.contact-info-divider {
+        border-top: 1px solid var(--border-light);
+        padding-top: 25px;
+    }
 }
 
 .contact-form-card {
