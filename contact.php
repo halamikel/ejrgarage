@@ -14,20 +14,24 @@
 <section class="contact-details-section">
   <div class="container">
     <h2 class="contact-section-title section-title text-center">Contact Information</h2>
-    <div class="contact-info-card mt-4">
-      <div class="row g-4">
-        <div class="col-md-4 contact-info-item">
+    <div class="row g-4 mt-2">
+      <div class="col-md-4">
+        <div class="contact-info-card h-100 text-center">
           <div class="contact-info-icon">📞</div>
           <h6>Call Us</h6>
           <p>0906-704-5422</p>
           <small>Emergency Line</small>
         </div>
-        <div class="col-md-4 contact-info-item">
+      </div>
+      <div class="col-md-4">
+        <div class="contact-info-card h-100 text-center">
           <div class="contact-info-icon">✉️</div>
           <h6>Email Us</h6>
           <p>ejrgaragetest@gmail.com</p>
         </div>
-        <div class="col-md-4 contact-info-item">
+      </div>
+      <div class="col-md-4">
+        <div class="contact-info-card h-100 text-center">
           <div class="contact-info-icon"><i class="bi bi-facebook"></i></div>
           <h6>Message Us</h6>
           <p>Raymond Dale Yandan</p>

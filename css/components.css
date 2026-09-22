@@ -154,24 +154,6 @@ textarea {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
-/* Match the flat "Our Services" panel style: light background, border, no shadow */
-.contact-info-card {
-    background: #fafbfc;
-    border: 1px solid var(--border-light);
-    box-shadow: none;
-    padding: 30px 20px;
-}
-
-/* CONTACT INFO - unified panel with internal items instead of 3 separate cards */
-.contact-info-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
-    padding: 10px;
-}
-
 .contact-info-icon {
     font-size: 2.2rem;
     line-height: 1;
@@ -182,7 +164,7 @@ textarea {
     color: #1877f2;
 }
 
-.contact-info-item h6 {
+.contact-info-card h6 {
     font-family: var(--font-display);
     font-weight: 700;
     text-transform: uppercase;
@@ -191,24 +173,24 @@ textarea {
     color: var(--text-dark);
 }
 
-.contact-info-item p {
-    font-size: 0.85rem;
+.contact-info-card p {
+    font-size: 0.9rem;
     color: var(--text-muted);
     margin-bottom: 0;
     overflow-wrap: break-word;
 }
 
-.contact-info-item small {
+.contact-info-card small {
     display: block;
     margin-top: 2px;
     color: var(--text-muted);
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.contact-info-item .btn-outline-orange {
-    margin-top: 12px;
+.contact-info-card .btn-outline-orange {
+    margin-top: 14px;
 }
 
 .contact-form-card {
