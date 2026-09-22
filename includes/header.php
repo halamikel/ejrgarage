@@ -112,7 +112,7 @@ if (session_status() === PHP_SESSION_NONE) {
           <a href="/service_history.php" class="nav-account-menu-item">
             <i class="bi bi-clock-history"></i> Service History
           </a>
-          <a href="/account.php" class="nav-account-menu-item">
+          <a href="/settings.php" class="nav-account-menu-item">
             <i class="bi bi-gear"></i> Settings
           </a>
 
