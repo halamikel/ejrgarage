@@ -132,7 +132,7 @@ include 'includes/header.php';
 <div class="ejr-tab-nav mb-4">
 <!-- APPOINTMENTS -->
 <button class="ejr-tab-btn active" data-ejr-tab="tab-appointments">
-<i class="bi bi-calendar-event"></i>
+<i class="bi bi-calendar-check-fill"></i>
 <span>
                     Appointments
                 </span>
@@ -142,7 +142,7 @@ include 'includes/header.php';
 </button>
 <!-- USERS -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-users">
-<i class="bi bi-people"></i>
+<i class="bi bi-people-fill"></i>
 <span>
                     Users
                 </span>
@@ -152,7 +152,7 @@ include 'includes/header.php';
 </button>
 <!-- VEHICLES -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-vehicles">
-<i class="bi bi-truck"></i>
+<i class="bi bi-car-front-fill"></i>
 <span>
                     Vehicles
                 </span>
@@ -162,7 +162,7 @@ include 'includes/header.php';
 </button>
 <!-- HISTORY -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-history">
-<i class="bi bi-clock-history"></i>
+<i class="bi bi-clipboard2-check-fill"></i>
 <span>
                     History
                 </span>
@@ -178,7 +178,7 @@ include 'includes/header.php';
             -->
 <!-- PARTS -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-parts">
-<i class="bi bi-box-seam"></i>
+<i class="bi bi-box-seam-fill"></i>
 <span>
                     Parts
                 </span>
@@ -188,7 +188,7 @@ include 'includes/header.php';
 </button>
 <!-- PART INQUIRIES -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-inquiries">
-<i class="bi bi-envelope-open"></i>
+<i class="bi bi-envelope-open-fill"></i>
 <span>
                     Part Inquiries
                 </span>
@@ -198,7 +198,7 @@ include 'includes/header.php';
 </button>
 <!-- ORDERS -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-orders">
-<i class="bi bi-bag-check"></i>
+<i class="bi bi-cart-check-fill"></i>
 <span>
                     Orders
                 </span>
@@ -208,7 +208,7 @@ include 'includes/header.php';
 </button>
 <!-- BUSY DATES -->
 <button class="ejr-tab-btn" data-ejr-tab="tab-busy-dates">
-<i class="bi bi-calendar-x"></i>
+<i class="bi bi-calendar-x-fill"></i>
 <span>
                     Busy Dates
                 </span>
@@ -633,7 +633,7 @@ include 'includes/header.php';
 <span class="ejr-card-icon" style="
                                     background:rgba(245,158,11,0.1);
                                 ">
-<i class="bi bi-clock-history" style="color:#f59e0b;"></i>
+<i class="bi bi-clipboard2-check-fill" style="color:#f59e0b;"></i>
 </span>
 
                             Service History
@@ -1194,7 +1194,7 @@ include 'includes/header.php';
 <span class="ejr-card-icon" style="
                                     background:rgba(230,36,41,0.1);
                                 ">
-<i class="bi bi-person-gear text-danger"></i>
+<i class="bi bi-person-workspace text-danger"></i>
 </span>
 
                             Mechanics / Technicians

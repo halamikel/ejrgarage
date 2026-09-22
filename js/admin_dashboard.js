@@ -2224,6 +2224,63 @@ function getExportData(type) {
     return [];
 }
 
+// Clears only the export/date filters for the selected tab.
+// This function is explicitly attached to window because the PHP dashboard
+// uses inline onclick="clearDateFilters('...')" handlers.
+function clearDateFilters(type) {
+    const prefix = String(type || '').trim();
+    if (!prefix) return;
+
+    const ids = [
+        `${prefix}MonthFilter`,
+        `${prefix}FromDate`,
+        `${prefix}ToDate`
+    ];
+
+    let cleared = 0;
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (el.value !== '') {
+            el.value = '';
+            cleared++;
+        }
+
+        // Refresh any listeners attached to these controls.
+        try {
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) {
+            // The value has already been cleared; no further action needed.
+        }
+    });
+
+    // Keep the normal search/status filters intact while refreshing the
+    // dashboard. Export functions read the cleared controls directly.
+    if (typeof applyAllFilters === 'function') {
+        applyAllFilters();
+    }
+
+    // Give the user visible confirmation that the export date filters were
+    // actually reset, even when the table itself does not visibly change.
+    if (typeof Swal !== 'undefined' && cleared > 0) {
+        Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'success',
+            title: 'Export filters cleared',
+            text: 'Month and date range filters have been reset.',
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true
+        });
+    }
+}
+
+window.clearDateFilters = clearDateFilters;
+
 function getExportConfig(type) {
     const configs = {
         appointments: {
