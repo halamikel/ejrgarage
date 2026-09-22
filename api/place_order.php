@@ -45,9 +45,18 @@ try {
     $customer_name   = trim($data['customer_name'] ?? '');
 $contact         = trim($data['contact'] ?? '');
 $address         = trim($data['address'] ?? '');
+$shipping_instructions = trim($data['shipping_instructions'] ?? '');
 $items           = $data['items'] ?? [];
     $total_price     = floatval($data['total_price'] ?? 0);
     $payment_method  = ($data['payment_method'] ?? 'card') === 'cod' ? 'cod' : 'card';
+
+    // Self-healing: shipping_instructions wasn't part of the original
+    // part_orders schema — add it the first time it's missing (same
+    // pattern used for appointments.notes in save_booking.php).
+    $shipColCheck = $conn->query("SHOW COLUMNS FROM part_orders LIKE 'shipping_instructions'");
+    if ($shipColCheck && $shipColCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE part_orders ADD COLUMN shipping_instructions TEXT NULL");
+    }
 
     if (!$customer_name || !$contact || !$address || empty($items) || $total_price <= 0) {
     echo json_encode([
@@ -89,20 +98,22 @@ $items           = $data['items'] ?? [];
             customer_name,
             contact,
             address,
+            shipping_instructions,
             items,
             total_price,
             status,
             payment_method
         )
-        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     ");
 
         $stmt->bind_param(
-            "issssds",
+            "isssssds",
             $user_id,
             $customer_name,
             $contact,
             $address,
+            $shipping_instructions,
             $items_json,
             $total_price,
             $payment_method

@@ -1,0 +1,47 @@
+<?php
+header('Content-Type: application/json');
+require_once 'db_config.php';
+ejr_ensure_customer_profiles_table($conn);
+require_once '../includes/php-jwt/JWT.php';
+require_once '../includes/php-jwt/Key.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+if (!defined("JWT_SECRET")) require_once __DIR__ . "/env.php";
+$secret_key = JWT_SECRET;
+$headers    = array_change_key_case(getallheaders(), CASE_LOWER);
+$authHeader = $headers['authorization'] ?? '';
+
+if (!preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
+    http_response_code(401);
+    echo json_encode(["status" => "error", "message" => "Token missing"]);
+    exit;
+}
+
+try {
+    $decoded = JWT::decode($matches[1], new Key($secret_key, 'HS256'));
+    $userId  = $decoded->uid ?? $decoded->id;
+
+    $stmt = $conn->prepare(
+        "SELECT id, label, full_name, contact_number, address_line1, address_line2,
+                city, province, zip_code, is_default
+         FROM customer_profiles
+         WHERE user_id = ?
+         ORDER BY is_default DESC, created_at DESC"
+    );
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $profiles = [];
+    while ($row = $result->fetch_assoc()) {
+        $profiles[] = $row;
+    }
+
+    echo json_encode(["status" => "success", "profiles" => $profiles]);
+
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(["status" => "error", "message" => "Unauthorized: " . $e->getMessage()]);
+}

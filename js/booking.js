@@ -2065,6 +2065,90 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
                 // ==================================================
+                // CONTACT DETAILS (name / contact number / address)
+                // ==================================================
+
+                const contactInfo =
+                    getSelectedContactDetails();
+
+                if (
+                    !contactInfo.full_name ||
+                    !contactInfo.address_line1 ||
+                    !contactInfo.city ||
+                    !contactInfo.province ||
+                    !contactInfo.zip_code
+                ) {
+
+                    Swal.fire(
+                        "Missing Details",
+                        "Please complete your name and full address before continuing.",
+                        "warning"
+                    );
+
+                    return;
+
+                }
+
+                if (
+                    !/^9\d{9}$/.test(
+                        contactInfo.contact_digits
+                    )
+                ) {
+
+                    Swal.fire(
+                        "Invalid Contact Number",
+                        "Please enter a valid 10-digit mobile number (e.g. 9XXXXXXXXX).",
+                        "warning"
+                    );
+
+                    return;
+
+                }
+
+                if (
+                    !/^\d{4}$/.test(
+                        contactInfo.zip_code
+                    )
+                ) {
+
+                    Swal.fire(
+                        "Invalid ZIP Code",
+                        "Please enter a valid 4-digit ZIP code.",
+                        "warning"
+                    );
+
+                    return;
+
+                }
+
+                vehicleDetails.customerName =
+                    contactInfo.full_name;
+
+                vehicleDetails.contact =
+                    "+63 " + contactInfo.contact_digits;
+
+                vehicleDetails.address =
+                    [
+                        contactInfo.address_line1,
+                        contactInfo.address_line2,
+                        contactInfo.city,
+                        contactInfo.province,
+                        contactInfo.zip_code
+                    ]
+                        .filter(Boolean)
+                        .join(", ");
+
+
+                // ==================================================
+                // OPTIONALLY SAVE AS A NEW PROFILE
+                // ==================================================
+
+                maybeSaveContactProfile(
+                    contactInfo
+                );
+
+
+                // ==================================================
                 // SAVE VEHICLE DETAILS
                 // ==================================================
 
@@ -2087,5 +2171,447 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
     }
+
+
+    // ============================================================
+    // YOUR DETAILS — SAVED CONTACT / ADDRESS PROFILES
+    //
+    // Same "saved list + add new" pattern as the vehicle garage
+    // above, but for the customer's name, contact number and
+    // delivery/contact address (used on the "Your Details" step).
+    // ============================================================
+
+    (function initContactProfiles() {
+
+        const savedContactSection =
+            document.getElementById(
+                "savedContactProfilesSection"
+            );
+
+        const manualContactForm =
+            document.getElementById(
+                "manualContactForm"
+            );
+
+        const savedContactSelect =
+            document.getElementById(
+                "savedContactProfileSelect"
+            );
+
+        if (
+            !savedContactSection ||
+            !manualContactForm ||
+            !savedContactSelect
+        ) {
+
+            return;
+
+        }
+
+        let contactProfiles = [];
+
+        function enforceDigitsOnly(input, maxLen) {
+
+            if (!input) return;
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    this.value =
+                        this.value
+                            .replace(/\D/g, "")
+                            .slice(0, maxLen);
+
+                }
+            );
+
+            input.addEventListener(
+                "keydown",
+                function (event) {
+
+                    const allowedKeys = [
+                        "Backspace", "Delete", "ArrowLeft",
+                        "ArrowRight", "ArrowUp", "ArrowDown",
+                        "Tab", "Home", "End"
+                    ];
+
+                    if (
+                        allowedKeys.includes(event.key) ||
+                        /^\d$/.test(event.key)
+                    ) {
+
+                        return;
+
+                    }
+
+                    event.preventDefault();
+
+                }
+            );
+
+            input.addEventListener(
+                "paste",
+                function (event) {
+
+                    event.preventDefault();
+
+                    const pasted =
+                        (event.clipboardData || window.clipboardData)
+                            .getData("text");
+
+                    const digits =
+                        pasted
+                            .replace(/\D/g, "")
+                            .slice(0, maxLen);
+
+                    document.execCommand(
+                        "insertText",
+                        false,
+                        digits
+                    );
+
+                }
+            );
+
+        }
+
+        enforceDigitsOnly(
+            document.getElementById("contactNumber"),
+            10
+        );
+
+        enforceDigitsOnly(
+            document.getElementById("contactZip"),
+            4
+        );
+
+        function clearManualContactFields() {
+
+            [
+                "contactFullName", "contactNumber", "contactAddress1",
+                "contactAddress2", "contactCity", "contactProvince",
+                "contactZip", "contactProfileLabel"
+            ].forEach(function (id) {
+
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+
+            });
+
+            const saveCheck =
+                document.getElementById("saveAsContactProfile");
+
+            if (saveCheck) saveCheck.checked = false;
+
+            const labelWrap =
+                document.getElementById("contactProfileLabelWrap");
+
+            if (labelWrap) labelWrap.style.display = "none";
+
+        }
+
+        function renderContactProfileSelect() {
+
+            const backContainer =
+                document.getElementById(
+                    "backToContactProfilesContainer"
+                );
+
+            if (!contactProfiles.length) {
+
+                savedContactSection.style.display = "none";
+                manualContactForm.style.display = "block";
+                return;
+
+            }
+
+            savedContactSelect.innerHTML =
+                '<option value="">-- Select a saved profile --</option>';
+
+            contactProfiles.forEach(function (profile) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    JSON.stringify(profile);
+
+                const addressBits =
+                    [profile.address_line1, profile.city]
+                        .filter(Boolean)
+                        .join(", ");
+
+                option.textContent =
+                    (profile.label || "Saved Address") +
+                    " — " + profile.full_name +
+                    " (" + addressBits + ")";
+
+                savedContactSelect.appendChild(option);
+
+            });
+
+            savedContactSection.style.display = "block";
+            manualContactForm.style.display = "none";
+            if (backContainer) backContainer.style.display = "none";
+
+        }
+
+        function loadContactProfiles() {
+
+            const token =
+                localStorage.getItem("jwt_token");
+
+            if (!token) return;
+
+            fetch("api/get_profiles.php", {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+
+                    if (
+                        data.status === "success" &&
+                        Array.isArray(data.profiles)
+                    ) {
+
+                        contactProfiles = data.profiles;
+                        renderContactProfileSelect();
+
+                    }
+
+                })
+                .catch(function (err) {
+
+                    console.warn(
+                        "Could not load saved profiles:",
+                        err
+                    );
+
+                });
+
+        }
+
+        function prefillFromAccount() {
+
+            const user =
+                JSON.parse(
+                    localStorage.getItem("user") || "{}"
+                );
+
+            const nameInput =
+                document.getElementById("contactFullName");
+
+            if (nameInput && user.full_name) {
+
+                nameInput.value =
+                    user.full_name.trim();
+
+            }
+
+            const contactInput =
+                document.getElementById("contactNumber");
+
+            if (contactInput && user.phone) {
+
+                const digits =
+                    String(user.phone).replace(/\D/g, "");
+
+                contactInput.value =
+                    digits.startsWith("63")
+                        ? digits.slice(2)
+                        : digits.slice(-10);
+
+            }
+
+            const address1Input =
+                document.getElementById("contactAddress1");
+
+            if (address1Input && user.address) {
+
+                address1Input.value =
+                    user.address.trim();
+
+            }
+
+        }
+
+        const addNewBtn =
+            document.getElementById("btnAddNewContactProfile");
+
+        if (addNewBtn) {
+
+            addNewBtn.addEventListener(
+                "click",
+                function () {
+
+                    clearManualContactFields();
+                    manualContactForm.style.display = "block";
+                    savedContactSection.style.display = "none";
+                    savedContactSelect.value = "";
+
+                    const backContainer =
+                        document.getElementById(
+                            "backToContactProfilesContainer"
+                        );
+
+                    if (backContainer) {
+
+                        backContainer.style.display =
+                            contactProfiles.length ? "block" : "none";
+
+                    }
+
+                }
+            );
+
+        }
+
+        const backBtn =
+            document.getElementById("btnBackToContactProfiles");
+
+        if (backBtn) {
+
+            backBtn.addEventListener(
+                "click",
+                function () {
+
+                    manualContactForm.style.display = "none";
+                    savedContactSection.style.display = "block";
+
+                }
+            );
+
+        }
+
+        const saveAsProfileCheck =
+            document.getElementById("saveAsContactProfile");
+
+        const profileLabelWrap =
+            document.getElementById("contactProfileLabelWrap");
+
+        if (saveAsProfileCheck && profileLabelWrap) {
+
+            saveAsProfileCheck.addEventListener(
+                "change",
+                function () {
+
+                    profileLabelWrap.style.display =
+                        this.checked ? "block" : "none";
+
+                }
+            );
+
+        }
+
+        // Expose a getter so the vehicle form submit handler above
+        // can read the currently selected/entered contact details.
+        window.getSelectedContactDetails = function () {
+
+            const usingSaved =
+                savedContactSection.style.display !== "none" &&
+                savedContactSelect.value !== "";
+
+            if (usingSaved) {
+
+                const profile =
+                    JSON.parse(savedContactSelect.value);
+
+                return {
+                    full_name: profile.full_name || "",
+                    contact_digits:
+                        (profile.contact_number || "")
+                            .replace(/\D/g, "")
+                            .slice(-10),
+                    address_line1: profile.address_line1 || "",
+                    address_line2: profile.address_line2 || "",
+                    city: profile.city || "",
+                    province: profile.province || "",
+                    zip_code: profile.zip_code || "",
+                    is_saved: true
+                };
+
+            }
+
+            return {
+                full_name:
+                    (document.getElementById("contactFullName").value || "").trim(),
+                contact_digits:
+                    (document.getElementById("contactNumber").value || "").trim(),
+                address_line1:
+                    (document.getElementById("contactAddress1").value || "").trim(),
+                address_line2:
+                    (document.getElementById("contactAddress2").value || "").trim(),
+                city:
+                    (document.getElementById("contactCity").value || "").trim(),
+                province:
+                    (document.getElementById("contactProvince").value || "").trim(),
+                zip_code:
+                    (document.getElementById("contactZip").value || "").trim(),
+                is_saved: false
+            };
+
+        };
+
+        window.maybeSaveContactProfile = function (contactInfo) {
+
+            if (contactInfo.is_saved) return;
+
+            const saveCheck =
+                document.getElementById("saveAsContactProfile");
+
+            if (!saveCheck || !saveCheck.checked) return;
+
+            const token =
+                localStorage.getItem("jwt_token");
+
+            if (!token) return;
+
+            const labelInput =
+                document.getElementById("contactProfileLabel");
+
+            fetch("api/add_profile.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({
+                    label: labelInput ? labelInput.value.trim() : "",
+                    full_name: contactInfo.full_name,
+                    contact_number: contactInfo.contact_digits,
+                    address_line1: contactInfo.address_line1,
+                    address_line2: contactInfo.address_line2,
+                    city: contactInfo.city,
+                    province: contactInfo.province,
+                    zip_code: contactInfo.zip_code
+                })
+            }).catch(function (err) {
+
+                console.warn(
+                    "Could not save profile:",
+                    err
+                );
+
+            });
+
+        };
+
+        const user =
+            JSON.parse(
+                localStorage.getItem("user") || "{}"
+            );
+
+        if (user.full_name || user.address) {
+
+            prefillFromAccount();
+
+        }
+
+        loadContactProfiles();
+
+    })();
 
 });

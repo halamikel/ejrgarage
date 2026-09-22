@@ -229,6 +229,38 @@ function ejr_auto_approve_pending_orders(mysqli $conn, int $minutes = 5): void
 }
 
 /**
+ * Saved customer profiles (name / contact number / delivery address).
+ *
+ * Used by the "My Cart" checkout form and the booking "Your Details" step
+ * so a customer can save multiple name + contact + address combinations
+ * (e.g. "Home", "Office") and reuse them instead of retyping every time —
+ * same idea as the saved vehicles ("My Garage") feature.
+ *
+ * Self-healing: safe to call on every request, only CREATEs the table
+ * the first time it's missing (same pattern as the archive helpers above).
+ */
+function ejr_ensure_customer_profiles_table(mysqli $conn): void
+{
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS customer_profiles (
+            id              INT AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT NOT NULL,
+            label           VARCHAR(50)  NULL,
+            full_name       VARCHAR(150) NOT NULL,
+            contact_number  VARCHAR(15)  NOT NULL,
+            address_line1   VARCHAR(255) NOT NULL,
+            address_line2   VARCHAR(255) NULL,
+            city            VARCHAR(100) NOT NULL,
+            province        VARCHAR(100) NOT NULL,
+            zip_code        VARCHAR(10)  NOT NULL,
+            is_default      TINYINT(1)   NOT NULL DEFAULT 0,
+            created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+            INDEX (user_id)
+        )
+    ");
+}
+
+/**
  * Restore a previously archived row.
  */
 function ejr_restore_row(mysqli $conn, string $table, int $id): bool

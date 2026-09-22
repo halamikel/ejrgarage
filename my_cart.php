@@ -43,53 +43,124 @@
               <i class="bi bi-bag-check me-2 text-danger"></i>Place Order
             </h5>
             <form id="orderForm">
-              <div class="mb-3">
-                <label class="form-label fw-semibold small text-muted text-uppercase">Your Name</label>
-                <input type="text" id="orderCustomerName" class="form-control shadow-sm" placeholder="Juan Dela Cruz" required>
+
+              <!-- =====================================================
+                   SAVED PROFILES
+              ====================================================== -->
+              <div id="savedProfilesSection" class="mb-4" style="display:none;">
+                <label class="form-label fw-bold text-dark" for="savedProfileSelect">
+                  <i class="bi bi-person-lines-fill me-2 text-danger"></i>Use a Saved Profile
+                </label>
+                <select class="form-select form-select-lg" id="savedProfileSelect" style="border-color:#e62429;">
+                  <option value="">-- Select a saved profile --</option>
+                </select>
+                <div class="text-end mt-2">
+                  <button type="button" class="btn btn-sm text-danger fw-bold" id="btnAddNewProfile">
+                    <i class="bi bi-plus-circle me-1"></i> Add a new profile
+                  </button>
+                </div>
               </div>
-              <div class="mb-4">
-                <label class="form-label fw-semibold small text-muted text-uppercase">Contact Number</label>
-                <input type="text" id="orderContact" class="form-control shadow-sm" placeholder="09XX-XXX-XXXX" required>
+
+              <!-- =====================================================
+                   MANUAL PROFILE FORM
+              ====================================================== -->
+              <div id="manualProfileForm">
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Tell us who this order is for and where to deliver or pick it up.
+                </p>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold small text-muted text-uppercase">Full Name</label>
+                  <input type="text" id="orderCustomerName" class="form-control shadow-sm" placeholder="Juan Dela Cruz" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold small text-muted text-uppercase">Contact Number</label>
+                  <div class="phone-input-wrap">
+                    <span class="phone-prefix">+63</span>
+                    <input
+                      type="tel"
+                      id="orderContact"
+                      class="form-control shadow-sm"
+                      placeholder="9XXXXXXXXX"
+                      inputmode="numeric"
+                      maxlength="10"
+                      autocomplete="off"
+                      required
+                    >
+                  </div>
+                  <div class="form-text">Enter your 10-digit mobile number, numbers only.</div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold small text-muted text-uppercase">Address Line 1</label>
+                  <input type="text" id="orderAddress1" class="form-control shadow-sm" placeholder="House/Unit No., Street Name" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold small text-muted text-uppercase">
+                    Address Line 2 <span class="fw-normal text-muted text-normal">(optional)</span>
+                  </label>
+                  <input type="text" id="orderAddress2" class="form-control shadow-sm" placeholder="Barangay, Subdivision, Landmark">
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-6 col-md-5">
+                    <label class="form-label fw-semibold small text-muted text-uppercase">City / Town</label>
+                    <input type="text" id="orderCity" class="form-control shadow-sm" placeholder="e.g. Santo Tomas" required>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label fw-semibold small text-muted text-uppercase">Province</label>
+                    <input type="text" id="orderProvince" class="form-control shadow-sm" placeholder="e.g. Batangas" required>
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label fw-semibold small text-muted text-uppercase">ZIP Code</label>
+                    <input type="text" id="orderZip" class="form-control shadow-sm" placeholder="4234" inputmode="numeric" maxlength="4" required>
+                  </div>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="saveAsProfile">
+                  <label class="form-check-label small" for="saveAsProfile">
+                    Save these details as a new profile for next time
+                  </label>
+                </div>
+                <div class="mb-3" id="profileLabelWrap" style="display:none;">
+                  <label class="form-label fw-semibold small text-muted text-uppercase">Profile Label</label>
+                  <input type="text" id="profileLabel" class="form-control shadow-sm" placeholder="e.g. Home, Office" maxlength="50">
+                </div>
+
+                <div class="text-end mb-3" id="backToProfilesContainer" style="display:none;">
+                  <button type="button" class="btn btn-sm text-secondary" id="btnBackToProfiles">
+                    <i class="bi bi-arrow-left me-1"></i> Back to saved profiles
+                  </button>
+                </div>
               </div>
+
+              <!-- =====================================================
+                   SHIPPING INSTRUCTIONS
+              ====================================================== -->
               <div class="mb-4">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <label for="orderAddress" class="form-label fw-semibold small text-muted text-uppercase mb-0">
-      Delivery / Pickup Address
-    </label>
+                <label class="form-label fw-semibold small text-muted text-uppercase">
+                  Shipping Instructions <span class="fw-normal text-muted text-normal">(optional)</span>
+                </label>
+                <textarea
+                  id="shippingInstructions"
+                  class="form-control shadow-sm"
+                  rows="2"
+                  placeholder="e.g. Gate code, preferred drop-off time, landmark for the rider"
+                ></textarea>
+              </div>
 
-    <button
-      type="button"
-      id="useProfileAddressBtn"
-      class="btn btn-sm btn-outline-danger"
-      style="display:none;"
-    >
-      <i class="bi bi-person-check me-1"></i>
-      Use Profile Address
-    </button>
-  </div>
-
-  <textarea
-    id="orderAddress"
-    class="form-control shadow-sm"
-    rows="3"
-    placeholder="Enter your complete address"
-    required
-  ></textarea>
-
-  <div class="form-text">
-    <i class="bi bi-info-circle me-1"></i>
-    You can use your saved profile address or enter a different address for this order.
-  </div>
-
-  <div
-    id="savedAddressNotice"
-    class="small text-success mt-2"
-    style="display:none;"
-  >
-    <i class="bi bi-check-circle-fill me-1"></i>
-    Your saved profile address has been loaded.
-  </div>
-</div>
+              <div class="alert alert-warning d-flex align-items-start gap-2 small mb-4">
+                <i class="bi bi-truck fs-5"></i>
+                <div>
+                  <strong>Delivery Fee Notice:</strong> Orders are shipped via <strong>Lalamove</strong>.
+                  The delivery fee will be <strong>shouldered by you (the customer)</strong> and is paid
+                  directly to the rider upon delivery.
+                </div>
+              </div>
 
               <div class="mb-4">
                 <label class="form-label fw-semibold small text-muted text-uppercase mb-2">Payment Method</label>
@@ -178,12 +249,53 @@
 .payment-option-card input[type="radio"]:checked + label i {
     color: #dc3545;
 }
+.text-normal {
+    text-transform: none !important;
+}
+.phone-input-wrap {
+    position: relative;
+}
+.phone-input-wrap .phone-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #495057;
+    font-weight: 600;
+    pointer-events: none;
+}
+.phone-input-wrap input[type="tel"] {
+    padding-left: 48px;
+}
 </style>
 
 <script>
 let cart = JSON.parse(localStorage.getItem('ejr_cart') || '[]');
+let savedProfiles = [];
 
-// ── REFRESH USER FROM API ─────────────────────────────────────
+// ── PHONE INPUT: DIGITS ONLY, 10 DIGITS MAX ───────────────────
+function enforceDigitsOnlyPhone(input) {
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+    });
+
+    input.addEventListener('keydown', function (event) {
+        const allowedKeys = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Home','End'];
+        if (allowedKeys.includes(event.key) || /^\d$/.test(event.key)) return;
+        event.preventDefault();
+    });
+
+    input.addEventListener('paste', function (event) {
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const digits = pasted.replace(/\D/g, '').slice(0, 10);
+        document.execCommand('insertText', false, digits);
+    });
+}
+
+// ── REFRESH USER FROM API (basic account fallback) ────────────
 function refreshUserFromApi() {
     const token = localStorage.getItem('jwt_token');
     if (!token) return;
@@ -195,110 +307,159 @@ function refreshUserFromApi() {
     .then(data => {
         if (data.status === 'success' && data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
-            prefillUser(data.user);
+            // Only use the account's basic info as a starting point when
+            // the user has no saved profiles yet.
+            if (!savedProfiles.length) {
+                prefillFromAccount(data.user);
+            }
         }
     })
     .catch(err => console.warn('Could not refresh user:', err));
 }
 
-function prefillUser(user) {
-    let fullName = '';
-
+function prefillFromAccount(user) {
     if (user.full_name) {
-        const nameParts = user.full_name.trim().split(' ');
-        const lastName  = nameParts.length > 1 ? nameParts.pop() : '';
-        const firstName = nameParts.join(' ');
-        fullName = firstName + (lastName ? ' ' + lastName : '');
+        document.getElementById('orderCustomerName').value = user.full_name.trim();
     }
 
-    document.getElementById('orderCustomerName').value = fullName;
-    document.getElementById('orderContact').value = user.phone || '';
+    if (user.phone) {
+        // users.phone is stored as 639XXXXXXXXX — strip the leading 63
+        const digits = String(user.phone).replace(/\D/g, '');
+        document.getElementById('orderContact').value = digits.startsWith('63') ? digits.slice(2) : digits.slice(-10);
+    }
 
-    const addressInput = document.getElementById('orderAddress');
-    const useAddressBtn = document.getElementById('useProfileAddressBtn');
-    const addressNotice = document.getElementById('savedAddressNotice');
-
-    if (addressInput) {
-        const savedAddress = (user.address || '').trim();
-
-        if (savedAddress) {
-            addressInput.value = savedAddress;
-
-            if (useAddressBtn) {
-                useAddressBtn.style.display = 'inline-block';
-            }
-
-            if (addressNotice) {
-                addressNotice.style.display = 'block';
-            }
-        } else {
-            addressInput.value = '';
-
-            if (useAddressBtn) {
-                useAddressBtn.style.display = 'none';
-            }
-
-            if (addressNotice) {
-                addressNotice.style.display = 'none';
-            }
-        }
+    if (user.address) {
+        document.getElementById('orderAddress1').value = user.address.trim();
     }
 }
 
-function setupAddressControls() {
-    const addressInput = document.getElementById('orderAddress');
-    const useAddressBtn = document.getElementById('useProfileAddressBtn');
-    const addressNotice = document.getElementById('savedAddressNotice');
+// ── SAVED PROFILES ─────────────────────────────────────────────
+function fetchProfiles() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return;
 
-    if (!addressInput || !useAddressBtn) {
+    fetch('api/get_profiles.php', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success' && Array.isArray(data.profiles)) {
+            savedProfiles = data.profiles;
+            renderProfileSelect();
+        }
+    })
+    .catch(err => console.warn('Could not load saved profiles:', err));
+}
+
+function renderProfileSelect() {
+    const section = document.getElementById('savedProfilesSection');
+    const manualForm = document.getElementById('manualProfileForm');
+    const select = document.getElementById('savedProfileSelect');
+    const backToProfilesContainer = document.getElementById('backToProfilesContainer');
+
+    if (!section || !select) return;
+
+    if (!savedProfiles.length) {
+        section.style.display = 'none';
+        manualForm.style.display = 'block';
         return;
     }
 
-    useAddressBtn.addEventListener('click', function () {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const savedAddress = (user.address || '').trim();
+    select.innerHTML = '<option value="">-- Select a saved profile --</option>';
 
-        if (!savedAddress) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Saved Address',
-                text: 'You do not have an address saved in your profile yet.'
-            });
-            return;
-        }
-
-        addressInput.value = savedAddress;
-
-        if (addressNotice) {
-            addressNotice.style.display = 'block';
-        }
+    savedProfiles.forEach(profile => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify(profile);
+        const addressBits = [profile.address_line1, profile.city].filter(Boolean).join(', ');
+        option.textContent = `${profile.label || 'Saved Address'} — ${profile.full_name} (${addressBits})`;
+        select.appendChild(option);
     });
 
-    addressInput.addEventListener('input', function () {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const savedAddress = (user.address || '').trim();
+    section.style.display = 'block';
+    manualForm.style.display = 'none';
+    if (backToProfilesContainer) backToProfilesContainer.style.display = 'none';
+}
 
-        if (addressNotice) {
-            if (
-                savedAddress &&
-                addressInput.value.trim() === savedAddress
-            ) {
-                addressNotice.style.display = 'block';
-            } else {
-                addressNotice.style.display = 'none';
-            }
-        }
+function clearManualFields() {
+    ['orderCustomerName','orderContact','orderAddress1','orderAddress2','orderCity','orderProvince','orderZip','profileLabel'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
     });
+    const saveCheck = document.getElementById('saveAsProfile');
+    if (saveCheck) saveCheck.checked = false;
+    const labelWrap = document.getElementById('profileLabelWrap');
+    if (labelWrap) labelWrap.style.display = 'none';
+}
+
+function setupProfileControls() {
+    const btnAddNew = document.getElementById('btnAddNewProfile');
+    const btnBack = document.getElementById('btnBackToProfiles');
+    const savedSection = document.getElementById('savedProfilesSection');
+    const manualForm = document.getElementById('manualProfileForm');
+    const savedSelect = document.getElementById('savedProfileSelect');
+    const backToProfilesContainer = document.getElementById('backToProfilesContainer');
+    const saveAsProfile = document.getElementById('saveAsProfile');
+    const profileLabelWrap = document.getElementById('profileLabelWrap');
+
+    if (btnAddNew) {
+        btnAddNew.addEventListener('click', function () {
+            clearManualFields();
+            manualForm.style.display = 'block';
+            savedSection.style.display = 'none';
+            if (savedSelect) savedSelect.value = '';
+            if (backToProfilesContainer) backToProfilesContainer.style.display = savedProfiles.length ? 'block' : 'none';
+        });
+    }
+
+    if (btnBack) {
+        btnBack.addEventListener('click', function () {
+            manualForm.style.display = 'none';
+            savedSection.style.display = 'block';
+        });
+    }
+
+    if (saveAsProfile && profileLabelWrap) {
+        saveAsProfile.addEventListener('change', function () {
+            profileLabelWrap.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    enforceDigitsOnlyPhone(document.getElementById('orderContact'));
+
+    // ZIP code: digits only, 4 digits max
+    const zipInput = document.getElementById('orderZip');
+    if (zipInput) {
+        zipInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+    }
+}
+
+function saveNewProfile(profileData) {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return Promise.resolve(null);
+
+    return fetch('api/add_profile.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(profileData)
+    })
+    .then(res => res.json())
+    .catch(() => null);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (user.full_name || user.address) {
-        prefillUser(user);
+        prefillFromAccount(user);
     }
 
-    setupAddressControls();
+    setupProfileControls();
+    fetchProfiles();
     refreshUserFromApi();
     renderCart();
 });
@@ -410,6 +571,52 @@ document.getElementById('orderForm').addEventListener('submit', function (e) {
         return;
     }
 
+    // ── DETERMINE PROFILE SOURCE (saved vs manual entry) ───────
+    const savedSection = document.getElementById('savedProfilesSection');
+    const savedSelect  = document.getElementById('savedProfileSelect');
+    const isUsingSavedProfile = savedSection && savedSection.style.display !== 'none' &&
+                                 savedSelect && savedSelect.value !== '';
+
+    let customerName, contactDigits, address1, address2, city, province, zip;
+
+    if (isUsingSavedProfile) {
+        const profile = JSON.parse(savedSelect.value);
+        customerName  = profile.full_name || '';
+        contactDigits = (profile.contact_number || '').replace(/\D/g, '').slice(-10);
+        address1      = profile.address_line1 || '';
+        address2      = profile.address_line2 || '';
+        city          = profile.city || '';
+        province      = profile.province || '';
+        zip           = profile.zip_code || '';
+    } else {
+        customerName  = document.getElementById('orderCustomerName').value.trim();
+        contactDigits = document.getElementById('orderContact').value.trim();
+        address1      = document.getElementById('orderAddress1').value.trim();
+        address2      = document.getElementById('orderAddress2').value.trim();
+        city          = document.getElementById('orderCity').value.trim();
+        province      = document.getElementById('orderProvince').value.trim();
+        zip           = document.getElementById('orderZip').value.trim();
+    }
+
+    // ── VALIDATION ───────────────────────────────────────────────
+    if (!customerName || !address1 || !city || !province || !zip) {
+        Swal.fire('Missing Details', 'Please complete your name and full address before placing the order.', 'warning');
+        return;
+    }
+
+    if (!/^9\d{9}$/.test(contactDigits)) {
+        Swal.fire('Invalid Contact Number', 'Please enter a valid 10-digit mobile number (e.g. 9XXXXXXXXX).', 'warning');
+        return;
+    }
+
+    if (!/^\d{4}$/.test(zip)) {
+        Swal.fire('Invalid ZIP Code', 'Please enter a valid 4-digit ZIP code.', 'warning');
+        return;
+    }
+
+    const composedAddress = [address1, address2, city, province, zip].filter(Boolean).join(', ');
+    const formattedContact = '+63 ' + contactDigits;
+
     const btn = this.querySelector('[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Placing Order...';
@@ -417,51 +624,71 @@ document.getElementById('orderForm').addEventListener('submit', function (e) {
     const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
 
-    fetch('api/place_order.php', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify({
-            customer_name:   document.getElementById('orderCustomerName').value,
-            contact:         document.getElementById('orderContact').value,
-            address:         document.getElementById('orderAddress').value.trim(),
-            items:           cart,
-            total_price:     total,
-            payment_method:  paymentMethod
+    // ── OPTIONALLY SAVE AS A NEW PROFILE FIRST ──────────────────
+    const saveAsProfile = document.getElementById('saveAsProfile');
+    const shouldSaveProfile = !isUsingSavedProfile && saveAsProfile && saveAsProfile.checked;
+
+    const savePromise = shouldSaveProfile
+        ? saveNewProfile({
+            label:          (document.getElementById('profileLabel').value || '').trim(),
+            full_name:      customerName,
+            contact_number: contactDigits,
+            address_line1:  address1,
+            address_line2:  address2,
+            city:           city,
+            province:       province,
+            zip_code:       zip
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'success') {
-            cart = [];
-            saveCart();
-            if (data.checkout_url) {
-                window.location.href = data.checkout_url; // → PayMongo sandbox checkout (QRPH / Card)
+        : Promise.resolve(null);
+
+    savePromise.finally(() => {
+        fetch('api/place_order.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                customer_name:          customerName,
+                contact:                formattedContact,
+                address:                composedAddress,
+                shipping_instructions:  document.getElementById('shippingInstructions').value.trim(),
+                items:                  cart,
+                total_price:            total,
+                payment_method:         paymentMethod
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                cart = [];
+                saveCart();
+                if (data.checkout_url) {
+                    window.location.href = data.checkout_url; // → PayMongo sandbox checkout (QRPH / Card)
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Order Placed!',
+                        text: paymentMethod === 'cod'
+                            ? 'Your order is pending. Please prepare exact cash for delivery/pickup. Remember: the Lalamove delivery fee is shouldered by you and paid to the rider.'
+                            : 'Your order is now pending. We will contact you shortly. Remember: the Lalamove delivery fee is shouldered by you and paid to the rider.',
+                        confirmButtonColor: '#e62429'
+                    }).then(() => {
+                        window.location.href = 'available_parts.php';
+                    });
+                }
             } else {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Placed!',
-                    text: paymentMethod === 'cod'
-                        ? 'Your order is pending. Please prepare exact cash for delivery/pickup.'
-                        : 'Your order is now pending. We will contact you shortly.',
-                    confirmButtonColor: '#e62429'
-                }).then(() => {
-                    window.location.href = 'available_parts.php';
-                });
+                Swal.fire('Error', data.message || 'Failed to place order.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
             }
-        } else {
-            Swal.fire('Error', data.message || 'Failed to place order.', 'error');
+        })
+        .catch(() => {
+            Swal.fire('Error', 'Failed to connect to server.', 'error');
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
-        }
-    })
-    .catch(() => {
-        Swal.fire('Error', 'Failed to connect to server.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Place Order';
+        });
     });
 });
 </script>
