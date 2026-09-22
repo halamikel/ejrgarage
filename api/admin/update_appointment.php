@@ -88,15 +88,14 @@ if (!$appt) {
     exit;
 }
 
-// ── MECHANIC REQUIREMENT FOR ACCEPTING A BOOKING ─────────────
-// A Pending appointment may only be accepted/Confirmed after an
-// available mechanic has been assigned. This is enforced here on
-// the server as well as in the dashboard UI so the rule cannot be
-// bypassed by calling the API directly.
-if ($data['status'] === 'Confirmed' && empty($appt['mechanic_id'])) {
+// ── MECHANIC REQUIREMENT FOR ALL STATUS CHANGES ──────────────
+// An appointment cannot have its status changed unless a mechanic
+// has already been assigned. This is enforced server-side so the
+// rule cannot be bypassed by calling the API directly.
+if (empty($appt['mechanic_id'])) {
     echo json_encode([
         'status'  => 'error',
-        'message' => 'Please assign a mechanic to this appointment before accepting the booking.'
+        'message' => 'Please assign a mechanic to this appointment before changing its status.'
     ]);
     exit;
 }
