@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 session_start();
 
 require_once 'db_config.php';
+require_once 'rate_limit.php';
 require_once 'mailer_helper.php'; // ✅ your Brevo functions
 
 require_once '../includes/php-jwt/JWT.php';
@@ -32,6 +33,9 @@ try {
     exit;
 }
 
+// ── RATE LIMIT: 3 codes / 10 min per user+IP (prevents email bombing) ──
+ejr_rate_limit($conn, 'send_delete_otp', ejr_get_ip() . '|' . $userId, 3, 600);
+
 // ── GET USER ──────────────────────────────────────────────────
 $stmt = $conn->prepare("SELECT email, full_name FROM users WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $userId);
@@ -43,8 +47,10 @@ if (!$user) {
     exit;
 }
 
+$user['full_name'] = (string) ($user['full_name'] ?? '');
+
 // ── GENERATE OTP ──────────────────────────────────────────────
-$otp = rand(100000, 999999);
+$otp = (string) random_int(100000, 999999); // CSPRNG, not rand()
 
 $_SESSION['delete_otp']         = $otp;
 $_SESSION['delete_user_id']     = $userId;
@@ -85,13 +91,23 @@ $sent = sendEmailViaBrevo(
 // ── RESPONSE ─────────────────────────────────────────────────
 if ($sent) {
     echo json_encode([
-        'status' => 'success',
+        'status'  => 'success',
         'message' => 'OTP sent to your email.'
     ]);
 } else {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Failed to send email.'
-    ]);
+    // Don't leave a live OTP in the session for an email that never went out.
+    unset($_SESSION['delete_otp'], $_SESSION['delete_user_id'], $_SESSION['delete_otp_expires']);
+
+    $reason = ejrLastMailError();
+    error_log("EJR DELETE OTP: email failed for user_id={$userId} — {$reason}");
+
+    $message = 'Failed to send email. Please try again later.';
+    // Set MAIL_DEBUG=1 in the Render environment to see the real reason
+    // in the popup while troubleshooting. Remove it afterwards.
+    if (getenv('MAIL_DEBUG') === '1' && $reason !== '') {
+        $message .= ' (' . $reason . ')';
+    }
+
+    echo json_encode(['status' => 'error', 'message' => $message]);
 }
 ?>

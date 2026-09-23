@@ -8,10 +8,33 @@
 if (!defined('BREVO_API_KEY')) require_once __DIR__ . '/env.php';
 
 // ── Email via Brevo REST API ──────────────────────────────────
+// Remembers WHY the last send failed so callers can log/surface it.
+// (Every call site used to just get `false` with no explanation.)
+function ejrLastMailError(): string {
+    return $GLOBALS['EJR_LAST_MAIL_ERROR'] ?? '';
+}
+
 function sendEmailViaBrevo(string $toEmail, string $toName, string $subject, string $htmlBody): bool {
+    $GLOBALS['EJR_LAST_MAIL_ERROR'] = '';
+
+    // Fail fast with a clear message if the Render env vars are missing/empty.
+    // getenv() returns false for unset vars, and define(..., false) makes the
+    // "api-key" header blank -> Brevo answers 401 and the user just sees
+    // "Failed to send email."
+    $missing = [];
+    foreach (['BREVO_API_KEY', 'BREVO_SENDER_EMAIL', 'BREVO_SENDER_NAME'] as $c) {
+        if (!defined($c) || !constant($c)) $missing[] = $c;
+    }
+    if ($missing) {
+        $GLOBALS['EJR_LAST_MAIL_ERROR'] = 'Missing config: ' . implode(', ', $missing);
+        error_log("EJR MAIL: " . $GLOBALS['EJR_LAST_MAIL_ERROR']);
+        return false;
+    }
+
     $payload = json_encode([
         'sender'      => ['name' => BREVO_SENDER_NAME, 'email' => BREVO_SENDER_EMAIL],
-        'to'          => [['email' => $toEmail, 'name'  => $toName]],
+        // Brevo can reject an empty "name", so fall back to the address.
+        'to'          => [['email' => $toEmail, 'name' => trim($toName) !== '' ? $toName : $toEmail]],
         'subject'     => $subject,
         'htmlContent' => $htmlBody,
     ]);
@@ -35,8 +58,20 @@ function sendEmailViaBrevo(string $toEmail, string $toName, string $subject, str
     $curlError = curl_error($ch);
     curl_close($ch);
 
-    if ($curlError) { error_log("EJR MAIL cURL: $curlError"); return false; }
-    if ($httpCode !== 201) { error_log("EJR MAIL Brevo $httpCode: $response"); return false; }
+    if ($curlError) {
+        $GLOBALS['EJR_LAST_MAIL_ERROR'] = "cURL: $curlError";
+        error_log("EJR MAIL cURL: $curlError");
+        return false;
+    }
+
+    // Brevo normally answers 201, but any 2xx means the message was accepted.
+    if ($httpCode < 200 || $httpCode >= 300) {
+        $decoded = json_decode((string)$response, true);
+        $detail  = is_array($decoded) && !empty($decoded['message']) ? $decoded['message'] : (string)$response;
+        $GLOBALS['EJR_LAST_MAIL_ERROR'] = "Brevo HTTP $httpCode: $detail";
+        error_log("EJR MAIL Brevo $httpCode: $response");
+        return false;
+    }
     return true;
 }
 
