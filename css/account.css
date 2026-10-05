@@ -466,3 +466,13 @@
 .nav-account-menu-item.text-danger:hover {
   background: rgba(230, 36, 41, 0.08);
 }
+
+.nav-account-menu-item--admin {
+  color: var(--primary-red);
+}
+.nav-account-menu-item--admin i {
+  color: var(--primary-red);
+}
+.nav-account-menu-item--admin:hover {
+  background: rgba(230, 36, 41, 0.08);
+}

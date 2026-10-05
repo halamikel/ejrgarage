@@ -72,7 +72,8 @@ if ($replyColCheck && $replyColCheck->num_rows === 0) {
 
 // ── FETCH APPOINTMENT ─────────────────────────────────────────
 $fetch = $conn->prepare("
-    SELECT a.service_type, a.appointment_date, a.user_id,
+    SELECT a.service_type, a.appointment_date, a.user_id, a.status AS current_status,
+           a.mechanic_id,
            v.brand, v.model, v.plate_number
     FROM appointments a
     LEFT JOIN vehicles v ON v.id = a.vehicle_id
@@ -84,6 +85,27 @@ $appt = $fetch->get_result()->fetch_assoc();
 
 if (!$appt) {
     echo json_encode(['status' => 'error', 'message' => 'Appointment not found']);
+    exit;
+}
+
+// ── MECHANIC REQUIREMENT FOR ALL STATUS CHANGES ───────────────
+// An appointment must have a mechanic assigned before ANY status
+// change is allowed. This is enforced server-side as well as in the
+// dashboard UI so the rule cannot be bypassed by calling the API directly.
+if (empty($appt['mechanic_id'])) {
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Please assign a mechanic to this appointment before changing its status.'
+    ]);
+    exit;
+}
+
+// Only a Pending appointment can be accepted as Confirmed.
+if ($data['status'] === 'Confirmed' && strcasecmp((string)$appt['current_status'], 'Pending') !== 0) {
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Only pending appointments can be accepted.'
+    ]);
     exit;
 }
 

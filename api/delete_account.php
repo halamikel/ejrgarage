@@ -44,7 +44,7 @@ if (!$user) {
 // ── VERIFY OTP ────────────────────────────────────────────────
 session_start();
 $data = json_decode(file_get_contents('php://input'), true);
-$otp  = $data['otp'] ?? '';
+$otp  = trim((string) ($data['otp'] ?? ''));
 
 if (
     empty($_SESSION['delete_otp']) ||
@@ -56,7 +56,7 @@ if (
     exit;
 }
 
-if ($_SESSION['delete_otp'] != $otp) {
+if (!hash_equals((string) $_SESSION['delete_otp'], $otp)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid OTP code.']);
     exit;
 }
@@ -65,8 +65,12 @@ if ($_SESSION['delete_otp'] != $otp) {
 try {
     $conn->begin_transaction();
 
-    // Cancel any pending appointments first
-    $conn->prepare("UPDATE appointments SET status = 'Cancelled' WHERE user_id = ? AND status = 'Pending'")->bind_param("i", $userId) && true;
+    // Cancel any pending appointments first.
+    // (Previously this line only *prepared* the statement and never ran it,
+    //  so pending appointments were silently left untouched.)
+    $cancel = $conn->prepare("UPDATE appointments SET status = 'Cancelled' WHERE user_id = ? AND status = 'Pending'");
+    $cancel->bind_param("i", $userId);
+    $cancel->execute();
 
     // Delete vehicles
     $del1 = $conn->prepare("DELETE FROM vehicles WHERE user_id = ?");
@@ -78,57 +82,69 @@ try {
     $del2->bind_param("i", $userId);
     $del2->execute();
 
+    if ($del2->affected_rows < 1) {
+        throw new Exception('Account could not be found or was already deleted.');
+    }
+
     $conn->commit();
-
-    // Clear OTP session
-    unset($_SESSION['delete_otp'], $_SESSION['delete_user_id'], $_SESSION['delete_otp_expires']);
-
-    // ── SEND FAREWELL EMAIL ───────────────────────────────────
-    try {
-        $emailSubject = 'EJR Garage - Account Deleted';
-        $emailBody    = '
-        <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
-            <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
-                <div style="text-align:center;margin-bottom:24px;">
-                    <h2 style="color:#e62429;margin:0;">EJR Garage</h2>
-                    <p style="color:#5f6b7a;margin:4px 0 0;">Account Deletion Confirmation</p>
-                </div>
-                <p style="color:#1e2a36;">Hi <strong>' . htmlspecialchars($user['full_name']) . '</strong>,</p>
-                <p style="color:#5f6b7a;">Your account has been permanently deleted. All your data including vehicles and appointments have been removed from our system.</p>
-                <p style="color:#5f6b7a;">We are sorry to see you go. If this was a mistake or you change your mind, you are always welcome to create a new account.</p>
-                <div style="text-align:center;margin-top:24px;">
-                    <a href="https://ejrgarage.onrender.com/register.php"
-                       style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
-                        Create New Account
-                    </a>
-                </div>
-                <p style="color:#a0aab5;font-size:11px;text-align:center;margin-top:24px;">
-                    EJR Garage &mdash; Santo Tomas, Batangas
-                </p>
-            </div>
-        </div>';
-        sendEmailViaBrevo($user['email'], $user['full_name'], $emailSubject, $emailBody);
-    } catch (\Throwable $e) {
-        // Silent
-    }
-
-
-    // BUGFIX: Respond to browser BEFORE sending email so PHP execution
-    // timeout can't produce a blank response. See save_booking.php for details.
-    $responseBody = json_encode(['status' => 'success', 'message' => 'Account deleted successfully.']);
-    if (function_exists('fastcgi_finish_request')) {
-        echo $responseBody; fastcgi_finish_request();
-    } else {
-        ob_start(); echo $responseBody;
-        header('Content-Length: ' . ob_get_length());
-        header('Connection: close');
-        ob_end_flush(); @ob_flush(); flush();
-    }
-
-    echo json_encode(['status' => 'success', 'message' => 'Account deleted successfully.']);
-
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['status' => 'error', 'message' => 'Failed to delete account: ' . $e->getMessage()]);
+    error_log("EJR DELETE ACCOUNT failed for user_id={$userId}: " . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Failed to delete account. Please try again or contact support.']);
+    exit;
+}
+
+// Clear OTP session (one-time use)
+unset($_SESSION['delete_otp'], $_SESSION['delete_user_id'], $_SESSION['delete_otp_expires']);
+
+// ── RESPOND FIRST, THEN EMAIL ─────────────────────────────────
+// The account is already gone, so a slow/failed farewell email must never
+// turn into an error (or a hung request) for the user.
+// NOTE: the old code echoed the JSON twice, which produced invalid JSON
+// ("{...}{...}") on hosts without fastcgi_finish_request (e.g. Apache on
+// Render) — the browser's response.json() then threw and the user saw
+// "Could not connect to the server" even though deletion succeeded.
+$responseBody = json_encode(['status' => 'success', 'message' => 'Account deleted successfully.']);
+if (function_exists('fastcgi_finish_request')) {
+    echo $responseBody;
+    fastcgi_finish_request();
+} else {
+    ignore_user_abort(true);
+    ob_start();
+    echo $responseBody;
+    header('Content-Length: ' . ob_get_length());
+    header('Connection: close');
+    ob_end_flush();
+    @ob_flush();
+    flush();
+}
+
+// ── SEND FAREWELL EMAIL (after the response has been sent) ────
+try {
+    $emailSubject = 'EJR Garage - Account Deleted';
+    $emailBody    = '
+    <div style="background:#f4f6f8;padding:30px;font-family:Arial,sans-serif;">
+        <div style="background:#fff;border-radius:12px;max-width:520px;margin:auto;padding:30px;border:1px solid #e3e8ef;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <h2 style="color:#e62429;margin:0;">EJR Garage</h2>
+                <p style="color:#5f6b7a;margin:4px 0 0;">Account Deletion Confirmation</p>
+            </div>
+            <p style="color:#1e2a36;">Hi <strong>' . htmlspecialchars((string) $user['full_name']) . '</strong>,</p>
+            <p style="color:#5f6b7a;">Your account has been permanently deleted. All your data including vehicles and appointments have been removed from our system.</p>
+            <p style="color:#5f6b7a;">We are sorry to see you go. If this was a mistake or you change your mind, you are always welcome to create a new account.</p>
+            <div style="text-align:center;margin-top:24px;">
+                <a href="https://ejrgarage.onrender.com/registration.php"
+                   style="background:#e62429;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+                    Create New Account
+                </a>
+            </div>
+            <p style="color:#a0aab5;font-size:11px;text-align:center;margin-top:24px;">
+                EJR Garage &mdash; Santo Tomas, Batangas
+            </p>
+        </div>
+    </div>';
+    sendEmailViaBrevo($user['email'], (string) $user['full_name'], $emailSubject, $emailBody);
+} catch (\Throwable $e) {
+    error_log("EJR DELETE ACCOUNT farewell email failed: " . $e->getMessage());
 }
 ?>

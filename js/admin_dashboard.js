@@ -227,11 +227,11 @@ function renderInquiries(inquiries) {
             <td><span class="badge ${i.status === 'responded' ? 'bg-success' : 'bg-warning text-dark'}">${i.status === 'responded' ? 'responded' : 'pending'}</span></td>
             <td>
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})">
-                        <i class="bi bi-check-lg"></i>
+                    <button class="btn btn-sm btn-outline-success" onclick="updateInquiry(${i.id})" title="Reply to Inquiry" aria-label="Reply to Inquiry">
+                        <i class="bi bi-chat-left-text-fill"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})">
-                        <i class="bi bi-trash"></i>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInquiry(${i.id})" title="Delete Inquiry" aria-label="Delete Inquiry">
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                 </div>
             </td>
@@ -320,26 +320,26 @@ function renderOrders(orders) {
                 <div class="btn-group">
                     ${isPending ? `
                         <button class="btn btn-sm btn-outline-success"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Approve / Decline">
-                            <i class="bi bi-pencil-square"></i>
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Review Order Status" aria-label="Review Order Status">
+                            <i class="bi bi-clipboard-check-fill"></i>
                         </button>` : ''}
                     ${isApproved ? `
                         <button class="btn btn-sm btn-outline-info"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Shipped">
-                            <i class="bi bi-truck"></i> Ship
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Shipped" aria-label="Mark as Shipped">
+                            <i class="bi bi-truck-front-fill"></i> Ship
                         </button>` : ''}
                     ${isShipped ? `
                         <button class="btn btn-sm btn-outline-primary"
-                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Delivered">
-                            <i class="bi bi-box-seam"></i> Deliver
+                                onclick="updateOrder(${o.id}, '${o.status}', '${safeName}')" title="Mark as Delivered" aria-label="Mark as Delivered">
+                            <i class="bi bi-box-seam-fill"></i> Deliver
                         </button>` : ''}
                     <button class="btn btn-sm btn-outline-secondary"
-                            onclick="deleteOrder(${o.id})" title="Delete">
-                        <i class="bi bi-trash"></i>
+                            onclick="deleteOrder(${o.id})" title="Delete Order" aria-label="Delete Order">
+                        <i class="bi bi-trash3-fill"></i>
                     </button>
                     <a href="api/admin/generate_parts_receipt.php?id=${o.id}" target="_blank"
-                       class="btn btn-sm btn-outline-primary" title="View Invoice">
-                        <i class="bi bi-receipt"></i>
+                       class="btn btn-sm btn-outline-primary" title="View Order Receipt" aria-label="View Order Receipt">
+                        <i class="bi bi-receipt-cutoff"></i>
                     </a>
                 </div>
             </td>
@@ -494,7 +494,7 @@ function renderAppointments(apps) {
                         </button>
                         ${a.status === 'Pending'
                             ? `<button class="btn btn-sm btn-outline-primary" onclick="assignMechanic(${a.id})" title="Assign Mechanic">
-                                   <i class="bi bi-person-gear"></i>
+                                   <i class="bi bi-person-plus-fill"></i>
                                </button>`
                             : `<button class="btn btn-sm btn-outline-secondary" disabled title="Mechanic is locked once the appointment is ${a.status.toLowerCase()}">
                                    <i class="bi bi-lock-fill"></i>
@@ -619,8 +619,8 @@ function renderHistory(data) {
             <td>
                 <div class="btn-group">
                     <a href="api/admin/generate_receipt.php?id=${h.id}" target="_blank"
-                       class="btn btn-sm btn-outline-primary" title="View Invoice">
-                        <i class="bi bi-receipt"></i>
+                       class="btn btn-sm btn-outline-primary" title="View Order Receipt" aria-label="View Order Receipt">
+                        <i class="bi bi-receipt-cutoff"></i>
                     </a>
                     <button class="btn btn-sm btn-outline-success"
                             onclick="sendReceiptToUser(${h.id}, '${custName}')" title="Send Receipt">
@@ -660,8 +660,21 @@ const CANCELLATION_REPLIES = {
 
 function manageApp(id, currentStatus) {
     const status = (currentStatus || '').toLowerCase();
-    const appt   = masterData.appointments.find(a => a.id === id);
-    const name   = appt?.full_name || 'this customer';
+
+    // Appointment IDs can arrive from PHP as numbers or strings. Use a
+    // string comparison so an assigned mechanic is not lost just because
+    // the ID types differ between the rendered row and masterData.
+    const appt = (masterData.appointments || []).find(a => String(a.id) === String(id));
+    const name = appt?.full_name || 'this customer';
+
+    // Some API responses provide mechanic_id, while others provide the
+    // joined mechanic_name. Treat either as an assigned mechanic.
+    const hasMechanic = !!(
+        appt && (
+            (appt.mechanic_id !== null && appt.mechanic_id !== undefined && String(appt.mechanic_id).trim() !== '' && String(appt.mechanic_id) !== '0') ||
+            (appt.mechanic_name && String(appt.mechanic_name).trim() !== '')
+        )
+    );
 
     if (status === 'completed') {
         Swal.fire({ title: 'Already Completed', html: `Appointment for <b>${name}</b> has already been completed.`, icon: 'info', confirmButtonColor: '#b30000' });
@@ -672,21 +685,44 @@ function manageApp(id, currentStatus) {
         return;
     }
 
-    Swal.fire({
-        title: 'Update Appointment Status',
-        input: 'select',
-        inputOptions: {
-            'Pending':   'Pending',
+    // A booking cannot have its status changed until a mechanic has been
+    // assigned. Keep the current status visible, but do not offer any
+    // other status while the appointment is unassigned.
+    const inputOptions = hasMechanic
+        ? {
+            'Pending': 'Pending',
             'Confirmed': 'Confirmed',
             'Completed': 'Completed',
             'Cancelled': 'Cancelled'
-        },
+        }
+        : {
+            [currentStatus]: currentStatus
+        };
+
+    Swal.fire({
+        title: 'Update Appointment Status',
+        input: 'select',
+        inputOptions,
         inputValue: currentStatus,
+        footer: !hasMechanic
+            ? '<span class="text-warning fw-semibold"><i class="bi bi-person-plus-fill me-1"></i>Assign a mechanic first before changing the appointment status.</span>'
+            : '',
         showCancelButton: true,
         confirmButtonColor: '#b30000',
         confirmButtonText: 'Update'
     }).then(result => {
         if (!result.isConfirmed || !result.value) return;
+
+        // Extra client-side guard before sending ANY status change.
+        if (!hasMechanic && result.value !== currentStatus) {
+            Swal.fire({
+                title: 'Assign a Mechanic First',
+                text: 'You must assign a mechanic before changing the appointment status.',
+                icon: 'warning',
+                confirmButtonColor: '#e62429'
+            });
+            return;
+        }
 
         if (result.value === 'Cancelled') {
             promptCancellationReply(id);
@@ -2089,30 +2125,373 @@ function endLiveSession() {
 }
 
 // =============================================================
+// EXPORT HELPERS
+// =============================================================
+// Exports always use the SAME filters currently applied to the dashboard.
+// This means the global search box and each tab's dropdown filter are
+// respected when CSV/PDF is generated.
+
+function getExportData(type) {
+    // IMPORTANT: Export the SAME records currently shown after filtering.
+    // Do not use a separate/looser filter here, otherwise CSV/PDF can contain
+    // records that are hidden on the dashboard.
+    const term = (globalSearchTerm || '').toLowerCase().trim();
+
+    const getMonthFilter = (...ids) => {
+        for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el && el.value) return el.value;
+        }
+        return '';
+    };
+
+    const matchesMonth = (value, monthFilter) => {
+        if (!monthFilter) return true;
+        if (!value) return false;
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return false;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}` === monthFilter;
+    };
+
+    if (type === 'appointments') {
+        const statusFilter = document.getElementById('appointmentsStatusFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'appointmentsMonth', 'appointmentsDateFilter', 'appointmentsMonthFilter'
+        );
+
+        return masterData.appointments.filter(a => {
+            const matchesTerm = !term ||
+                (a.full_name && a.full_name.toLowerCase().includes(term)) ||
+                (a.service_type && a.service_type.toLowerCase().includes(term)) ||
+                (a.vehicle_info && a.vehicle_info.toLowerCase().includes(term)) ||
+                (a.mechanic_name && a.mechanic_name.toLowerCase().includes(term));
+            const matchesStatus = !statusFilter || a.status === statusFilter;
+            const matchesDate = matchesMonth(a.appointment_date, monthFilter);
+            return matchesTerm && matchesStatus && matchesDate;
+        });
+    }
+
+    if (type === 'users') {
+        const roleFilter = document.getElementById('usersRoleFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'usersMonth', 'usersDateFilter', 'usersMonthFilter'
+        );
+
+        return masterData.users.filter(u => {
+            const matchesTerm = !term ||
+                (u.full_name && u.full_name.toLowerCase().includes(term)) ||
+                (u.email && u.email.toLowerCase().includes(term)) ||
+                (u.phone && u.phone.toLowerCase().includes(term));
+            const matchesRole = !roleFilter || String(u.role_id) === roleFilter;
+            const matchesDate = matchesMonth(u.created_at, monthFilter);
+            return matchesTerm && matchesRole && matchesDate;
+        });
+    }
+
+    if (type === 'vehicles') {
+        const monthFilter = getMonthFilter(
+            'vehiclesMonth', 'vehiclesDateFilter', 'vehiclesMonthFilter'
+        );
+
+        return masterData.vehicles.filter(v => {
+            const matchesTerm = !term ||
+                (v.owner_name && v.owner_name.toLowerCase().includes(term)) ||
+                (v.plate_number && v.plate_number.toLowerCase().includes(term)) ||
+                (v.model && v.model.toLowerCase().includes(term)) ||
+                (v.brand && v.brand.toLowerCase().includes(term));
+
+            // Vehicles normally do not have a creation date. If a date/month
+            // filter exists in the page, use the first available date field.
+            const vehicleDate = v.created_at || v.date_created || v.registration_date || '';
+            const matchesDate = matchesMonth(vehicleDate, monthFilter);
+            return matchesTerm && matchesDate;
+        });
+    }
+
+    if (type === 'history') {
+        // History has its own search + month controls in the dashboard.
+        const historySearch = (document.getElementById('historySearch')?.value || '')
+            .toLowerCase().trim();
+        const historyMonth = document.getElementById('historyMonth')?.value || '';
+        const combinedTerm = historySearch || term;
+
+        return historyData.filter(h => {
+            const matchesTerm = !combinedTerm ||
+                (h.full_name && h.full_name.toLowerCase().includes(combinedTerm)) ||
+                (h.service_type && h.service_type.toLowerCase().includes(combinedTerm)) ||
+                (h.plate_number && h.plate_number.toLowerCase().includes(combinedTerm)) ||
+                (h.brand && h.brand.toLowerCase().includes(combinedTerm)) ||
+                (h.model && h.model.toLowerCase().includes(combinedTerm));
+
+            const matchesDate = !historyMonth ||
+                (h.service_date && String(h.service_date).startsWith(historyMonth));
+
+            return matchesTerm && matchesDate;
+        });
+    }
+
+    if (type === 'orders') {
+        const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
+        const monthFilter = getMonthFilter(
+            'ordersMonth', 'ordersDateFilter', 'ordersMonthFilter'
+        );
+
+        return ordersData.filter(o => {
+            const year = new Date(o.created_at).getFullYear();
+            const orderNo = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`.toLowerCase();
+
+            const matchesTerm = !term ||
+                (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+                (o.contact && o.contact.toLowerCase().includes(term)) ||
+                (o.address && o.address.toLowerCase().includes(term)) ||
+                orderNo.includes(term);
+
+            const matchesStatus = !statusFilter ||
+                String(o.status || '').toLowerCase() === statusFilter.toLowerCase();
+
+            const matchesDate = matchesMonth(o.created_at, monthFilter);
+
+            return matchesTerm && matchesStatus && matchesDate;
+        });
+    }
+
+    return [];
+}
+
+// Clears only the export/date filters for the selected tab.
+// This function is explicitly attached to window because the PHP dashboard
+// uses inline onclick="clearDateFilters('...')" handlers.
+function clearDateFilters(type) {
+    const prefix = String(type || '').trim();
+    if (!prefix) return;
+
+    const ids = [
+        `${prefix}MonthFilter`,
+        `${prefix}FromDate`,
+        `${prefix}ToDate`
+    ];
+
+    let cleared = 0;
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (el.value !== '') {
+            el.value = '';
+            cleared++;
+        }
+
+        // Refresh any listeners attached to these controls.
+        try {
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) {
+            // The value has already been cleared; no further action needed.
+        }
+    });
+
+    // Keep the normal search/status filters intact while refreshing the
+    // dashboard. Export functions read the cleared controls directly.
+    if (typeof applyAllFilters === 'function') {
+        applyAllFilters();
+    }
+
+    // Give the user visible confirmation that the export date filters were
+    // actually reset, even when the table itself does not visibly change.
+    if (typeof Swal !== 'undefined' && cleared > 0) {
+        Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'success',
+            title: 'Export filters cleared',
+            text: 'Month and date range filters have been reset.',
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true
+        });
+    }
+}
+
+window.clearDateFilters = clearDateFilters;
+
+function getExportConfig(type) {
+    const configs = {
+        appointments: {
+            title: 'Service Appointments',
+            csvFilename: 'appointments.csv',
+            pdfFilename: 'appointments.pdf',
+            headers: ['Customer', 'Service', 'Vehicle', 'Date', 'Mechanic', 'Notes', 'Status', 'Cancellation Reply']
+        },
+        users: {
+            title: 'Users',
+            csvFilename: 'users.csv',
+            pdfFilename: 'users.pdf',
+            headers: ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined']
+        },
+        vehicles: {
+            title: 'Customer Vehicles',
+            csvFilename: 'vehicles.csv',
+            pdfFilename: 'vehicles.pdf',
+            headers: ['Owner', 'Brand', 'Model', 'Year', 'Plate Number', 'Fuel', 'Transmission']
+        },
+        history: {
+            title: 'Service History',
+            csvFilename: 'service_history.csv',
+            pdfFilename: 'service_history.pdf',
+            headers: ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date']
+        },
+        orders: {
+            title: 'Parts Orders',
+            csvFilename: 'orders.csv',
+            pdfFilename: 'orders.pdf',
+            headers: ['Order #', 'Customer', 'Contact', 'Address', 'Items', 'Total', 'Date', 'Status', 'Cancellation Reply']
+        }
+    };
+
+    return configs[type];
+}
+
+function getExportRows(type, data) {
+    if (type === 'appointments') {
+        return data.map(a => [
+            a.full_name || 'Guest',
+            a.service_type || '—',
+            a.vehicle_info || '—',
+            a.appointment_date
+                ? new Date(a.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—',
+            a.mechanic_name || 'Unassigned',
+            a.notes || '—',
+            a.status || '—',
+            a.cancellation_reply || '—'
+        ]);
+    }
+
+    if (type === 'users') {
+        return data.map(u => [
+            u.id,
+            u.full_name || '—',
+            u.email || '—',
+            u.phone || '—',
+            u.role_id == 2 ? 'Admin' : u.role_id == 3 ? 'Mechanic' : 'Customer',
+            u.created_at
+                ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'
+        ]);
+    }
+
+    if (type === 'vehicles') {
+        return data.map(v => [
+            v.owner_name || '—',
+            v.brand || '—',
+            v.model || '—',
+            v.year_model || '—',
+            v.plate_number || '—',
+            v.fuel_type || '—',
+            v.transmission || '—'
+        ]);
+    }
+
+    if (type === 'history') {
+        return data.map(h => [
+            h.full_name || '—',
+            h.service_type || '—',
+            h.brand && h.model
+                ? `${h.brand} ${h.model} (${h.year_model || '—'})`
+                : '—',
+            h.plate_number || '—',
+            h.service_date
+                ? new Date(h.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'
+        ]);
+    }
+
+    if (type === 'orders') {
+        return data.map(o => {
+            const year = new Date(o.created_at).getFullYear();
+            const orderNo = `EJR-ORD-${year}-${String(o.id).padStart(5, '0')}`;
+
+            let itemsList = '—';
+            try {
+                const itemsArr = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                if (Array.isArray(itemsArr)) {
+                    itemsList = itemsArr.map(i => `${i.name} ×${i.qty}`).join(', ');
+                } else if (o.items) {
+                    itemsList = String(o.items);
+                }
+            } catch (e) {
+                itemsList = String(o.items || '—');
+            }
+
+            return [
+                orderNo,
+                o.customer_name || '—',
+                o.contact || '—',
+                o.address || '—',
+                itemsList,
+                `₱${parseFloat(o.total_price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+                o.created_at
+                    ? new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '—',
+                o.status || '—',
+                o.cancellation_reply || '—'
+            ];
+        });
+    }
+
+    return [];
+}
+
+function csvEscape(value) {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+// =============================================================
 // EXPORT CSV
 // =============================================================
 
 function exportCSV(type) {
-    let rows = [], headers = [], filename = '';
-    if (type === 'appointments') {
-        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Notes', 'Status', 'Cancellation Reply'];
-        rows     = masterData.appointments.map(a => [a.full_name || 'Guest', a.service_type, a.vehicle_info || '—', a.appointment_date, a.notes || '—', a.status, a.cancellation_reply || '—']);
-        filename = 'appointments.csv';
-    } else if (type === 'users') {
-        headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];
-        rows     = masterData.users.map(u => [u.id, u.full_name, u.email, u.phone || '—', u.role_id == 2 ? 'Admin' : 'Customer', u.created_at || '—']);
-        filename = 'users.csv';
-    } else if (type === 'history') {
-        headers  = ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date'];
-        rows     = historyData.map(h => [h.full_name || '—', h.service_type || '—', h.brand && h.model ? `${h.brand} ${h.model} (${h.year_model || '—'})` : '—', h.plate_number || '—', h.service_date || '—']);
-        filename = 'service_history.csv';
+    const config = getExportConfig(type);
+    if (!config) return;
+
+    const data = getExportData(type);
+    const rows = getExportRows(type, data);
+
+    if (!rows.length) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No records to export',
+            text: 'The current search/filter does not contain any records.'
+        });
+        return;
     }
-    const csv  = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
+
+    const csv = [config.headers, ...rows]
+        .map(row => row.map(csvEscape).join(','))
+        .join('\r\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = config.csvFilename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     URL.revokeObjectURL(url);
+
+    Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: `Exported ${rows.length} filtered record${rows.length === 1 ? '' : 's'}`,
+        showConfirmButton: false,
+        timer: 2200
+    });
 }
 
 // =============================================================
@@ -2120,30 +2499,19 @@ function exportCSV(type) {
 // =============================================================
 
 function exportPDF(type) {
-    let rows = [], headers = [], filename = '', title = '';
-    if (type === 'appointments') {
-        title    = 'Service Appointments';
-        headers  = ['Customer', 'Service', 'Vehicle', 'Date', 'Mechanic', 'Notes', 'Status'];
-        rows     = masterData.appointments.map(a => [
-            a.full_name || 'Guest',
-            a.service_type,
-            a.vehicle_info || '—',
-            a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
-            a.mechanic_name || 'Unassigned',
-            a.notes || '—',
-            a.status
-        ]);
-        filename = 'appointments.pdf';
-    } else if (type === 'users') {
-        title    = 'Users';
-        headers  = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Joined'];
-        rows     = masterData.users.map(u => [u.id, u.full_name, u.email, u.phone || '—', u.role_id == 2 ? 'Admin' : 'Customer', u.created_at || '—']);
-        filename = 'users.pdf';
-    } else if (type === 'history') {
-        title    = 'Service History';
-        headers  = ['Customer', 'Service', 'Vehicle', 'Plate No.', 'Date'];
-        rows     = historyData.map(h => [h.full_name || '—', h.service_type || '—', h.brand && h.model ? `${h.brand} ${h.model} (${h.year_model || '—'})` : '—', h.plate_number || '—', h.service_date || '—']);
-        filename = 'service_history.pdf';
+    const config = getExportConfig(type);
+    if (!config) return;
+
+    const data = getExportData(type);
+    const rows = getExportRows(type, data);
+
+    if (!rows.length) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No records to export',
+            text: 'The current search/filter does not contain any records.'
+        });
+        return;
     }
 
     if (typeof window.jspdf === 'undefined') {
@@ -2157,23 +2525,41 @@ function exportPDF(type) {
     doc.setFontSize(14);
     doc.setTextColor(179, 0, 0);
     doc.text('EJR Garage', 14, 15);
+
     doc.setFontSize(11);
     doc.setTextColor(60, 60, 60);
-    doc.text(title, 14, 22);
+    doc.text(config.title, 14, 22);
+
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
-    doc.text('Generated ' + new Date().toLocaleString('en-US'), 14, 27);
+
+    const filterText = globalSearchTerm
+        ? `Filtered records: ${rows.length} | Search: "${globalSearchTerm}"`
+        : `Filtered records: ${rows.length}`;
+
+    doc.text(filterText, 14, 27);
+    doc.text('Generated ' + new Date().toLocaleString('en-US'), 14, 32);
 
     doc.autoTable({
-        head: [headers],
+        head: [config.headers],
         body: rows,
-        startY: 32,
-        styles: { fontSize: 8, cellPadding: 3 },
+        startY: 38,
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: [179, 0, 0], textColor: [255, 255, 255] },
-        alternateRowStyles: { fillColor: [248, 248, 248] }
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        margin: { left: 10, right: 10 }
     });
 
-    doc.save(filename);
+    doc.save(config.pdfFilename);
+
+    Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: `Exported ${rows.length} filtered record${rows.length === 1 ? '' : 's'}`,
+        showConfirmButton: false,
+        timer: 2200
+    });
 }
 
 
@@ -2317,13 +2703,14 @@ function renderBusyDates(dates) {
                     </button>
                     <button class="btn btn-sm ${isBusy ? 'btn-outline-success' : 'btn-outline-warning'}"
                             onclick="toggleBusy(${d.id}, ${isBusy ? 0 : 1})"
-                            title="${isBusy ? 'Mark as Available' : 'Mark as Busy'}">
-                        <i class="bi bi-${isBusy ? 'unlock' : 'lock'}"></i>
+                            title="${isBusy ? 'Make Date Available' : 'Block Date'}"
+                            aria-label="${isBusy ? 'Make Date Available' : 'Block Date'}">
+                        <i class="bi bi-${isBusy ? 'calendar-check-fill' : 'calendar-x-fill'}"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
                             onclick="deleteBusyDate(${d.id}, '${formatted}')"
-                            title="Delete">
-                        <i class="bi bi-trash"></i>
+                            title="Delete Busy Date" aria-label="Delete Busy Date">
+                        <i class="bi bi-calendar-minus-fill"></i>
                     </button>
                 </div>
             </td>
@@ -2779,8 +3166,8 @@ function renderMechanics(mechanics) {
             <td>${m.specialty || '—'}</td>
             <td><span class="badge ${mechanicStatusBadgeClass(m.status)}">${mechanicStatusLabel(m.status)}</span></td>
             <td>
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editMechanic(${m.id})" title="Edit Mechanic" aria-label="Edit Mechanic"><i class="bi bi-person-gear"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMechanic(${m.id}, '${m.name.replace(/'/g,"\\'")}')" title="Remove Mechanic" aria-label="Remove Mechanic"><i class="bi bi-person-dash-fill"></i></button>
             </td>
         </tr>`).join('');
 }
@@ -2948,10 +3335,10 @@ function renderLeaveRequests(requests) {
             <td>${formatLeaveDate(r.requested_at ? r.requested_at.split(' ')[0] : '')}</td>
             <td>
                 ${r.status === 'pending' ? `
-                    <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve"><i class="bi bi-check-lg"></i></button>
-                    <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Reject"><i class="bi bi-x-lg"></i></button>
+                    <button class="btn btn-sm btn-success me-1" onclick="approveLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Approve Leave Request"><i class="bi bi-check-circle-fill"></i></button>
+                    <button class="btn btn-sm btn-outline-danger me-1" onclick="rejectLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Decline Leave Request"><i class="bi bi-x-circle-fill"></i></button>
                 ` : ''}
-                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="deleteLeaveRequest(${r.id}, '${r.mechanic_name.replace(/'/g,"\\'")}')" title="Delete Leave Request"><i class="bi bi-trash3-fill"></i></button>
             </td>
         </tr>`).join('');
 }

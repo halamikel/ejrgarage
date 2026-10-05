@@ -2066,86 +2066,100 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // ==================================================
                 // CONTACT DETAILS (name / contact number / address)
+                //
+                // This page doesn't currently render the "Your
+                // Details" contact/address form (#manualContactForm),
+                // so window.getSelectedContactDetails is only
+                // defined when that section exists elsewhere.
+                // Guard against it being missing so the vehicle
+                // form can still submit.
                 // ==================================================
 
-                const contactInfo =
-                    getSelectedContactDetails();
-
                 if (
-                    !contactInfo.full_name ||
-                    !contactInfo.address_line1 ||
-                    !contactInfo.city ||
-                    !contactInfo.province ||
-                    !contactInfo.zip_code
+                    typeof getSelectedContactDetails ===
+                        "function"
                 ) {
 
-                    Swal.fire(
-                        "Missing Details",
-                        "Please complete your name and full address before continuing.",
-                        "warning"
+                    const contactInfo =
+                        getSelectedContactDetails();
+
+                    if (
+                        !contactInfo.full_name ||
+                        !contactInfo.address_line1 ||
+                        !contactInfo.city ||
+                        !contactInfo.province ||
+                        !contactInfo.zip_code
+                    ) {
+
+                        Swal.fire(
+                            "Missing Details",
+                            "Please complete your name and full address before continuing.",
+                            "warning"
+                        );
+
+                        return;
+
+                    }
+
+                    if (
+                        !/^9\d{9}$/.test(
+                            contactInfo.contact_digits
+                        )
+                    ) {
+
+                        Swal.fire(
+                            "Invalid Contact Number",
+                            "Please enter a valid 10-digit mobile number (e.g. 9XXXXXXXXX).",
+                            "warning"
+                        );
+
+                        return;
+
+                    }
+
+                    if (
+                        !/^\d{4}$/.test(
+                            contactInfo.zip_code
+                        )
+                    ) {
+
+                        Swal.fire(
+                            "Invalid ZIP Code",
+                            "Please enter a valid 4-digit ZIP code.",
+                            "warning"
+                        );
+
+                        return;
+
+                    }
+
+                    vehicleDetails.customerName =
+                        contactInfo.full_name;
+
+                    vehicleDetails.contact =
+                        "+63 " + contactInfo.contact_digits;
+
+                    vehicleDetails.address =
+                        [
+                            contactInfo.address_line1,
+                            contactInfo.address_line2,
+                            contactInfo.city,
+                            contactInfo.province,
+                            contactInfo.zip_code
+                        ]
+                            .filter(Boolean)
+                            .join(", ");
+
+
+                    // ==============================================
+                    // OPTIONALLY SAVE AS A NEW PROFILE
+                    // ==============================================
+
+                    maybeSaveContactProfile(
+                        contactInfo
                     );
 
-                    return;
-
                 }
-
-                if (
-                    !/^9\d{9}$/.test(
-                        contactInfo.contact_digits
-                    )
-                ) {
-
-                    Swal.fire(
-                        "Invalid Contact Number",
-                        "Please enter a valid 10-digit mobile number (e.g. 9XXXXXXXXX).",
-                        "warning"
-                    );
-
-                    return;
-
-                }
-
-                if (
-                    !/^\d{4}$/.test(
-                        contactInfo.zip_code
-                    )
-                ) {
-
-                    Swal.fire(
-                        "Invalid ZIP Code",
-                        "Please enter a valid 4-digit ZIP code.",
-                        "warning"
-                    );
-
-                    return;
-
-                }
-
-                vehicleDetails.customerName =
-                    contactInfo.full_name;
-
-                vehicleDetails.contact =
-                    "+63 " + contactInfo.contact_digits;
-
-                vehicleDetails.address =
-                    [
-                        contactInfo.address_line1,
-                        contactInfo.address_line2,
-                        contactInfo.city,
-                        contactInfo.province,
-                        contactInfo.zip_code
-                    ]
-                        .filter(Boolean)
-                        .join(", ");
-
-
-                // ==================================================
-                // OPTIONALLY SAVE AS A NEW PROFILE
-                // ==================================================
-
-                maybeSaveContactProfile(
-                    contactInfo
-                );
 
 
                 // ==================================================
