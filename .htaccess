@@ -45,8 +45,15 @@
 # ── Allow AJAX/fetch requests (fixes InfinityFree 403 on API calls) ──
 <IfModule mod_headers.c>
     Header always set Access-Control-Allow-Origin "https://ejrgarage.onrender.com"
+
+    # DEV ONLY: also allow the Expo web dev server (http://localhost:8081).
+    # Remove these two lines before a production release.
+    SetEnvIf Origin "^http://localhost:(8081|19006)$" CORS_DEV_ORIGIN=$0
+    Header always set Access-Control-Allow-Origin "%{CORS_DEV_ORIGIN}e" env=CORS_DEV_ORIGIN
+
+    Header always append Vary "Origin"
     Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 </IfModule>
 
 # Handle OPTIONS preflight
