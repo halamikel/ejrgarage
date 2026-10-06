@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('X-EJR-Version: place-order-pm-fix-5');
+header('X-EJR-Version: place-order-pm-fix-6');
 require_once 'db_config.php';
 require_once 'rate_limit.php'; 
 require_once 'paymongo_helper.php';
@@ -53,12 +53,12 @@ $total_price     = floatval($data['total_price'] ?? 0);
 
 $voucher_code    = strtoupper(trim($data['voucher_code'] ?? ''));
 
-// place_order.php handles the cash-on-pickup/delivery flow (QR Ph goes
-// through create_qrph_payment.php), so default to 'cod'.
-$payment_method  = strtolower(trim((string)($data['payment_method'] ?? '')));
-if ($payment_method === '' || $payment_method === 'qrph') {
-    $payment_method = 'cod';
-}
+// Cash flows stay 'cod'. Anything else the checkout form sends
+// (online / card / qrph / paymongo) goes through PayMongo hosted checkout.
+$raw_pm = strtolower(trim((string)($data['payment_method'] ?? '')));
+$payment_method = in_array($raw_pm, ['', 'cod', 'cash', 'cash_on_delivery'], true)
+    ? 'cod'
+    : 'online';
 
     // Self-healing: shipping_instructions wasn't part of the original
     // part_orders schema — add it the first time it's missing (same
@@ -400,6 +400,47 @@ try {
     }
 
     /*
+     * -------------------------------------------------------
+     * ONLINE PAYMENT: create PayMongo checkout session
+     * -------------------------------------------------------
+     * Done before commit so that if PayMongo fails, the order,
+     * voucher usage and stock changes are all rolled back.
+     */
+    $checkout_url = null;
+
+    if ($payment_method === 'online') {
+
+        $scheme = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']))
+            ? $_SERVER['HTTP_X_FORWARDED_PROTO']
+            : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+        $baseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'];
+
+        $checkout = paymongo_create_checkout(
+            (int)$order_id,
+            "EJR Garage Parts Order #{$order_id}",
+            (float)$total_price,
+            $baseUrl . '/my_cart.php?payment=success&order_id=' . $order_id,
+            $baseUrl . '/my_cart.php?payment=cancelled&order_id=' . $order_id
+        );
+
+        if (!$checkout['ok'] || empty($checkout['checkout_url'])) {
+            throw new Exception(
+                'Unable to start online payment. Please try again or choose Cash on Delivery.'
+            );
+        }
+
+        $checkout_url = $checkout['checkout_url'];
+
+        // Keep the PayMongo checkout session id on the order.
+        $ckStmt = $conn->prepare("UPDATE part_orders SET paymongo_intent_id = ? WHERE id = ?");
+        if ($ckStmt) {
+            $cid = (string)$checkout['checkout_id'];
+            $ckStmt->bind_param("si", $cid, $order_id);
+            $ckStmt->execute();
+        }
+    }
+
+    /*
      * Everything succeeded.
      *
      * Commit:
@@ -443,7 +484,8 @@ echo json_encode([
     'voucher_code'     => $storedVoucherCode,
     'voucher_discount' => $voucher_discount,
     'total_price'      => $total_price,
-    'payment_method'   => $payment_method
+    'payment_method'   => $payment_method,
+    'checkout_url'     => $checkout_url
 ]);
 
 } catch (Exception $e) {
