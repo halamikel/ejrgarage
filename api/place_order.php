@@ -50,6 +50,8 @@ $shipping_instructions = trim($data['shipping_instructions'] ?? '');
 $items           = $data['items'] ?? [];
 $total_price     = floatval($data['total_price'] ?? 0);
 
+$voucher_code    = strtoupper(trim($data['voucher_code'] ?? ''));
+
     // Self-healing: shipping_instructions wasn't part of the original
     // part_orders schema — add it the first time it's missing (same
     // pattern used for appointments.notes in save_booking.php).
