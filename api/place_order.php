@@ -5,6 +5,7 @@ require_once 'rate_limit.php';
 require_once 'paymongo_helper.php';
 require_once '../includes/php-jwt/JWT.php';
 require_once '../includes/php-jwt/Key.php';
+require_once 'voucher_helper.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -47,8 +48,7 @@ $contact         = trim($data['contact'] ?? '');
 $address         = trim($data['address'] ?? '');
 $shipping_instructions = trim($data['shipping_instructions'] ?? '');
 $items           = $data['items'] ?? [];
-    $total_price     = floatval($data['total_price'] ?? 0);
-    $payment_method  = ($data['payment_method'] ?? 'card') === 'cod' ? 'cod' : 'card';
+$total_price     = floatval($data['total_price'] ?? 0);
 
     // Self-healing: shipping_instructions wasn't part of the original
     // part_orders schema — add it the first time it's missing (same
@@ -58,41 +58,162 @@ $items           = $data['items'] ?? [];
         $conn->query("ALTER TABLE part_orders ADD COLUMN shipping_instructions TEXT NULL");
     }
 
-    if (!$customer_name || !$contact || !$address || empty($items) || $total_price <= 0) {
+if (
+    !$customer_name ||
+    !$contact ||
+    !$address ||
+    empty($items)
+) {
     echo json_encode([
         'status' => 'error',
-        'message' => 'Name, contact number, address, items, and total price are required.'
+        'message' => 'Name, contact number, address, and items are required.'
     ]);
     exit;
 }
 
-    // --- PRE-ORDER STOCK CHECK + RESERVE STOCK ---
-    // Runs inside a transaction with row locks (FOR UPDATE) so two
-    // simultaneous orders can't both "pass" the check and oversell
-    // the same part.
-    $conn->begin_transaction();
+// --- STOCK CHECK + SERVER-SIDE PRICE CALCULATION + VOUCHER ---
+// Everything runs inside one transaction.
+// FOR UPDATE prevents two simultaneous orders from overselling stock.
 
-    try {
-        foreach ($items as $item) {
-            $id  = (int)$item['id'];
-            $qty = (int)$item['qty'];
+$conn->begin_transaction();
 
-            $stockCheck = $conn->prepare("SELECT stock, name FROM parts WHERE id = ? FOR UPDATE");
-            $stockCheck->bind_param("i", $id);
-            $stockCheck->execute();
-            $result = $stockCheck->get_result()->fetch_assoc();
+try {
 
-            if (!$result || $result['stock'] < $qty) {
-                $name = $result['name'] ?? 'Unknown Part';
-                $conn->rollback();
-                echo json_encode(['status' => 'error', 'message' => "Sorry, $name is out of stock or insufficient."]);
-                exit;
-            }
+    $subtotal = 0;
+
+    // These are the trusted items that will be stored in the order.
+    $serverItems = [];
+
+    foreach ($items as $item) {
+
+        $id  = (int)($item['id'] ?? 0);
+        $qty = (int)($item['qty'] ?? 0);
+
+        if ($id <= 0 || $qty <= 0) {
+            throw new Exception('Invalid order item.');
         }
 
-        $items_json = json_encode($items);
+        /*
+         * IMPORTANT:
+         *
+         * We get the price from TiDB.
+         * We DO NOT trust the price sent by the Expo app.
+         */
+        $stockCheck = $conn->prepare("
+            SELECT
+                id,
+                stock,
+                name,
+                price
+            FROM parts
+            WHERE id = ?
+            FOR UPDATE
+        ");
 
-        $stmt = $conn->prepare("
+        if (!$stockCheck) {
+            throw new Exception('Unable to check product stock.');
+        }
+
+        $stockCheck->bind_param("i", $id);
+
+        if (!$stockCheck->execute()) {
+            throw new Exception('Unable to check product stock.');
+        }
+
+        $result = $stockCheck
+            ->get_result()
+            ->fetch_assoc();
+
+        if (!$result) {
+            throw new Exception('The selected part could not be found.');
+        }
+
+        if ((int)$result['stock'] < $qty) {
+
+            throw new Exception(
+                "Sorry, {$result['name']} is out of stock or insufficient."
+            );
+        }
+
+        // TRUSTED PRICE FROM DATABASE
+        $price = (float)$result['price'];
+
+        $lineTotal = $price * $qty;
+
+        $subtotal += $lineTotal;
+
+        /*
+         * Store the database values rather than the values
+         * supplied by the mobile app.
+         */
+        $serverItems[] = [
+            'id'    => (int)$result['id'],
+            'name'  => $result['name'],
+            'price' => $price,
+            'qty'   => $qty
+        ];
+    }
+
+    // Always round money to 2 decimal places.
+    $subtotal = round($subtotal, 2);
+
+    /*
+     * -------------------------------------------------------
+     * APPLY VOUCHER
+     * -------------------------------------------------------
+     */
+
+    $voucher = null;
+
+    $voucher_discount = 0;
+
+    // Default: no voucher, so total = subtotal.
+    $total_price = $subtotal;
+
+    if ($voucher_code !== '') {
+
+        /*
+         * $lock = true
+         *
+         * This locks the voucher row while this order
+         * is being created.
+         */
+        $voucher = ejr_get_voucher(
+            $conn,
+            $voucher_code,
+            $user_id,
+            $subtotal,
+            true
+        );
+
+        $voucher_discount = $voucher['discount'];
+
+        $total_price = $voucher['total'];
+    }
+
+    if ($total_price <= 0) {
+        throw new Exception('Invalid order total.');
+    }
+
+    /*
+     * Store the server-calculated items.
+     */
+    $items_json = json_encode(
+        $serverItems,
+        JSON_UNESCAPED_UNICODE
+    );
+
+    if ($items_json === false) {
+        throw new Exception('Unable to prepare order items.');
+    }
+
+    /*
+     * -------------------------------------------------------
+     * CREATE ORDER
+     * -------------------------------------------------------
+     */
+
+    $stmt = $conn->prepare("
         INSERT INTO part_orders (
             user_id,
             customer_name,
@@ -101,90 +222,207 @@ $items           = $data['items'] ?? [];
             shipping_instructions,
             items,
             total_price,
+            voucher_id,
+            voucher_code,
+            voucher_discount,
             status,
             payment_method
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     ");
 
-        $stmt->bind_param(
-            "isssssds",
+    if (!$stmt) {
+        throw new Exception(
+            'Unable to prepare order creation.'
+        );
+    }
+
+    $voucher_id = $voucher
+        ? (int)$voucher['id']
+        : null;
+
+    $storedVoucherCode = $voucher
+        ? $voucher['code']
+        : null;
+
+    /*
+     * Type string:
+     *
+     * i = user_id
+     * s = customer_name
+     * s = contact
+     * s = address
+     * s = shipping_instructions
+     * s = items_json
+     * d = total_price
+     * i = voucher_id
+     * s = voucher_code
+     * d = voucher_discount
+     * s = payment_method
+     */
+    $stmt->bind_param(
+        "isssssdisds",
+        $user_id,
+        $customer_name,
+        $contact,
+        $address,
+        $shipping_instructions,
+        $items_json,
+        $total_price,
+        $voucher_id,
+        $storedVoucherCode,
+        $voucher_discount,
+        $payment_method
+    );
+
+    if (!$stmt->execute()) {
+        throw new Exception(
+            'Database execution failed.'
+        );
+    }
+
+    $order_id = $stmt->insert_id;
+
+    /*
+     * -------------------------------------------------------
+     * RECORD VOUCHER REDEMPTION
+     * -------------------------------------------------------
+     */
+
+    if ($voucher) {
+
+        $redemptionStmt = $conn->prepare("
+            INSERT INTO voucher_redemptions (
+                voucher_id,
+                user_id,
+                order_id,
+                discount_amount
+            )
+            VALUES (?, ?, ?, ?)
+        ");
+
+        if (!$redemptionStmt) {
+            throw new Exception(
+                'Unable to record voucher redemption.'
+            );
+        }
+
+        $voucherId = (int)$voucher['id'];
+
+        $redemptionStmt->bind_param(
+            "iiid",
+            $voucherId,
             $user_id,
-            $customer_name,
-            $contact,
-            $address,
-            $shipping_instructions,
-            $items_json,
-            $total_price,
-            $payment_method
-        );
-
-        if (!$stmt->execute()) {
-            $conn->rollback();
-            echo json_encode(['status' => 'error', 'message' => 'Database execution failed.']);
-            exit;
-        }
-
-        $order_id = $stmt->insert_id;
-
-        // --- DECREASE STOCK NOW THAT THE ORDER EXISTS ---
-        $deductStmt = $conn->prepare("UPDATE parts SET stock = stock - ? WHERE id = ?");
-        foreach ($items as $item) {
-            $id  = (int)$item['id'];
-            $qty = (int)$item['qty'];
-            $deductStmt->bind_param("ii", $qty, $id);
-            $deductStmt->execute();
-        }
-
-        $conn->commit();
-    } catch (\Throwable $e) {
-        $conn->rollback();
-        error_log('EJR place_order stock error: ' . $e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'Something went wrong placing your order. Please try again.']);
-        exit;
-    }
-
-    // Stock reserved & order saved — continue to payment/checkout below.
-    {
-        // ── CASH ON DELIVERY: no online payment needed, order is just pending fulfillment ──
-        if ($payment_method === 'cod') {
-            echo json_encode([
-                'status'       => 'success',
-                'message'      => 'Order placed! You will pay in cash upon delivery/pickup.',
-                'checkout_url' => null
-            ]);
-            exit;
-        }
-
-        // ── ONLINE PAYMENT: create PayMongo Checkout Session (QRPH / Card) ──
-        $checkout = paymongo_create_checkout(
             $order_id,
-            "EJR Garage Parts Order #{$order_id}",
-            $total_price,
-            "https://ejrgarage.onrender.com/payment_success.php?order_id={$order_id}",
-            "https://ejrgarage.onrender.com/payment_cancelled.php?order_id={$order_id}"
+            $voucher_discount
         );
 
-        if ($checkout['ok']) {
-            $upd = $conn->prepare("UPDATE part_orders SET paymongo_checkout_id = ? WHERE id = ?");
-            $upd->bind_param("si", $checkout['checkout_id'], $order_id);
-            $upd->execute();
+        if (!$redemptionStmt->execute()) {
+            throw new Exception(
+                'Unable to record voucher redemption.'
+            );
+        }
 
-            echo json_encode([
-                'status'       => 'success',
-                'message'      => 'Order placed. Redirecting to payment...',
-                'checkout_url' => $checkout['checkout_url']
-            ]);
-        } else {
-            // Order is saved either way; payment can be retried/handled by admin.
-            error_log("PayMongo checkout creation failed for order #{$order_id}: " . $checkout['error']);
-            echo json_encode([
-                'status'  => 'success',
-                'message' => 'Order placed, but payment session could not be created. Please contact us to pay.',
-                'checkout_url' => null
-            ]);
+        /*
+         * Increase global usage count.
+         */
+        $usageStmt = $conn->prepare("
+            UPDATE vouchers
+            SET
+                usage_count = usage_count + 1,
+                updated_at = NOW()
+            WHERE id = ?
+        ");
+
+        if (!$usageStmt) {
+            throw new Exception(
+                'Unable to update voucher usage.'
+            );
+        }
+
+        $usageStmt->bind_param(
+            "i",
+            $voucherId
+        );
+
+        if (!$usageStmt->execute()) {
+            throw new Exception(
+                'Unable to update voucher usage.'
+            );
         }
     }
+
+    /*
+     * -------------------------------------------------------
+     * DECREASE STOCK
+     * -------------------------------------------------------
+     *
+     * The rows are already locked with FOR UPDATE.
+     */
+    $deductStmt = $conn->prepare("
+        UPDATE parts
+        SET stock = stock - ?
+        WHERE id = ?
+    ");
+
+    if (!$deductStmt) {
+        throw new Exception(
+            'Unable to update stock.'
+        );
+    }
+
+    foreach ($serverItems as $item) {
+
+        $id  = (int)$item['id'];
+        $qty = (int)$item['qty'];
+
+        $deductStmt->bind_param(
+            "ii",
+            $qty,
+            $id
+        );
+
+        if (!$deductStmt->execute()) {
+            throw new Exception(
+                'Unable to update stock.'
+            );
+        }
+    }
+
+    /*
+     * Everything succeeded.
+     *
+     * Commit:
+     * - order
+     * - voucher redemption
+     * - voucher usage
+     * - stock deduction
+     */
+    $conn->commit();
+
+} catch (\Throwable $e) {
+
+    /*
+     * If anything failed, undo:
+     * - order
+     * - voucher redemption
+     * - voucher usage
+     * - stock changes
+     */
+    $conn->rollback();
+
+    error_log(
+        'EJR place_order transaction error: ' .
+        $e->getMessage()
+    );
+
+    echo json_encode([
+        'status'  => 'error',
+        'message' => $e->getMessage()
+    ]);
+
+    exit;
+}
 
 } catch (Exception $e) {
     error_log('EJR place_order error: ' . $e->getMessage());
