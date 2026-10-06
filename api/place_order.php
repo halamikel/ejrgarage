@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('X-EJR-Version: place-order-pm-fix-3');
+header('X-EJR-Version: place-order-pm-fix-4');
 require_once 'db_config.php';
 require_once 'rate_limit.php'; 
 require_once 'paymongo_helper.php';
@@ -66,18 +66,6 @@ if ($payment_method === '' || $payment_method === 'qrph') {
     $shipColCheck = $conn->query("SHOW COLUMNS FROM part_orders LIKE 'shipping_instructions'");
     if ($shipColCheck && $shipColCheck->num_rows === 0) {
         $conn->query("ALTER TABLE part_orders ADD COLUMN shipping_instructions TEXT NULL");
-    }
-
-    // Self-healing: payment_method was created as a restrictive column
-    // (ENUM) that rejects 'cod' ("Data truncated"). Widen it to VARCHAR so
-    // any payment method value is accepted. Existing values are kept.
-    $pmColCheck = $conn->query("SHOW COLUMNS FROM part_orders LIKE 'payment_method'");
-    if ($pmColCheck && ($pmCol = $pmColCheck->fetch_assoc())) {
-        if (stripos($pmCol['Type'], 'enum') === 0 || stripos($pmCol['Type'], 'char') === false) {
-            $conn->query("ALTER TABLE part_orders MODIFY COLUMN payment_method VARCHAR(30) NOT NULL DEFAULT 'cod'");
-        }
-    } elseif ($pmColCheck && $pmColCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE part_orders ADD COLUMN payment_method VARCHAR(30) NOT NULL DEFAULT 'cod'");
     }
 
 if (
