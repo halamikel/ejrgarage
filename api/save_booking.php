@@ -121,12 +121,37 @@ try {
         exit;
     }
 
+    // ── PREFERRED MECHANIC (optional) ─────────────────────────
+    // The app sends the chosen roster id as "mechanic_id" (top level, or
+    // inside "vehicle"). Empty / 0 / invalid = leave unassigned so an
+    // admin can assign one later.
+    $colMech = $conn->query("SHOW COLUMNS FROM appointments LIKE 'mechanic_id'");
+    if ($colMech && $colMech->num_rows === 0) {
+        $conn->query("ALTER TABLE appointments ADD COLUMN mechanic_id INT NULL");
+    }
+
+    $mechanicId = (int)($data['mechanic_id'] ?? ($v['mechanic_id'] ?? 0));
+    if ($mechanicId > 0) {
+        // Only accept a mechanic that exists, isn't archived, and is still available.
+        $mchk = $conn->prepare(
+            "SELECT id FROM mechanics
+             WHERE id = ? AND status = 'available'
+               AND (is_archived IS NULL OR is_archived = 0) LIMIT 1"
+        );
+        $mchk->bind_param("i", $mechanicId);
+        $mchk->execute();
+        if (!$mchk->get_result()->fetch_assoc()) {
+            $mechanicId = 0; // stale pick -> fall back to "we'll assign one"
+        }
+    }
+    $mechanicParam = $mechanicId > 0 ? $mechanicId : null;
+
     // ── SAVE APPOINTMENT ──────────────────────────────────────
     $stmtApp = $conn->prepare(
-        "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, notes, contact_number, address, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')"
+        "INSERT INTO appointments (user_id, vehicle_id, service_type, appointment_date, notes, contact_number, address, mechanic_id, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')"
     );
-    $stmtApp->bind_param("iisssss", $userId, $vehicleId, $services, $v['appointmentDate'], $notes, $contact, $address);
+    $stmtApp->bind_param("iisssssi", $userId, $vehicleId, $services, $v['appointmentDate'], $notes, $contact, $address, $mechanicParam);
 
     if (!$stmtApp->execute()) {
         throw new Exception("Appointment Save Failed: " . $stmtApp->error);
