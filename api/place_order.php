@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+header('X-EJR-Version: place-order-pm-fix-2');
 require_once 'db_config.php';
 require_once 'rate_limit.php'; 
 require_once 'paymongo_helper.php';
@@ -51,6 +52,13 @@ $items           = $data['items'] ?? [];
 $total_price     = floatval($data['total_price'] ?? 0);
 
 $voucher_code    = strtoupper(trim($data['voucher_code'] ?? ''));
+
+// place_order.php handles the cash-on-pickup/delivery flow (QR Ph goes
+// through create_qrph_payment.php), so default to 'cod'.
+$payment_method  = strtolower(trim((string)($data['payment_method'] ?? '')));
+if ($payment_method === '' || $payment_method === 'qrph') {
+    $payment_method = 'cod';
+}
 
     // Self-healing: shipping_instructions wasn't part of the original
     // part_orders schema — add it the first time it's missing (same
@@ -230,7 +238,7 @@ try {
             status,
             payment_method
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', COALESCE(?, 'cod'))
     ");
 
     if (!$stmt) {
