@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('X-EJR-Version: place-order-pm-fix-4');
+header('X-EJR-Version: place-order-pm-fix-5');
 require_once 'db_config.php';
 require_once 'rate_limit.php'; 
 require_once 'paymongo_helper.php';
@@ -433,6 +433,18 @@ try {
 
     exit;
 }
+
+// Order committed successfully - tell the app.
+echo json_encode([
+    'status'           => 'success',
+    'message'          => 'Order placed successfully.',
+    'order_id'         => (int)$order_id,
+    'subtotal'         => $subtotal,
+    'voucher_code'     => $storedVoucherCode,
+    'voucher_discount' => $voucher_discount,
+    'total_price'      => $total_price,
+    'payment_method'   => $payment_method
+]);
 
 } catch (Exception $e) {
     error_log('EJR place_order error: ' . $e->getMessage());
