@@ -9,6 +9,39 @@
 
 const EJR_PTS_APPOINTMENT = 50;   // per completed appointment
 const EJR_PESO_PER_POINT  = 200;  // 1 pt per ₱200 spent on parts
+const EJR_PTS_REVIEW      = 10;   // per service review
+
+/**
+ * Self-healing schema (same pattern as the other endpoints): makes sure the
+ * users.points column and the points_ledger table exist. Without them every
+ * award fails silently (error_log only) and the balance never goes up.
+ */
+function ejr_ensure_points_schema(mysqli $conn): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
+    try {
+        $c = $conn->query("SHOW COLUMNS FROM users LIKE 'points'");
+        if ($c && $c->num_rows === 0) {
+            $conn->query("ALTER TABLE users ADD COLUMN points INT NOT NULL DEFAULT 0");
+        }
+        $conn->query("
+            CREATE TABLE IF NOT EXISTS points_ledger (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                points INT NOT NULL,
+                reason VARCHAR(30) NOT NULL,
+                ref_id INT NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_points_award (user_id, reason, ref_id)
+            )
+        ");
+    } catch (Throwable $e) {
+        error_log('EJR points schema check failed: ' . $e->getMessage());
+    }
+}
 
 /**
  * Credit points once per (user, reason, ref). Returns points actually awarded (0 if duplicate).
@@ -16,6 +49,7 @@ const EJR_PESO_PER_POINT  = 200;  // 1 pt per ₱200 spent on parts
 function ejr_award_points(mysqli $conn, int $userId, int $points, string $reason, int $refId): int
 {
     if ($userId <= 0 || $points <= 0) return 0;
+    ejr_ensure_points_schema($conn);
 
     try {
         $conn->begin_transaction();
@@ -67,6 +101,12 @@ function ejr_award_order_points(mysqli $conn, int $orderId): int
     return ejr_award_points($conn, (int)$row['user_id'], $pts, 'parts_order', $orderId);
 }
 
+/** 10 pts for reviewing a completed appointment (once per appointment). */
+function ejr_award_review_points(mysqli $conn, int $userId, int $appointmentId): int
+{
+    return ejr_award_points($conn, $userId, EJR_PTS_REVIEW, 'review', $appointmentId);
+}
+
 /**
  * Catch-up sync for one customer. Awards any points they have earned but
  * never received: Completed appointments, and parts orders that are
@@ -77,6 +117,7 @@ function ejr_award_order_points(mysqli $conn, int $orderId): int
 function ejr_sync_user_points(mysqli $conn, int $userId): int
 {
     if ($userId <= 0) return 0;
+    ejr_ensure_points_schema($conn);
     $total = 0;
 
     try {
