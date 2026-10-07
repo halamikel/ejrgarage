@@ -67,6 +67,56 @@ function ejr_award_order_points(mysqli $conn, int $orderId): int
     return ejr_award_points($conn, (int)$row['user_id'], $pts, 'parts_order', $orderId);
 }
 
+/**
+ * Catch-up sync for one customer. Awards any points they have earned but
+ * never received: Completed appointments, and parts orders that are
+ * 'completed' or 'delivered'. Safe to call often: every award goes through
+ * ejr_award_points(), whose UNIQUE (user_id, reason, ref_id) key makes it
+ * idempotent. Never throws, so it can't break the endpoint that calls it.
+ */
+function ejr_sync_user_points(mysqli $conn, int $userId): int
+{
+    if ($userId <= 0) return 0;
+    $total = 0;
+
+    try {
+        // Completed appointments with no ledger row yet.
+        $q = $conn->prepare("
+            SELECT a.id
+            FROM appointments a
+            LEFT JOIN points_ledger l
+                   ON l.user_id = a.user_id AND l.reason = 'appointment' AND l.ref_id = a.id
+            WHERE a.user_id = ? AND a.status = 'Completed' AND l.id IS NULL
+        ");
+        $q->bind_param("i", $userId);
+        $q->execute();
+        $res = $q->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $total += ejr_award_points($conn, $userId, EJR_PTS_APPOINTMENT, 'appointment', (int)$row['id']);
+        }
+
+        // Completed / delivered parts orders with no ledger row yet.
+        $q = $conn->prepare("
+            SELECT o.id, o.total_price
+            FROM part_orders o
+            LEFT JOIN points_ledger l
+                   ON l.user_id = o.user_id AND l.reason = 'parts_order' AND l.ref_id = o.id
+            WHERE o.user_id = ? AND o.status IN ('completed', 'delivered') AND l.id IS NULL
+        ");
+        $q->bind_param("i", $userId);
+        $q->execute();
+        $res = $q->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $pts = (int)floor(((float)$row['total_price']) / EJR_PESO_PER_POINT);
+            $total += ejr_award_points($conn, $userId, $pts, 'parts_order', (int)$row['id']);
+        }
+    } catch (Throwable $e) {
+        error_log('EJR points sync failed: ' . $e->getMessage());
+    }
+
+    return $total;
+}
+
 /** Small JWT helper for the customer rewards endpoints. Exits 401 on failure; returns user id. */
 function ejr_require_user_id(): int
 {

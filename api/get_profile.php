@@ -30,6 +30,10 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
 
         // Fetch user data
         // Note: we select 'full_name' and 'phone' to match your JS prefillUser() function
+        // Credit any points earned but never awarded (self-heals past silent failures).
+        require_once __DIR__ . '/points_helper.php';
+        ejr_sync_user_points($conn, (int)$userId);
+
         // SELECT * so a missing optional column (e.g. points) can't 500 the whole profile.
         $stmt = $conn->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $userId);
