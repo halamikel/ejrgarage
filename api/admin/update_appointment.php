@@ -138,6 +138,12 @@ if (!$stmt->execute()) {
     exit;
 }
 
+// ── AWARD POINTS (once per appointment) ───────────────────────
+if ($data['status'] === 'Completed') {
+    require_once '../points_helper.php';
+    ejr_award_appointment_points($conn, (int)$data['appointment_id']);
+}
+
 // ── RESPOND ───────────────────────────────────────────────────
 echo json_encode(['status' => 'success']);
 

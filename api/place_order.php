@@ -334,6 +334,20 @@ try {
         }
 
         /*
+         * If this was a reward voucher, mark it used so it leaves "My Vouchers".
+         */
+        try {
+            $usedStmt = $conn->prepare("UPDATE user_vouchers SET used_at = NOW() WHERE code = ? AND user_id = ? AND used_at IS NULL");
+            if ($usedStmt) {
+                $usedCode = $voucher['code'];
+                $usedStmt->bind_param("si", $usedCode, $user_id);
+                $usedStmt->execute();
+            }
+        } catch (Throwable $e) {
+            error_log('EJR user_vouchers mark-used: ' . $e->getMessage());
+        }
+
+        /*
          * Increase global usage count.
          */
         $usageStmt = $conn->prepare("

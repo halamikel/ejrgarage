@@ -104,6 +104,12 @@ if (!$upd->execute()) {
     exit;
 }
 
+// ── Award points (once per appointment) ───────────────────────
+if ($status === 'Completed') {
+    require_once 'points_helper.php';
+    ejr_award_appointment_points($conn, $jobId);
+}
+
 echo json_encode(["status" => "success", "message" => "Job status updated to $status."]);
 
 // ── Best-effort customer email notification (non-blocking) ───────

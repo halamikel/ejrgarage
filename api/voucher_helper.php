@@ -116,6 +116,23 @@ function ejr_get_voucher(
         throw new Exception('This voucher is no longer active.');
     }
 
+    /*
+     * Reward vouchers belong to the customer who claimed them.
+     */
+    try {
+        $ownStmt = $conn->prepare("SELECT user_id FROM user_vouchers WHERE code = ? LIMIT 1");
+        if ($ownStmt) {
+            $ownStmt->bind_param("s", $code);
+            $ownStmt->execute();
+            $owner = $ownStmt->get_result()->fetch_assoc();
+            if ($owner && (int)$owner['user_id'] !== $user_id) {
+                throw new Exception('Voucher code not found.');
+            }
+        }
+    } catch (mysqli_sql_exception $e) {
+        // user_vouchers table not created yet — ignore.
+    }
+
     $now = time();
 
     if (!empty($voucher['starts_at'])) {

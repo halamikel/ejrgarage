@@ -201,6 +201,12 @@ if ($action === 'update_status') {
         exit;
     }
 
+    // ── AWARD POINTS (1 pt per ₱200, once per order) ────────────
+    if ($newStatus === 'completed') {
+        require_once __DIR__ . '/../points_helper.php';
+        ejr_award_order_points($conn, (int)$order_id);
+    }
+
     echo json_encode(['status' => 'success', 'message' => 'Order status updated.']);
 
     // ── NOTIFY CUSTOMER (cancellations only) ────────────────────

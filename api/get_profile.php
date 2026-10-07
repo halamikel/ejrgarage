@@ -30,7 +30,7 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
 
         // Fetch user data
         // Note: we select 'full_name' and 'phone' to match your JS prefillUser() function
-        $stmt = $conn->prepare("SELECT id, full_name, email, phone, address, role_id, notif_email, notif_sms, profile_picture, created_at FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id, full_name, email, phone, address, role_id, notif_email, notif_sms, profile_picture, created_at, points FROM users WHERE id = ?");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
