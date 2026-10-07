@@ -30,12 +30,23 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
 
         // Fetch user data
         // Note: we select 'full_name' and 'phone' to match your JS prefillUser() function
-        $stmt = $conn->prepare("SELECT id, full_name, email, phone, address, role_id, notif_email, notif_sms, profile_picture, created_at, points FROM users WHERE id = ?");
+        // SELECT * so a missing optional column (e.g. points) can't 500 the whole profile.
+        $stmt = $conn->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
 
-        if ($user = $result->fetch_assoc()) {
+        if ($row = $result->fetch_assoc()) {
+            // Only expose the fields the app needs (never password hashes etc.),
+            // defaulting any column that doesn't exist yet.
+            $user = [];
+            foreach (['id','full_name','email','phone','address','role_id','notif_email','notif_sms','profile_picture','created_at','points'] as $f) {
+                $user[$f] = $row[$f] ?? ($f === 'points' ? 0 : null);
+            }
+            $user['points'] = (int)$user['points'];
+            if (!array_key_exists('points', $row)) {
+                error_log('EJR get_profile: users.points column is missing - run the rewards migration.');
+            }
             // Same is_available lookup as login.php — keeps the mechanic
             // app's availability toggle accurate after a splash-screen
             // auto-login / profile refresh, not just a fresh login.
@@ -74,7 +85,7 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         // A database error is a server problem, not a bad token. Returning 401
         // here makes the app think the session expired and log the user out.
         if ($e instanceof mysqli_sql_exception) {
-            error_log('EJR get_profile DB error: ' . $e->getMessage());
+            error_log('EJR get_profile DB error: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "Server error loading profile."]);
             exit;
