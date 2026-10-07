@@ -2,6 +2,10 @@
 header('Content-Type: application/json');
 require_once 'db_config.php';
 require_once 'points_helper.php';
+require_once 'voucher_helper.php';
+
+// Claimed vouchers are valid for 30 days from the moment they are claimed.
+const EJR_VOUCHER_VALID_DAYS = 30;
 
 $userId = ejr_require_user_id();
 
@@ -14,6 +18,23 @@ if ($rewardId <= 0) {
 }
 
 try {
+    // Make sure the voucher tables exist BEFORE the transaction (DDL would
+    // implicitly commit it). Without this, claiming fails on a fresh database.
+    ejr_ensure_voucher_tables($conn);
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS user_vouchers (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            reward_id INT NOT NULL,
+            code VARCHAR(50) NOT NULL,
+            expires_at DATETIME NULL,
+            used_at DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_user_voucher_code (code),
+            INDEX idx_user_vouchers_user (user_id)
+        )
+    ");
+
     $conn->begin_transaction();
 
     // Lock the user row so two taps can't spend the same points twice.
@@ -44,8 +65,7 @@ try {
     if (!$tpl) throw new Exception('This reward is not configured yet.');
 
     $code = 'EJR-' . strtoupper(bin2hex(random_bytes(4)));
-    $days = (int)($reward['duration_days'] ?? 0);
-    $expires = $days > 0 ? date('Y-m-d H:i:s', strtotime("+{$days} days")) : null;
+    $expires = date('Y-m-d H:i:s', strtotime('+' . EJR_VOUCHER_VALID_DAYS . ' days'));
 
     $v = $conn->prepare("
         INSERT INTO vouchers
@@ -72,8 +92,19 @@ try {
     $l->bind_param("iii", $userId, $neg, $uvId);
     $l->execute();
 
+    $bal = $conn->prepare("SELECT points FROM users WHERE id = ?");
+    $bal->bind_param("i", $userId);
+    $bal->execute();
+    $newBalance = (int)($bal->get_result()->fetch_assoc()['points'] ?? 0);
+
     $conn->commit();
-    echo json_encode(['status' => 'success', 'message' => "Voucher claimed! Your code is {$code}.", 'code' => $code]);
+    echo json_encode([
+        'status'     => 'success',
+        'message'    => "Voucher claimed! Your code is {$code}. Valid for " . EJR_VOUCHER_VALID_DAYS . " days.",
+        'code'       => $code,
+        'expires_at' => $expires,
+        'points'     => $newBalance,
+    ]);
 } catch (Throwable $e) {
     try { $conn->rollback(); } catch (Throwable $e2) {}
     http_response_code(400);

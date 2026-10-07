@@ -324,6 +324,22 @@ try {
                     'Unable to update voucher usage.'
                 );
             }
+
+            /*
+             * If this was a reward voucher, mark it used so it leaves
+             * "My Vouchers" (place_order.php already does this).
+             */
+            try {
+                $usedStmt = $conn->prepare(
+                    "UPDATE user_vouchers SET used_at = NOW() WHERE code = ? AND user_id = ? AND used_at IS NULL"
+                );
+                if ($usedStmt) {
+                    $usedStmt->bind_param("si", $storedVoucherCode, $user_id);
+                    $usedStmt->execute();
+                }
+            } catch (Throwable $e) {
+                error_log('EJR user_vouchers mark-used: ' . $e->getMessage());
+            }
         }
 
         /*
