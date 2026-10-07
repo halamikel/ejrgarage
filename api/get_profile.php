@@ -71,6 +71,14 @@ if (preg_match('/bearer\s(\S+)/i', $authHeader, $matches)) {
         }
 
     } catch (Exception $e) {
+        // A database error is a server problem, not a bad token. Returning 401
+        // here makes the app think the session expired and log the user out.
+        if ($e instanceof mysqli_sql_exception) {
+            error_log('EJR get_profile DB error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Server error loading profile."]);
+            exit;
+        }
         http_response_code(401);
         echo json_encode(["status" => "error", "message" => "Unauthorized: " . $e->getMessage()]);
     }
