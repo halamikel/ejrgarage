@@ -1,6 +1,8 @@
 # ignore a specific file
 includes/mail_config.php
-uploads/avatars/avatars.htaccess
+# NOTE: uploads/avatars/avatars.htaccess is deliberately NOT ignored —
+# it blocks PHP execution inside the uploads directory, so it must be
+# deployed. .gitignore does not affect already-tracked files.
 
 # ignore all .env files
 .env
@@ -9,3 +11,7 @@ uploads/avatars/avatars.htaccess
 node_modules/
 vendor/
 uploads/
+
+# ignore editor config (can contain local SFTP/deploy credentials)
+.vscode/
+.idea/
