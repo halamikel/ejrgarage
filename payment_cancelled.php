@@ -15,7 +15,7 @@ include 'includes/header.php';
             Your order #<?= $order_id ?> was saved but payment wasn't completed.
             You can retry payment anytime from your orders page.
           </p>
-          <a href="my_inquiries.php" class="btn fw-bold px-5 py-2"
+          <a href="my_orders.php" class="btn fw-bold px-5 py-2"
              style="background-color:#dc3545; color:#fff; border:none; border-radius:8px; font-size:1rem; display:inline-block;">
             View My Orders
           </a>

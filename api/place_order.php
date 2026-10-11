@@ -433,8 +433,8 @@ try {
             (int)$order_id,
             "EJR Garage Parts Order #{$order_id}",
             (float)$total_price,
-            $baseUrl . '/my_cart.php?payment=success&order_id=' . $order_id,
-            $baseUrl . '/my_cart.php?payment=cancelled&order_id=' . $order_id
+            $baseUrl . '/payment_success.php?order_id=' . $order_id,
+            $baseUrl . '/payment_cancelled.php?order_id=' . $order_id
         );
 
         if (!$checkout['ok'] || empty($checkout['checkout_url'])) {

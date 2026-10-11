@@ -9,16 +9,16 @@ $verified = false;
 $errorMsg = '';
 
 if ($order_id > 0) {
-    $stmt = $conn->prepare("SELECT paymongo_checkout_id, payment_status FROM part_orders WHERE id = ?");
+    $stmt = $conn->prepare("SELECT paymongo_intent_id, payment_status FROM part_orders WHERE id = ?");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $order = $stmt->get_result()->fetch_assoc();
 
-    if ($order && $order['paymongo_checkout_id']) {
+    if ($order && $order['paymongo_intent_id']) {
         if ($order['payment_status'] === 'paid') {
             $verified = true; // already confirmed previously
         } else {
-            $session = paymongo_get_checkout($order['paymongo_checkout_id']);
+            $session = paymongo_get_checkout($order['paymongo_intent_id']);
             $paymentStatus = $session['attributes']['payment_intent']['attributes']['status'] ?? null;
 
             if ($paymentStatus === 'succeeded') {
