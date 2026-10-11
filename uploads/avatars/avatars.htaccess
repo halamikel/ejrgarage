@@ -1,0 +1,14 @@
+# Block PHP execution in the uploads directory.
+# Even if a malicious file somehow gets uploaded, it cannot be executed as PHP.
+<FilesMatch "\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Only allow image files to be served
+<FilesMatch "\.(jpg|jpeg|png|webp|gif)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+Options -Indexes
