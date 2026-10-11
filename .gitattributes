@@ -1,0 +1,31 @@
+# Normalize line endings so Windows checkouts don't create phantom diffs.
+# The index already stores LF, so these rules match existing content and
+# cause no churn — they only stop CRLF from being reintroduced on checkout.
+
+* text=auto eol=lf
+
+# Source and config files are always LF
+*.php      text eol=lf
+*.js       text eol=lf
+*.css      text eol=lf
+*.json     text eol=lf
+*.sql      text eol=lf
+*.md       text eol=lf
+*.svg      text eol=lf
+*.txt      text eol=lf
+*.pem      text eol=lf
+.htaccess  text eol=lf
+
+# Binaries must never be line-ending converted
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.jfif     binary
+*.gif      binary
+*.webp     binary
+*.ico      binary
+*.apk      binary
+*.woff     binary
+*.woff2    binary
+*.ttf      binary
+*.eot      binary
