@@ -1,4 +1,6 @@
-FROM php:8.3-apache
+# Pin to the patched 8.3.36 release: 8.3.35 and earlier are vulnerable to
+# CVE-2026-109618 and CVE-2026-109619 (PHP2Shell, unauthenticated RCE).
+FROM php:8.3.36-apache
 
 # Install MySQL extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
